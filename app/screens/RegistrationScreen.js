@@ -7,7 +7,7 @@ import {
   Text,
 } from "react-native";
 
-function WelcomeScreen(props) {
+function RegistrationScreen(props) {
   return (
     <ImageBackground
       style={styles.background}
@@ -24,7 +24,7 @@ function WelcomeScreen(props) {
       <View style={styles.registerButton}>
         <Button
           title="Register"
-          onPress={() => NavigationActivation.navigate("Registration")}
+          onPress={() => console.log("Register pressed")}
         />
       </View>
     </ImageBackground>
@@ -67,4 +67,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default WelcomeScreen;
+export default RegistrationScreen;
