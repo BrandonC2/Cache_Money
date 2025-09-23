@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -7,24 +8,28 @@ import {
   Text,
 } from "react-native";
 
-function AboutScreen(props) {
+
+export default function AboutScreen({ navigation }) {
   return (
     <ImageBackground
       style={styles.background}
-      source={require("./assets/IMG_1.jpg")}
+      source={require("../assets/IMG_1.jpg")}
     >
       <View style={styles.logoContainer}>
-        <Image source={require("./assets/ye.png")} style={styles.logo} />
+        <Image source={require("../assets/ye.png")} style={styles.logo} />
         <Text style={styles.title}>Let you Cook</Text>
       </View>
       <View style={styles.loginButton}>
-        <Button title="Login" onPress={() => console.log("Login pressed")} />
+        <Button
+          title="Login"
+          onPress={() => navigation.navigate("Login")}
+        />
       </View>
 
       <View style={styles.registerButton}>
         <Button
           title="Register"
-          onPress={() => console.log("Register pressed")}
+          onPress={() => navigation.navigate("Registration")}
         />
       </View>
     </ImageBackground>
@@ -34,37 +39,32 @@ function AboutScreen(props) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
+    //justifyContent: "flex-end",
+    //alignItems: "center",
   },
   title: {
     fontSize: 24,
+    marginVertical: 36,
     fontWeight: "bold",
-    marginTop: 50,
     color: "white",
   },
-  loginButton: {
-    width: 100,
-    height: 100,
-    top: 75,
-    //alignItems: "center",
-  },
+
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 200,
+    marginTop: 100,
   },
   logoContainer: {
     //position: "absolute",
-    top: 50,
     alignItems: "center",
   },
   registerButton: {
     width: 100,
     height: 100,
-    top: 40,
-    //backgroundColor: "#5c9ffcff",
-    //alignItems: "center",
+  },
+  loginButton: {
+    width: 100,
+    height: 100,
   },
 });
 
-export default AboutScreen;

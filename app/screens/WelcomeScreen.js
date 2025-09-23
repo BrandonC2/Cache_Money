@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -5,28 +6,36 @@ import {
   View,
   Image,
   Text,
+  TextInput,
 } from "react-native";
 
-function WelcomeScreen(props) {
+export default function WelcomeScreen({navigation}) {
   return (
-    <ImageBackground
+<ImageBackground
       style={styles.background}
-      source={require("./assets/IMG_1.jpg")}
+      source={require("../assets/IMG_1.jpg")}
     >
       <View style={styles.logoContainer}>
-        <Image source={require("./assets/ye.png")} style={styles.logo} />
-        <Text style={styles.title}>Let you Cook</Text>
-      </View>
-      <View style={styles.loginButton}>
-        <Button title="Login" onPress={() => console.log("Login pressed")} />
+        <Image source={require("../assets/ye.png")} style={styles.logo} />
       </View>
 
-      <View style={styles.registerButton}>
+      <View style={styles.backButton}>
         <Button
-          title="Register"
-          onPress={() => NavigationActivation.navigate("Registration")}
+          title="Back"
+          onPress={() => navigation.navigate("About")}
         />
       </View>
+
+      <View>
+        <Text style={styles.title}>Username</Text>
+        <TextInput style={styles.input}></TextInput>
+      </View>
+
+      <View>
+        <Text style={styles.title}>Password</Text>
+        <TextInput style={styles.input}></TextInput>
+      </View>
+
     </ImageBackground>
   );
 }
@@ -34,37 +43,36 @@ function WelcomeScreen(props) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    justifyContent: "flex-end",
     alignItems: "center",
   },
   title: {
     fontSize: 24,
+    marginVertical: 36,
     fontWeight: "bold",
-    marginTop: 50,
     color: "white",
   },
-  loginButton: {
-    width: 100,
-    height: 100,
-    top: 75,
-    //alignItems: "center",
-  },
+
   logo: {
     width: 100,
     height: 100,
+    marginTop: 50,
   },
   logoContainer: {
-    //position: "absolute",
-    top: 50,
     alignItems: "center",
   },
-  registerButton: {
+
+  backButton: {
     width: 100,
     height: 100,
-    top: 40,
-    //backgroundColor: "#5c9ffcff",
-    //alignItems: "center",
+  },
+  input: {
+    height: 40,
+    width: 250,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    //marginVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    //borderRadius: 5,
   },
 });
-
-export default WelcomeScreen;

@@ -8,6 +8,7 @@ import AboutScreen from './app/screens/AboutScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  // Basic Default Navigator
   return(
   <NavigationContainer>
     <Stack.Navigator initialRouteName="About">
