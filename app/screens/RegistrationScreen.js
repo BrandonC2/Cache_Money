@@ -34,10 +34,11 @@ export default function RegistrationScreen({ navigation }) {
 
   const validate = () => {
     // simple regex for emailS
-    const emailRegex = /\S+@\S+\.\S+/;
+    //const emailRegex = /\S+@\S+\.\S+/;
+    const emailRegex = /^[A-Za-z+0-9+(_!)?]+@\S+\.\S+$/
 
     // Makes sure not empty or has spaces
-    const userRegex = /^[A-Za-z+0-9]+$/;
+    const userRegex = /^[A-Za-z+0-9+(_)]+$/;
     const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
 
     if(!emailRegex.test(email) || !userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
@@ -61,25 +62,22 @@ export default function RegistrationScreen({ navigation }) {
         <View style={styles.infoContainer}>
 
           <View style={styles.inputContainer}>
-              <Text style={styles.title}>Username</Text>
               <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
               </TextInput>
           </View>
 
           <View style={styles.inputContainer}>
-              <Text style={styles.title }>Email</Text>
               <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
               </TextInput>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.title}>Password</Text>
             <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
             </TextInput>
           </View>
 
         </View>
-        {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
+        {error ? <Text style={{color:"red", fontFamily: "sans-serif", fontSize: 20, }}>{error}</Text> : null}
 
         <View style={styles.infoContainer}>
           <View style={styles.returnContainer}>
@@ -123,6 +121,12 @@ export default function RegistrationScreen({ navigation }) {
       right: 20
       //marginTop: 100,
     },
+    icons: {
+      width: 50,
+      height: 30,
+      right: 20
+      //marginTop: 100,
+    },
      logoContainer: {
       flex: 1,
       //marginHorizontal: 60,
@@ -150,19 +154,29 @@ export default function RegistrationScreen({ navigation }) {
       //opacity: 0,
       width: 200,
       height: 40,
-      backgroundColor: "#98dbe3ff",
+      borderRadius: 15,
+      borderWidth: 3,
+      backgroundColor: "#989ce3ff",
       alignItems: "center",
       justifyContent: 'center',
+      borderColor: "#fff",
+      color: "#161515ff",
+      fontFamily: "sans-serif",
+      fontSize: 20,
     },
-    input: {
-      height: 50,
-      width: 250,
-      //borderWidth: 1,
+   input: {
+      height: 60,
+      width: 350,
+      borderRadius: 15,
+      borderWidth: 3,
       textShadowColor: "#121111ff",
-      //marginVertical: 4,
+      marginVertical: 8,
       //paddingHorizontal: 10,
-      backgroundColor: "#fff",
-      //borderRadius: 5,
+      backgroundColor: "transparent",
+      borderColor: "#fff",
+      color: "#161515ff",
+      fontFamily: "sans-serif",
+      fontSize: 24,
     },
 });
 

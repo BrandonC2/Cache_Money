@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 /*
-  About Screen (for now) serves as start up screen
+  About Screen (for now) serves as start up screen to showcase the different screens
   - Note: likely will move to login screen to default
   - Touchable opacity for buttons
 */
@@ -33,6 +33,10 @@ export default function AboutScreen({ navigation }) {
 
         <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Registration")}>
           <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("KitchenHome")}>
+          <Text style ={{fontSize: 24, color: "black"}}>ExampleHomepage</Text>
         </TouchableOpacity>
 
       </View>
@@ -97,5 +101,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: 'center',
   },
+
+
+  //Add animations lol
+
+
 });
 

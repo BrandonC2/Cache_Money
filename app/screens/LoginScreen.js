@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -20,6 +20,24 @@ import {
   - CRUD to save valid inputs
 */
 export default function LoginScreen({navigation}) {
+  const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
+    const [error, setError] = useState("")
+  
+    const validate = () => {
+
+      // Makes sure not empty or has spaces
+      const userRegex = /^[A-Za-z+0-9]+$/;
+      const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
+  
+      if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
+        setError("Please enter a valid input for each")
+      
+      else {
+        setError("");
+        alert("Valid Information, Thank you! ✅");
+      }
+    };
   return (
     <ImageBackground
       style={styles.background}
@@ -31,15 +49,16 @@ export default function LoginScreen({navigation}) {
       </View>
 
       <View style={styles.infoContainer}>
+        {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
 
         <View style={styles.inputContainer}>
-            <Text style={styles.title}>Username</Text>
-            <TextInput style={styles.input}></TextInput>
+            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+            </TextInput>
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.title}>Password</Text>
-          <TextInput style={styles.input}></TextInput>
+            <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+            </TextInput>
         </View>
 
          <View style={styles.returnContainer}>
@@ -53,9 +72,14 @@ export default function LoginScreen({navigation}) {
             <Text style ={{fontSize: 24, color: "black"}}>Return</Text>
           </TouchableOpacity>
         </View>
-        
-      </View>
 
+        <View style={styles.returnContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Registration")}>
+            <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+          </TouchableOpacity>
+        </View>        
+        {error ? <Text style={{color:"red"}}>{error}</Text> : null}
+      </View>
     </ImageBackground>
   );
 }
@@ -111,24 +135,33 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    opacity: 10,
-    width: 200,
-    height: 40,
-    backgroundColor: "#98dbe3ff",
-    alignItems: "center",
-    justifyContent: 'center',
-  },
+      //opacity: 0,
+      width: 200,
+      height: 40,
+      borderRadius: 15,
+      borderWidth: 3,
+      backgroundColor: "#989ce3ff",
+      alignItems: "center",
+      justifyContent: 'center',
+      borderColor: "#fff",
+      color: "#161515ff",
+      fontFamily: "sans-serif",
+      fontSize: 20,
+    },
 
   input: {
-    height: 40,
-    width: 200,
-    borderColor: "#ccc",
-    borderWidth: 2,
-    textShadowColor: "#121111ff",
-    //marginVertical: 4,
-    //paddingHorizontal: 10,
-    backgroundColor: "#fff",
-    //borderRadius: 5,
-  },
+      height: 60,
+      width: 350,
+      borderRadius: 15,
+      borderWidth: 3,
+      textShadowColor: "#121111ff",
+      marginVertical: 8,
+      //paddingHorizontal: 10,
+      backgroundColor: "transparent",
+      borderColor: "#fff",
+      color: "#161515ff",
+      fontFamily: "sans-serif",
+      fontSize: 24,
+    },
 
 });

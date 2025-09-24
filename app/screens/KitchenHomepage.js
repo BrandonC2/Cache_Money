@@ -1,19 +1,49 @@
-import React from 'react';
-import {ImageBackground, StyleSheet, View} from "react-native";
+import React, { useState } from "react";
+import {
+  ImageBackground,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  Image,
+  Text,
+  TextInput,
+} from "react-native";
 
-function KitchenHomepage(props) {
-    
-    return (
-        <ImageBackground 
-        style={styles.background}
-        source={require("../assets/.jpg")}
-        >
-            <View style={styles.logoContainer}></View>
-            <Image source={require('../assets/logo.png')} />
-            <Text>Let you Cook</Text>
-            <View style={styles.loginButton}></View>
-            <View style={styles.registerButton}></View>
-        </ImageBackground>
+/*
+  Home Screen functions:
+  - Showcases items in grid form
+  - search bar to query an item
+  - icon taps to add/remove items
+  - "bar" to sort items to query
+
+  Necessary:
+  - Text description of what constitutes a valid Username/Password
+  - Message sent detailing an invalid input (alert possibly)
+  - CRUD to save valid inputs
+*/
+
+export default function KitchenHomepage({navigation}) {
+return (
+    <ImageBackground style={styles.background} source={require("../assets/IMG_1.jpg")}>
+
+      <View style={styles.logoContainer}>
+        <Image source={require("../assets/ye.png")} style={styles.logo} />
+        <Text style={styles.title}>Cache Money Made</Text>
+      </View>
+      
+      <Text style={styles.description}>Cooking Crazy 4 U</Text>
+
+      <View style ={styles.buttons}>
+        
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Login")}>
+          <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Registration")}>
+          <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+        </TouchableOpacity>
+        </View>
+    </ImageBackground>
     );
 }
 
@@ -46,4 +76,3 @@ const styles = StyleSheet.create({
         backgroundColor: "#5c9ffcff"
     },
 })
-export default WelcomeScreen
