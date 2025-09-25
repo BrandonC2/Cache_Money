@@ -18,10 +18,11 @@ export default function App() {
 
     <Stack.Navigator initialRouteName="About">
 
-      <Stack.Screen name = "Login" component ={LoginScreen} />
-      <Stack.Screen name = "Registration" component ={RegistrationScreen} />
-      <Stack.Screen name = "About" component ={AboutScreen} />
-      <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} />
+      <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
+      
 
 
     </Stack.Navigator>

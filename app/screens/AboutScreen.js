@@ -1,46 +1,77 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
   View,
-  Image,
   Text,
   TouchableOpacity,
 } from "react-native";
 
-/*
-  About Screen (for now) serves as start up screen to showcase the different screens
-  - Note: likely will move to login screen to default
-  - Touchable opacity for buttons
-*/
-export default function AboutScreen({ navigation }) {
-  
-  return (
-    <ImageBackground style={styles.background} source={require("../assets/IMG_1.jpg")}>
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  Easing,
+} from "react-native-reanimated";
 
+export default function AboutScreen({ navigation }) {
+  const rotate = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${rotate.value}deg` }],
+    };
+  });
+
+  useEffect(() => {
+    rotate.value = withRepeat(
+      withTiming(360, {
+        duration: 2000,
+        easing: Easing.linear,
+      }),
+      -1, // infinite
+      false
+    );
+  }, []);
+
+  return (
+    <ImageBackground
+      style={styles.background}
+      source={require("../assets/IMG_1.jpg")}
+    >
       <View style={styles.logoContainer}>
-        <Image source={require("../assets/ye.png")} style={styles.logo} />
+        <Animated.Image
+          source={require("../assets/ye.png")}
+          style={[styles.logo, animatedStyle]} // 👈 apply animation here
+        />
         <Text style={styles.title}>Cache Money Made</Text>
       </View>
-      
+
       <Text style={styles.description}>Cooking Crazy 4 U</Text>
 
-      <View style ={styles.buttons}>
-        
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Login")}>
-          <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
+      <View style={styles.buttons}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={{ fontSize: 24, color: "black" }}>Login</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Registration")}>
-          <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={() => navigation.navigate("Registration")}
+        >
+          <Text style={{ fontSize: 24, color: "black" }}>Sign-Up</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("KitchenHome")}>
-          <Text style ={{fontSize: 24, color: "black"}}>ExampleHomepage</Text>
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={() => navigation.navigate("KitchenHome")}
+        >
+          <Text style={{ fontSize: 24, color: "black" }}>ExampleHomepage</Text>
         </TouchableOpacity>
-
       </View>
-      
     </ImageBackground>
   );
 }
@@ -48,7 +79,6 @@ export default function AboutScreen({ navigation }) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    //justifyContent: "flex-end",
     alignItems: "center",
   },
   title: {
@@ -61,22 +91,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
   },
-
   logo: {
     width: 100,
     height: 100,
-    right: 20
-    //marginTop: 100,
+    right: 20,
+    resizeMode: "contain",
   },
   logoContainer: {
     marginTop: 50,
-    //marginHorizontal: 60,
     position: "absolute",
     alignItems: "center",
     flexDirection: "row",
   },
   buttons: {
-    //position: "absolute",
     alignItems: "center",
     flexDirection: "row",
     flex: 1,
@@ -86,25 +113,16 @@ const styles = StyleSheet.create({
     width: 150,
     height: 40,
     left: 20,
-    //marginVertical: 30,
     backgroundColor: "#98dbe3ff",
     alignItems: "center",
-    justifyContent: 'center',
-    //borderColor: "black",
+    justifyContent: "center",
   },
   loginButton: {
     width: 150,
     height: 40,
     right: 20,
-    //marginVertical: 30,
     backgroundColor: "#98dbe3ff",
     alignItems: "center",
-    justifyContent: 'center',
+    justifyContent: "center",
   },
-
-
-  //Add animations lol
-
-
 });
-
