@@ -41,7 +41,7 @@ export default function LoginScreen({navigation}) {
   return (
     <ImageBackground
       style={styles.background}
-      source={require("../assets/IMG_1.jpg")}
+      // source={require("../assets/IMG_1.jpg")}
     >
       <View style={styles.logoContainer}>
         <Image source={require("../assets/ye.png")} style={styles.logo} />
@@ -63,19 +63,20 @@ export default function LoginScreen({navigation}) {
 
          <View style={styles.returnContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => alert("Does Nothing for now")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
+            <Text style ={{fontSize: 18, color: "white"}}>Login</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.returnContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Return</Text>
+            <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Registration")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+          <Text style ={{fontSize: 18, color: "#00000"}}>Don't have an account?</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
+            <Text style ={{fontSize: 18, color: "#53B175"}}>Sign-Up</Text>
           </TouchableOpacity>
         </View>        
         {error ? <Text style={{color:"red"}}>{error}</Text> : null}
@@ -88,6 +89,7 @@ const styles = StyleSheet.create({
 
   background: {
     flex: 1,
+    color: "white",
     alignItems: "center",
   },
 
@@ -136,11 +138,11 @@ const styles = StyleSheet.create({
 
   backButton: {
       //opacity: 0,
-      width: 200,
-      height: 40,
-      borderRadius: 15,
+      width: 364,
+      height: 67,
+      borderRadius: 10,
       borderWidth: 3,
-      backgroundColor: "#989ce3ff",
+      backgroundColor: "#53B175",
       alignItems: "center",
       justifyContent: 'center',
       borderColor: "#fff",
