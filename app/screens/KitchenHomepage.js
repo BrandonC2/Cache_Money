@@ -9,7 +9,8 @@ import {
   TextInput,
 } from "react-native";
 
-/*
+/* hahahahahhahahaah
+  hheeeee heeeeee
   Home Screen functions:
   - Showcases items in grid form
   - search bar to query an item
