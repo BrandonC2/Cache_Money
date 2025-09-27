@@ -16,58 +16,6 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
-// export default class App extends React.Component{
-//   render() {
-//     return (
-//       <ImageBackground 
-//         style = {styles.background}
-//         source = {require('../assets/abtbg.jpg')}
-//       >
-//         <View >
-//           <Image
-//             style = {styles.logo}
-//             source = {require('../assets/Just_Icon.png')}
-//             resizeMode="contain"
-//           >
-//           </Image>
-//         </View>
-//         <View style = {styles.logo_text}>
-//           <Image
-            
-//             source = {require('../assets/cc4u_p.png')}
-//             resizeMode="contain"
-//             >
-//           </Image>
-//         </View>
-
-//       </ImageBackground>
-//     )
-//   }
-// }
-
-
-// const styles = StyleSheet.create({
-//   background: {
-//     width: '100%',
-//     height: '100%'
-//   },
-//     logo: {
-//     width: '10%',
-//     height: '10%',
-//     marginLeft: '13%',
-//     marginTop: '45%'
-//   },
-//   logo_text: {
-//     width: '85%',
-//     height: '85%',
-//     marginLeft: '8%',
-//     marginTop: '26%'
-//   },
-
-// });
-
-
-
  export default function AboutScreen({ navigation }) {
  
   const rotate = useSharedValue(0);
@@ -94,52 +42,48 @@ import Animated, {
       style={styles.background}
       source={require("../assets/abtbg.jpg")}
     >
-      <View style={styles.logoContainer}>
-        <Animated.Image
+      <View style={styles.topContainer}>
+
+      <Image
+        style = {styles.logo}
+        source = {require('../assets/Just_Icon.png')}
+        >
+      </Image>
+        {/* <Animated.Image
           source={require("../assets/ye.png")}
           style={[styles.logo, animatedStyle]} // 👈 apply animation here
-        />
+        /> */}
+        <Image
+          style = {styles.titleImage}
+          source = {require("../assets/cc4u_p.png")}/>
+    
         {/* <Text style={styles.title}>Cache Money Made</Text> */}
       </View>
 
       {/* <Text style={styles.description}>Cooking Crazy 4 U</Text> */}
 
-      <View>
-        <Image
-          style = {styles.title}        
-          source = {require("../assets/cc4u_p.png")}
-        />
-      </View>
 
-      {/* <View >
-        <Image
-        style = {styles.logoContainer}
-        source = {require('../assets/Just_Icon.png')}
-        >
-      </Image>
-      </View> */}
-
-
-      <View style={styles.returnContainer}>
+      {/* Container for the bottom buttons */}
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.loginButton}
+          style={styles.button}
           onPress={() => navigation.navigate("Login")}
         >
-          <Text style={{ fontSize: 24, color: "#FFF9FF" }}>Login</Text>
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.registerButton}
+          style={styles.button}
           onPress={() => navigation.navigate("Registration")}
         >
-          <Text style={{ fontSize: 24, color: "#FFF9FF" }}>Sign-Up</Text>
+          <Text style={styles.buttonText}>Sign-Up</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.registerButton}
+          style={styles.button}
           onPress={() => navigation.navigate("KitchenHome")}
         >
-          <Text style={{ fontSize: 24, color: "#FFF9FF"}}>ExampleHomepage</Text>
+          <Text style={styles.buttonText}>Homepage</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -149,74 +93,51 @@ import Animated, {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    // distributes everything vertically with space between the sections
+    justifyContent: "space-around",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
-  title: {
-    width: 380,
-    height: 380,
-    marginLeft: '-42%',
-    marginTop: '70%',
-    position: 'absolute'
+  // holds the logo and title
+  topContainer: {
+    alignItems: 'center',
   },
-  description: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  titleImage: {
+    width: 350,
+    height: 350,
+    resizeMode: 'contain',
+    top: '15%',
   },
   logo: {
-    width: 100,
-    height: 100,
-    right: 20,
+    width: 200,
+    height: 200,
     resizeMode: "contain",
+    top: "38%",
   },
-  logoContainer: {
-    marginTop: '64%',
-    marginLeft: '10%',
-    position: 'absolute',
-    alignItems: "center",
-    flexDirection: "row",
+  buttonContainer: {
+    width: "95%",
+    alignItems: 'center',
   },
-  returnContainer: {
-    marginTop: 50,
-    alignItems: "center",
-    flexWrap: "wrap",
-    //flex: 1,
-    //marginHorizontal: 100,
-  },
-  buttons: {
-    alignItems: "center",
-    flexDirection: "column",
-    flex: 1,
-    marginVertical: 0,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+  button: {
+    width: '100%',
+    height: 67,
+    backgroundColor: "#53B175",
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 19,
+    marginBottom: 18,
+    bottom: "15%",
+    // shadow for ios users
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 3,
+    // shadow for android users
+    elevation: 3,
   },
-  text: {
-    fontSize: 24, 
-    color: "#FFF9FF",
-  },
-  registerButton: {
-    width: 364,
-    height: 67,
-    left: 20,
-    marginBottom: '5%',
-    backgroundColor: "#53B175",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 19,
-    // fontFamily: "",
-  },
-  loginButton: {
-    width: 364,
-    height: 67,
-    right: 20,
-    marginTop: '120%',
-    marginBottom: '5%',
-    backgroundColor: "#53B175",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 19,
-  },
+  buttonText: {
+    fontSize: 20,
+    color: '#FFF9FF'
+  }
+
 });
