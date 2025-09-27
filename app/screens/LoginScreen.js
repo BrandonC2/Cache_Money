@@ -53,17 +53,26 @@ export default function LoginScreen({navigation}) {
         
         {/* Title text */}
         <Text style ={{fontSize: 30, color: "black", position:'relative', right:140,}}>Login</Text>
+        <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
 
          {/* User Name Block */}
         <View style={styles.inputContainer}>
-            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]}>
             </TextInput>
         </View>
-
+        <View style={[styles.line,,{top: 33}]}></View>
         {/* Password Block */}
         <View style={styles.inputContainer}>
             <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
             </TextInput>
+        </View>
+        <View style={[styles.line,{top: 63}]}></View>
+
+      {/* Forgot password block */}
+      <View style={styles.returnContainer}>
+          <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
+            <Text style ={{fontSize: 18, color: "black", position: 'relative', top: 15, left: 110}}>Forgot Password?</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Login Block */}
@@ -82,9 +91,9 @@ export default function LoginScreen({navigation}) {
 
         {/* Sign up Link */}
         <View style={styles.returnContainer}>
-          <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:100}}>Don't have an account? </Text>
+          <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
-            <Text style ={{fontSize: 18, color: "#53B175", position:'relative', top:100}}>Sign-Up</Text>
+            <Text style ={{fontSize: 18, color: "#53B175", position:'relative', top:10}}>Sign-Up</Text>
           </TouchableOpacity>
         </View>        
         {error ? <Text style={{color:"red"}}>{error}</Text> : null}
@@ -146,7 +155,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     //marginTop: 50,
     position: 'relative',
-    top: 100,
+    top: 80,
     alignItems: "center",
     flexDirection: "row",
   },
@@ -155,7 +164,7 @@ const styles = StyleSheet.create({
       //opacity: 0,
       //Position (higher the value further from the margin)
       position: 'relative',
-      top: 130,
+      top: 20,
       //Button dimensions
       width: 364,
       height: 67,
@@ -182,7 +191,7 @@ const styles = StyleSheet.create({
       height: 60,
       width: 350,
       borderRadius: 15,
-      borderWidth: 3,
+      borderWidth: 0,
       textShadowColor: "#121111ff",
       marginVertical: 8,
       //paddingHorizontal: 10,
@@ -192,5 +201,16 @@ const styles = StyleSheet.create({
       fontFamily: "sans-serif",
       fontSize: 24,
     },
+  line: {
+    position: 'relative',
+    top: 55,
+    width: 364,
+    height: 1.5,
+    backgroundColor: '#E2E2E2',
+    // marginLeft: 5,
+    // margineRight: 10,
+    marginVertical: 8,
+  }
+  
 
 });
