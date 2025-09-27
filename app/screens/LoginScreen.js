@@ -41,41 +41,59 @@ export default function LoginScreen({navigation}) {
   return (
     <ImageBackground
       style={styles.background}
-      source={require("../assets/IMG_1.jpg")}
+      // source={require("../assets/IMG_1.jpg")}
     >
       <View style={styles.logoContainer}>
-        <Image source={require("../assets/ye.png")} style={styles.logo} />
-        <Text style={styles.title}>Cache Money Made</Text>
+        <Image source={require("../assets/Just_Icon.png")} style={styles.logo} />
+        {/* <Text style={styles.title}>Cache Money Made</Text> */}
       </View>
 
       <View style={styles.infoContainer}>
         {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
+        
+        {/* Title text */}
+        <Text style ={{fontSize: 30, color: "black", position:'relative', right:140,}}>Login</Text>
+        <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
 
+         {/* User Name Block */}
         <View style={styles.inputContainer}>
-            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]}>
             </TextInput>
         </View>
-
+        <View style={[styles.line,,{top: 33}]}></View>
+        {/* Password Block */}
         <View style={styles.inputContainer}>
             <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
             </TextInput>
         </View>
+        <View style={[styles.line,{top: 63}]}></View>
 
+      {/* Forgot password block */}
+      <View style={styles.returnContainer}>
+          <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
+            <Text style ={{fontSize: 18, color: "black", position: 'relative', top: 15, left: 110}}>Forgot Password?</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Login Block */}
          <View style={styles.returnContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => alert("Does Nothing for now")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
+            <Text style ={{fontSize: 18, color: "white"}}>Login</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Return Block */}
         <View style={styles.returnContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Return</Text>
+            <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Sign up Link */}
         <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Registration")}>
-            <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
+          <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
+            <Text style ={{fontSize: 18, color: "#53B175", position:'relative', top:10}}>Sign-Up</Text>
           </TouchableOpacity>
         </View>        
         {error ? <Text style={{color:"red"}}>{error}</Text> : null}
@@ -88,10 +106,12 @@ const styles = StyleSheet.create({
 
   background: {
     flex: 1,
+    color: "white",
     alignItems: "center",
   },
 
   infoContainer: {
+    
     flex: 1,
     alignItems: "center",
   },
@@ -107,12 +127,16 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    right: 20
-    //marginTop: 100,
+    width: 200,
+    height: 200,
+    right: 10,
+    // marginTop: 100,
     
   },
    logoContainer: {
-    marginTop: 50,
+
+    marginTop: 10,
+   
     //flex: 1,
     //marginHorizontal: 60,
     //position: "absolute",
@@ -130,30 +154,44 @@ const styles = StyleSheet.create({
 
   inputContainer: {
     //marginTop: 50,
+    position: 'relative',
+    top: 80,
     alignItems: "center",
     flexDirection: "row",
   },
 
   backButton: {
       //opacity: 0,
-      width: 200,
-      height: 40,
-      borderRadius: 15,
+      //Position (higher the value further from the margin)
+      position: 'relative',
+      top: 20,
+      //Button dimensions
+      width: 364,
+      height: 67,
+      borderRadius: 10,
       borderWidth: 3,
-      backgroundColor: "#989ce3ff",
+      //colors
+      backgroundColor: "#53B175",
+      borderColor: "#53B175",
+      color: "#161515ff",
+      //text settings
       alignItems: "center",
       justifyContent: 'center',
-      borderColor: "#fff",
-      color: "#161515ff",
       fontFamily: "sans-serif",
       fontSize: 20,
+      //shadow settings
+      shadowColor: '#070707ff',
+      shadowOffset: {width: 3, height:4},
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 8,
     },
 
   input: {
       height: 60,
       width: 350,
       borderRadius: 15,
-      borderWidth: 3,
+      borderWidth: 0,
       textShadowColor: "#121111ff",
       marginVertical: 8,
       //paddingHorizontal: 10,
@@ -163,5 +201,16 @@ const styles = StyleSheet.create({
       fontFamily: "sans-serif",
       fontSize: 24,
     },
+  line: {
+    position: 'relative',
+    top: 55,
+    width: 364,
+    height: 1.5,
+    backgroundColor: '#E2E2E2',
+    // marginLeft: 5,
+    // margineRight: 10,
+    marginVertical: 8,
+  }
+  
 
 });

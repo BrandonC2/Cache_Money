@@ -5,6 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Image,
 } from "react-native";
 
 import Animated, {
@@ -15,7 +16,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
-export default function AboutScreen({ navigation }) {
+ export default function AboutScreen({ navigation }) {
+ 
   const rotate = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -38,38 +40,50 @@ export default function AboutScreen({ navigation }) {
   return (
     <ImageBackground
       style={styles.background}
-      source={require("../assets/IMG_1.jpg")}
+      source={require("../assets/abtbg.jpg")}
     >
-      <View style={styles.logoContainer}>
-        <Animated.Image
+      <View style={styles.topContainer}>
+
+      <Image
+        style = {styles.logo}
+        source = {require('../assets/Just_Icon.png')}
+        >
+      </Image>
+        {/* <Animated.Image
           source={require("../assets/ye.png")}
           style={[styles.logo, animatedStyle]} // 👈 apply animation here
-        />
-        <Text style={styles.title}>Cache Money Made</Text>
+        /> */}
+        <Image
+          style = {styles.titleImage}
+          source = {require("../assets/cc4u_p.png")}/>
+    
+        {/* <Text style={styles.title}>Cache Money Made</Text> */}
       </View>
 
-      <Text style={styles.description}>Cooking Crazy 4 U</Text>
+      {/* <Text style={styles.description}>Cooking Crazy 4 U</Text> */}
 
-      <View style={styles.buttons}>
+
+      {/* Container for the bottom buttons */}
+      <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.loginButton}
+          style={styles.button}
           onPress={() => navigation.navigate("Login")}
         >
-          <Text style={{ fontSize: 24, color: "black" }}>Login</Text>
+          <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.registerButton}
+          style={styles.button}
           onPress={() => navigation.navigate("Registration")}
         >
-          <Text style={{ fontSize: 24, color: "black" }}>Sign-Up</Text>
+          <Text style={styles.buttonText}>Sign-Up</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.registerButton}
+          style={styles.button}
           onPress={() => navigation.navigate("KitchenHome")}
         >
-          <Text style={{ fontSize: 24, color: "black" }}>ExampleHomepage</Text>
+          <Text style={styles.buttonText}>Homepage</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -79,50 +93,51 @@ export default function AboutScreen({ navigation }) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    // distributes everything vertically with space between the sections
+    justifyContent: "space-around",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  // holds the logo and title
+  topContainer: {
+    alignItems: 'center',
   },
-  description: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  titleImage: {
+    width: 350,
+    height: 350,
+    resizeMode: 'contain',
+    top: '15%',
   },
   logo: {
-    width: 100,
-    height: 100,
-    right: 20,
+    width: 200,
+    height: 200,
     resizeMode: "contain",
+    top: "38%",
   },
-  logoContainer: {
-    marginTop: 50,
-    position: "absolute",
-    alignItems: "center",
-    flexDirection: "row",
+  buttonContainer: {
+    width: "95%",
+    alignItems: 'center',
   },
-  buttons: {
-    alignItems: "center",
-    flexDirection: "row",
-    flex: 1,
-    marginHorizontal: 100,
+  button: {
+    width: '100%',
+    height: 67,
+    backgroundColor: "#53B175",
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 19,
+    marginBottom: 18,
+    bottom: "15%",
+    // shadow for ios users
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    // shadow for android users
+    elevation: 3,
   },
-  registerButton: {
-    width: 150,
-    height: 40,
-    left: 20,
-    backgroundColor: "#98dbe3ff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loginButton: {
-    width: 150,
-    height: 40,
-    right: 20,
-    backgroundColor: "#98dbe3ff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  buttonText: {
+    fontSize: 20,
+    color: '#FFF9FF'
+  }
+
 });
