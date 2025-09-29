@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* hahahahahhahahaah
   hheeeee heeeeee
+  kristen is a fart smella
   Home Screen functions:
   - Showcases items in grid form
   - search bar to query an item
@@ -25,6 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
   - CRUD to save valid inputs
 */
 
+
 export default function KitchenHomepage({ navigation }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(null);
@@ -35,6 +37,8 @@ export default function KitchenHomepage({ navigation }) {
     { label: "Person", value: "person" },
   ]);
   const [images, setImages] = useState([]);
+  const [icons, setIcons] = useState([])
+
 
   const handleSelect = (selected) => {
     if (selected && !icons.includes(selected)) {
