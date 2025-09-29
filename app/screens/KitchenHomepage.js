@@ -6,8 +6,10 @@ import {
   View,
   Image,
   Text,
-  TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import DropDownPicker from "react-native-dropdown-picker";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* hahahahahhahahaah
   hheeeee heeeeee
@@ -23,71 +25,142 @@ import {
   - CRUD to save valid inputs
 */
 
-export default function KitchenHomepage({navigation}) {
-return (
+export default function KitchenHomepage({ navigation }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [ingredients, setIngredients] = useState([
+    { label: "Home", value: "home" },
+    { label: "Star", value: "star" },
+    { label: "Settings", value: "settings" },
+    { label: "Person", value: "person" },
+  ]);
+  const [images, setImages] = useState([]);
+
+  const handleSelect = (selected) => {
+    if (selected && !icons.includes(selected)) {
+      setIcons([...icons, selected]);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const saved = await AsyncStorage.getItem('images');
+      if (saved) setImages(JSON.parse(saved));
+    })();
+  }, []);
+
+  const saveImages = async (newImages) => {
+    setImages(newImages);
+    await AsyncStorage.setItem('images', JSON.stringify(newImages));
+  };
+
+  // remove an item
+  const handleRemove = (name) => {
+    setIcons(icons.filter((icon) => icon !== name));
+  };
+
+  return (
     <ImageBackground style={styles.background}>
+      <DropDownPicker
+        open={open}
+        value={value}
+        items={ingredients}
+        setOpen={setOpen}
+        setValue={setValue}
+        setItems={setIngredients}
+        onChangeValue={handleSelect} // ✅ triggered when user picks an item
+        placeholder="Select an icon"
+      />
+
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          marginTop: 20,
+          justifyContent: "center",
+        }}
+      >
+        {icons.map((iconName, idx) => (
+          <TouchableOpacity
+            key={idx}
+            onPress={() => handleRemove(iconName)} // ✅ tap icon to remove
+            style={{ margin: 5, alignItems: "center" }}
+          >
+            <Ionicons name={iconName} size={50} color="blue" />
+            <Text>{iconName}</Text>
+            {
+            //<Text style={{ fontSize: 12, color: "red" }}>(tap to remove)</Text>
+            }
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={styles.logoContainer}>
-        <Image source={require("../assets/Just_Icon.png")} style={styles.logo} />
+        <Image
+          source={require("../assets/Just_Icon.png")}
+          style={styles.logo}
+        />
         <Text style={styles.title}>Cache Money Made</Text>
       </View>
+
+      <Text
+        style={[styles.description, { position: "relative", top: -30 }]}
+      >
+        Cooking Crazy 4 U
+      </Text>
       
-      <Text style={[styles.description,{position: 'relative', top:-30}]}>Cooking Crazy 4 U</Text>
-
-      <View style ={styles.buttons}>
-        
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Login")}>
-          <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
+      <View style={styles.buttons}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={{ fontSize: 24, color: "black" }}>Login</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Registration")}>
-          <Text style ={{fontSize: 24, color: "black",position: 'relative', bottom: 20, left: 15}}>Sign-Up</Text>
-        </TouchableOpacity>
-        </View>
+      </View>
     </ImageBackground>
-    );
+  );
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-        justifyContent: "flex-end",
-        alignItems: "center"
-    },
-    loginButton: {
-        width: 100,
-        height: 67,
-        backgroundColor: "#53B175",
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 19,
-        marginBottom: 18,
-        bottom: "15%",
-        // shadow for ios users
-        shadowColor: 'black',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.25,
-        shadowRadius: 3,
-        // shadow for android users
-        elevation: 3,
-    },
-    logo: {
-        // width: 100,
-        // height: 100,
-        width: 200,
-        height: 200,
-        position: 'absolute',
-        top: 70,
-    },
-    logoContainer: {
-        position: 'absolute',
-        top: 70,
-        alignItems: "center",
-    },
-
-    registerButtonButton: {
-        width: "100%",
-        height: 70,
-        backgroundColor: "#5c9ffcff"
-    },
-})
+  background: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  loginButton: {
+    width: 100,
+    height: 67,
+    backgroundColor: "#53B175",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 19,
+    marginBottom: 18,
+    bottom: "15%",
+    shadowColor: "black",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  registerButton: {
+    width: 100,
+    height: 67,
+    backgroundColor: "#5c9ffcff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 19,
+    marginBottom: 18,
+    bottom: "15%",
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    position: "absolute",
+    top: 70,
+  },
+  logoContainer: {
+    position: "absolute",
+    top: 70,
+    alignItems: "center",
+  },
+});
