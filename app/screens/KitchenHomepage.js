@@ -9,7 +9,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DropDownPicker from "react-native-dropdown-picker";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/*
+import axios from "axios";
+const API = "server url"
+*/
 
 /* hahahahahhahahaah
   hheeeee heeeeee
@@ -28,39 +31,42 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 export default function KitchenHomepage({ navigation }) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
-  const [ingredients, setIngredients] = useState([
-    { label: "Home", value: "home" },
-    { label: "Star", value: "star" },
-    { label: "Settings", value: "settings" },
-    { label: "Person", value: "person" },
-  ]);
-  const [images, setImages] = useState([]);
-  const [icons, setIcons] = useState([])
+  const [name, setName] = useState("");
+  const [expire, setExpire] = useState("");
+  const [desc, setDesc] = useState("");
+  const [editId, setEditId] = useState(null);
 
-
-  const handleSelect = (selected) => {
-    if (selected && !icons.includes(selected)) {
-      setIcons([...icons, selected]);
-    }
+  const fetchItems = async () => {
+    const res = await axios.get({/*put mongo connect url here */});
+    setItems(res.data);
   };
 
   useEffect(() => {
-    (async () => {
-      const saved = await AsyncStorage.getItem('images');
-      if (saved) setImages(JSON.parse(saved));
-    })();
+    fetchItems();
   }, []);
 
-  const saveImages = async (newImages) => {
-    setImages(newImages);
-    await AsyncStorage.setItem('images', JSON.stringify(newImages));
+  const saveItem = async () => {
+    if (!name) return;
+    if (editId) {
+      await axios.put(`${API}/${editId}`, { name, description: desc });
+      setEditId(null);
+    } else {
+      await axios.post(API, { name, description: desc });
+    }
+    setName("");
+    setDesc("");
+    fetchItems();
   };
 
-  // remove an item
-  const handleRemove = (name) => {
-    setIcons(icons.filter((icon) => icon !== name));
+  const removeItem = async (id) => {
+    await axios.delete(`${API}/${id}`);
+    fetchItems();
+  };
+  
+  const startEdit = (item) => {
+    setName(item.name);
+    setDesc(item.description);
+    setEditId(item._id);
   };
 
   return (
