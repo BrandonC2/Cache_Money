@@ -19,7 +19,7 @@ db.once('open', () => {
 });
 
 // Import routes
-// const userRoutes = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRoutes');
 // const inventoryRoutes = require('./routes/inventoryRoutes');
 // const recipeRoutes = require('./routes/recipeRoutes');
 // const receiptRoutes = require('./routes/receiptRoutes');
@@ -29,6 +29,7 @@ db.once('open', () => {
 // app.use('/api/recipes', recipeRoutes);
 // app.use('/api/receipts', receiptRoutes);
 
+app.use('/api/users', userRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
