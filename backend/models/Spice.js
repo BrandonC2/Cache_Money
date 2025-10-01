@@ -1,11 +1,15 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+/*
+Ingredient without the bool values
+*/
 
-const itemSchema = new mongoose.Schema({
+
+const spiceSchema = new mongoose.Schema({
     name: {
             type: String,
             required: true,
-            //unique: true,
+            unique: true,
             trim: true,
             minlength: 3,
             match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid username. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
@@ -23,10 +27,6 @@ const itemSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
-    items: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "Group",
-    },
 });
 /*
 // Hash password before saving
@@ -41,4 +41,4 @@ userSchema.methods.comparePassword = function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 */
-module.exports = mongoose.model('item', itemSchema);
+module.exports = mongoose.model('Spice', spiceSchema);
