@@ -21,23 +21,23 @@ import {
 */
 export default function LoginScreen({navigation}) {
   const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   
-    const validate = () => {
+  const validate = () => {
 
-      // Makes sure not empty or has spaces
-      const userRegex = /^[A-Za-z+0-9]+$/;
-      const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
+    // Makes sure not empty or has spaces
+    const userRegex = /^[A-Za-z+0-9]+$/;
+    const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
   
-      if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
-        setError("Please enter a valid input for each")
+    if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
+      setError("Please enter a valid input for each")
       
-      else {
-        setError("");
-        alert("Valid Information, Thank you! ✅");
-      }
-    };
+    else {
+      setError("");
+      alert("Valid Information, Thank you! ✅");
+    }
+  };
   return (
     <ImageBackground
       style={styles.background}
