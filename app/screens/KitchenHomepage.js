@@ -14,9 +14,7 @@ import axios from "axios";
 const API = "server url"
 */
 
-/* hahahahahhahahaah
-  hheeeee heeeeee
-  kristen is a fart smella
+/* 
   Home Screen functions:
   - Showcases items in grid form
   - search bar to query an item
