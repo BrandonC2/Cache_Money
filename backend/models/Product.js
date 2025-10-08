@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
             unique: true,
             trim: true,
             minlength: 3,
-            match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid username. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
+            match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid name. Must contain only letters, numbers or dots and cannot end with or repeat special characters.']
 
         },
     desc: { 
@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
     },
-    isCarbonated: {
+    isAlcholic: { 
         type: Boolean,
         required: true,
     },

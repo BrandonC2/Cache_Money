@@ -3,20 +3,22 @@ const bcrypt = require('bcryptjs');
 
 const itemSchema = new mongoose.Schema({
     name: {
-            type: String,
-            required: true,
-            //unique: true,
-            trim: true,
-            minlength: 3,
-            match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid username. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
+        type: String,
+        required: true,
+        //unique: true,
+        trim: true,
+        minlength: 3,
+        match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid item. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
 
         },
     expire: { 
         type: datetime,
         required: true,
-        unique: true,
         trim: true,
-        lowercase: true, 
+    },
+    isLiquid: { 
+        type: Boolean,
+        required: true,
     },
     desc: { 
         type: String,

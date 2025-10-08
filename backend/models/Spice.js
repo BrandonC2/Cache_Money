@@ -18,7 +18,6 @@ const spiceSchema = new mongoose.Schema({
     expire: { 
         type: datetime,
         required: true,
-        unique: true,
         trim: true,
         lowercase: true, 
     },
@@ -28,17 +27,5 @@ const spiceSchema = new mongoose.Schema({
         trim: true,
     },
 });
-/*
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
 
-// Compare password method
-userSchema.methods.comparePassword = function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-*/
 module.exports = mongoose.model('Spice', spiceSchema);

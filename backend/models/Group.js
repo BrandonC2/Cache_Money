@@ -12,7 +12,7 @@ const groupSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         minlength: 3,
-        match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid username. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
+        match: [/^[a-zA-Z]$/, 'Invalid group. Must start with a letter, contain only letters.']
 
         },
     desc: { 
