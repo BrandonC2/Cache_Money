@@ -88,6 +88,12 @@ export default function LoginScreen({navigation}) {
             <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
           </TouchableOpacity>
         </View>
+        {/*DELETE AFTER ABOUT IS FIXED AND FIX THE APP INITIAL ROUTE PLSSSS*/}
+        <View style={styles.returnContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("MainNavBar")}>
+            <Text style ={{fontSize: 18, color: "white"}}>TEMP HOME SCREEN</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Sign up Link */}
         <View style={styles.returnContainer}>
