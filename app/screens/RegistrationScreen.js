@@ -10,6 +10,11 @@ import {
 } from "react-native";
 
 /*
+import axios from "axios";
+const API = "server url"
+*/
+
+/*
   Registration Screen functions:
   - Username: Provide a valid username (rules will need to be established)
   - Password: same as Username
@@ -61,29 +66,29 @@ export default function RegistrationScreen({ navigation }) {
 
         {/* Title text */}
         <View style={styles.infoContainer}>
-                  <Text style ={{fontSize: 30, color: "black", position:'relative', right:130,}}>Sign Up</Text>
-                  <Text style ={{fontSize: 15, color: "black", position:'relative', right:45,}}>Get started by entering your information</Text>
+                  <Text style ={{fontSize: 30, color: "black", right:'32%',}}>Sign Up</Text>
+                  <Text style ={{fontSize: 15, color: "black", right:'11.5%',}}>Get started by entering your information</Text>
         
          {/* User Name Block */}
           <View style={styles.inputContainer}>
               <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
               </TextInput>
           </View>
-        <View style={[styles.line,{top: 63}]}></View>
+        <View style={[styles.line]}></View>
 
          {/* Emmail Block */}
           <View style={styles.inputContainer}>
               <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
               </TextInput>
           </View>
-          <View style={[styles.line,{top: 63}]}></View>
+          <View style={[styles.line]}></View>
 
          {/* Password Block */}
           <View style={styles.inputContainer}>
             <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
             </TextInput>
           </View>
-        <View style={[styles.line,{top: 63}]}></View>
+        <View style={[styles.line]}></View>
 
      
 
@@ -93,7 +98,7 @@ export default function RegistrationScreen({ navigation }) {
        {/*Sign up Block */}
         <View style={styles.infoContainer}>
           <View style={styles.returnContainer}>
-              <TouchableOpacity style={[styles.backButton,{position:'relative', top:65}]} onPress={validate}>
+              <TouchableOpacity style={[styles.backButton,{top:'50%'}]} onPress={validate}>
                 <Text style ={{fontSize: 24, color: "white"}}>Sign-Up</Text>
               </TouchableOpacity>
             </View>
@@ -106,9 +111,9 @@ export default function RegistrationScreen({ navigation }) {
 
            {/* Login touchable link */}
             <View style={styles.returnContainer}>
-              <Text style ={{fontSize: 18, color: "#00000",position:'relative',top:35}}>Already have an account? </Text>
+              <Text style ={{fontSize: 18, color: "#00000",top:'35%'}}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style ={{fontSize:  18, color: "#53B175",position:'relative',top:35}}>Login</Text>
+                <Text style ={{fontSize:  18, color: "#53B175",top:'71%'}}>Login</Text>
               </TouchableOpacity>
             </View>
             
@@ -255,7 +260,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     //marginTop: 50,
     position: 'relative',
-    top: 80,
+    top: '20%',
     alignItems: "center",
     flexDirection: "row",
   },
@@ -280,11 +285,11 @@ const styles = StyleSheet.create({
       fontFamily: "sans-serif",
       fontSize: 20,
       //shadow settings
-      shadowColor: '#070707ff',
+      shadowColor: '#2e2d2dff',
       shadowOffset: {width: 3, height:4},
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 8,
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+      elevation: 3,
     },
 
   input: {
@@ -306,7 +311,7 @@ const styles = StyleSheet.create({
   line: {
     position: 'relative',
     //Dimensions
-    top: 55,
+    top: '14%',
     width: 364,
     height: 1.5,
     //color

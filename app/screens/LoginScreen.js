@@ -21,23 +21,23 @@ import {
 */
 export default function LoginScreen({navigation}) {
   const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   
-    const validate = () => {
+  const validate = () => {
 
-      // Makes sure not empty or has spaces
-      const userRegex = /^[A-Za-z+0-9]+$/;
-      const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
+    // Makes sure not empty or has spaces
+    const userRegex = /^[A-Za-z+0-9]+$/;
+    const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
   
-      if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
-        setError("Please enter a valid input for each")
+    if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
+      setError("Please enter a valid input for each")
       
-      else {
-        setError("");
-        alert("Valid Information, Thank you! ✅");
-      }
-    };
+    else {
+      setError("");
+      alert("Valid Information, Thank you! ✅");
+    }
+  };
   return (
     <ImageBackground
       style={styles.background}
@@ -86,12 +86,6 @@ export default function LoginScreen({navigation}) {
         <View style={styles.returnContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
             <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
-          </TouchableOpacity>
-        </View>
-        {/*DELETE AFTER ABOUT IS FIXED AND FIX THE APP INITIAL ROUTE PLSSSS*/}
-        <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("MainNavBar")}>
-            <Text style ={{fontSize: 18, color: "white"}}>TEMP HOME SCREEN</Text>
           </TouchableOpacity>
         </View>
 

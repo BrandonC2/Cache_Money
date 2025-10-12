@@ -16,8 +16,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
- export default function AboutScreen({ navigation }) {
- 
+export default function AboutScreen({ navigation }) {
+
   const rotate = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -40,7 +40,7 @@ import Animated, {
   return (
     <ImageBackground
       style={styles.background}
-      source={require("../assets/abtbg.jpg")}
+      source={require("../assets/fridge_image.jpg")}
     >
       <View style={styles.topContainer}>
 
@@ -55,7 +55,7 @@ import Animated, {
         /> */}
         <Image
           style = {styles.titleImage}
-          source = {require("../assets/cc4u_p.png")}/>
+          source = {require("../assets/cooking_crazy_4u_p.png")}/>
     
         {/* <Text style={styles.title}>Cache Money Made</Text> */}
       </View>
