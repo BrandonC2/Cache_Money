@@ -80,7 +80,7 @@ export default function RegistrationScreen({ navigation }) {
     }
   }
 
-  const validate = () => {
+  const validate = async () => {
     // simple regex for emailS
     //const emailRegex = /\S+@\S+\.\S+/;
     const emailRegex = /^[A-Za-z+0-9+(_!)?]+@\S+\.\S+$/
@@ -89,12 +89,26 @@ export default function RegistrationScreen({ navigation }) {
     const userRegex = /^[A-Za-z+0-9+(_)]+$/;
     const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
 
-    if(!emailRegex.test(email) || !userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
+    if(
+      !emailRegex.test(email) || 
+      !userRegex.test(username) || 
+      !passwordRegex.test(password) || 
+      username.length < 4 || 
+      password.length < 4
+    ){
       setError("Please enter a valid input for each")
-    
-    else {
+      return;
+    }
+    try {
       setError("");
-      alert("Valid Information, Thank you! ✅");
+      const response = await axios.post(API, { username, email, password });
+      alert("Registration Successful ✅");
+      navigation.navigate("Login");
+    } 
+    
+    catch (err) {
+      const msg = err.response?.data?.error || "Error registering user";
+    setError(msg);
     }
   };
   return (
