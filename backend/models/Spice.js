@@ -1,20 +1,23 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 /*
-Ingredient without the bool values
+Relationship/Properties Guide:
+- Spices (and ingredients) can be combined into a Product
+- Spices can belong to multiple Products 0...*
+
 */
 
 
 const spiceSchema = new mongoose.Schema({
     name: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-            minlength: 3,
-            match: [/^(?!.*[._]{2})(?!.*[._]$)[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/, 'Invalid username. Must start with a letter, contain only letters, numbers, dots, or underscores, and cannot end with or repeat special characters.']
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        minlength: 3,
+        match: [/^[a-zA-Z]$/, 'Invalid Spice. Must start with a letter, contain only letters.']
 
-        },
+    },
     expire: { 
         type: datetime,
         required: true,
