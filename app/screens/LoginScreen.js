@@ -8,6 +8,8 @@ import {
   Text,
   TextInput,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API_BASE from '../config/api';
 /*
   Welcome Screen functions:
   - Username: Provide a valid username (rules will need to be established)
@@ -23,6 +25,10 @@ export default function LoginScreen({navigation}) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  React.useEffect(() => {
+    console.log('API_BASE (Login):', API_BASE);
+  }, []);
   
   const validate = () => {
 
@@ -38,6 +44,49 @@ export default function LoginScreen({navigation}) {
       alert("Valid Information, Thank you! ✅");
     }
   };
+
+  const handleLogin = async () => {
+    setError("");
+    // basic client-side validation
+    if (!username || !password) {
+      setError('Please provide username and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Use API_BASE from config
+      const res = await fetch(`${API_BASE}/api/users/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: username, password }),
+      });
+        // safe JSON parse: backend might return empty body or non-JSON on error
+        const text = await res.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { raw: text }; }
+      if (!res.ok) {
+          const serverMsg = data.message || data.error || data.raw || 'Login failed';
+          console.error('Login failed:', res.status, serverMsg);
+          setError(serverMsg);
+        setLoading(false);
+        return;
+      }
+      const { token } = data;
+      if (token) {
+        await AsyncStorage.setItem('authToken', token);
+        // navigate to main app screen after login
+        navigation.navigate('KitchenHomepage');
+      } else {
+          setError('No token received from server');
+      }
+    } catch (err) {
+        console.error('Network/login error:', err);
+        setError(err.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <ImageBackground
       style={styles.background}
@@ -56,11 +105,10 @@ export default function LoginScreen({navigation}) {
         <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
 
          {/* User Name Block */}
-        <View style={styles.inputContainer}>
-            <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]}>
-            </TextInput>
-        </View>
-        <View style={[styles.line,,{top: 33}]}></View>
+    <View style={styles.inputContainer}>
+      <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} />
+    </View>
+    <View style={[styles.line,{top: 33}]}></View>
         {/* Password Block */}
         <View style={styles.inputContainer}>
             <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
@@ -77,8 +125,8 @@ export default function LoginScreen({navigation}) {
 
         {/* Login Block */}
          <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => alert("Does Nothing for now")}>
-            <Text style ={{fontSize: 18, color: "white"}}>Login</Text>
+          <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
+            <Text style ={{fontSize: 18, color: "white"}}>{loading ? 'Logging in...' : 'Login'}</Text>
           </TouchableOpacity>
         </View>
 

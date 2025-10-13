@@ -19,4 +19,26 @@ router.post('/signin', async (req, res) => {
   }
 });
 
+
+// Signup route
+// POST /api/users/signup
+router.post('/signup', async (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) return res.status(400).json({ message: 'Missing required fields' });
+  try {
+    // check duplicates
+    const exists = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
+    if (exists) return res.status(409).json({ message: 'User with that email or username already exists' });
+
+    const user = new User({ username, email: email.toLowerCase(), password });
+    await user.save();
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const safeUser = { id: user._id, username: user.username, email: user.email };
+    res.status(201).json({ token, user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

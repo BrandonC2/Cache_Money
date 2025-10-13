@@ -8,6 +8,8 @@ import {
   Text,
   TextInput,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API_BASE from '../config/api';
 
 /*
 import axios from "axios";
@@ -36,6 +38,47 @@ export default function RegistrationScreen({ navigation }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  React.useEffect(() => {
+    console.log('API_BASE (Registration):', API_BASE);
+  }, []);
+  
+
+  const handleSignUp = async () => {
+    setError('');
+    if (!username || !email || !password) {
+      setError('Please complete all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/users/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password }),
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { raw: text }; }
+      if (!res.ok) {
+        const serverMsg = data.message || data.error || data.raw || 'Signup failed';
+        console.error('Signup failed:', res.status, serverMsg);
+        setError(serverMsg);
+        setLoading(false);
+        return;
+      }
+      const { token } = data;
+      if (token) {
+        await AsyncStorage.setItem('authToken', token);
+        navigation.navigate('KitchenHomepage');
+      }
+    } catch (err) {
+      console.error('Network/signup error:', err);
+      setError(err.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const validate = () => {
     // simple regex for emailS
@@ -98,8 +141,8 @@ export default function RegistrationScreen({ navigation }) {
        {/*Sign up Block */}
         <View style={styles.infoContainer}>
           <View style={styles.returnContainer}>
-              <TouchableOpacity style={[styles.backButton,{top:'50%'}]} onPress={validate}>
-                <Text style ={{fontSize: 24, color: "white"}}>Sign-Up</Text>
+              <TouchableOpacity style={[styles.backButton,{top:'50%'}]} onPress={handleSignUp} disabled={loading}>
+                <Text style ={{fontSize: 24, color: "white"}}>{loading ? 'Signing up...' : 'Sign-Up'}</Text>
               </TouchableOpacity>
             </View>
 
