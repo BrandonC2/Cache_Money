@@ -17,6 +17,11 @@ const API = "server url"
 */
 
 /*
+import axios from "axios";
+const API = "server url"
+*/
+
+/*
   Registration Screen functions:
   - Username: Provide a valid username (rules will need to be established)
   - Password: same as Username

@@ -16,8 +16,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
- export default function AboutScreen({ navigation }) {
- 
+export default function AboutScreen({ navigation }) {
+
   const rotate = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => {
