@@ -36,7 +36,7 @@ export default function KitchenHomepage({ navigation }) {
   
   return (
     <ImageBackground style={styles.background}>
-      <DropDownPicker
+      {/* <DropDownPicker
         open={open}
         value={value}
         items={ingredients}
@@ -68,7 +68,7 @@ export default function KitchenHomepage({ navigation }) {
             }
           </TouchableOpacity>
         ))}
-      </View>
+      </View> */}
 
       <View style={styles.logoContainer}>
         <Image

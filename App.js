@@ -8,7 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import LoginScreen from './app/screens/LoginScreen';
 import RegistrationScreen from './app/screens/RegistrationScreen';
-// import AboutScreen from './app/screens/AboutScreen';
+import AboutScreen from './app/screens/AboutScreen';
 import KitchenHomepage from './app/screens/KitchenHomepage';
 
 //Currently not the main thing we are focusing on, 
@@ -141,15 +141,15 @@ export default function App() {
   <NavigationContainer>
 
     {/* chnage to "About when fixed */}
-    <Stack.Navigator initialRouteName="Login">
+    <Stack.Navigator initialRouteName="About">
 
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
       {/*   uncomment when about is fixed*/}
-      {/* <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/> */}
+      <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
 
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
-      {/* <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/> */}
+      <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
 
 
