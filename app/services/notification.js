@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import mongoose from 'mongoose';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

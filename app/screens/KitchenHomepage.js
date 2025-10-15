@@ -33,40 +33,7 @@ export default function KitchenHomepage({ navigation }) {
   const [expire, setExpire] = useState("");
   const [desc, setDesc] = useState("");
   const [editId, setEditId] = useState(null);
-
-  const fetchItems = async () => {
-    const res = await axios.get({/*put mongo connect url here */});
-    setItems(res.data);
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const saveItem = async () => {
-    if (!name) return;
-    if (editId) {
-      await axios.put(`${API}/${editId}`, { name, description: desc });
-      setEditId(null);
-    } else {
-      await axios.post(API, { name, description: desc });
-    }
-    setName("");
-    setDesc("");
-    fetchItems();
-  };
-
-  const removeItem = async (id) => {
-    await axios.delete(`${API}/${id}`);
-    fetchItems();
-  };
   
-  const startEdit = (item) => {
-    setName(item.name);
-    setDesc(item.description);
-    setEditId(item._id);
-  };
-
   return (
     <ImageBackground style={styles.background}>
       <DropDownPicker
