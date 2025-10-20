@@ -56,10 +56,10 @@ export default function LoginScreen({navigation}) {
     setLoading(true);
     try {
       // Use API_BASE from config
-      const res = await fetch(`${API_BASE}/api/users/login`, {
+      const res = await fetch(`${API_BASE}/api/users/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: username, password }),
+        body: JSON.stringify({ username: username, password }),
       });
         // safe JSON parse: backend might return empty body or non-JSON on error
         const text = await res.text();
@@ -76,7 +76,7 @@ export default function LoginScreen({navigation}) {
       if (token) {
         await AsyncStorage.setItem('authToken', token);
         // navigate to main app screen after login
-        navigation.navigate('KitchenHomepage');
+        navigation.navigate('KitchenHome');
       } else {
           setError('No token received from server');
       }

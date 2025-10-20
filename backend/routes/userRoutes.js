@@ -18,9 +18,9 @@ router.post("/register", async (req, res) => {
 // Sign in route
 // POST /api/users/signin
 router.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ username });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
