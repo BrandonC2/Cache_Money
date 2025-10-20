@@ -81,7 +81,7 @@ export default function AboutScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate("KitchenHome")}
+          onPress={() => navigation.navigate("MainNavBar")}
         >
           <Text style={styles.buttonText}>Homepage</Text>
         </TouchableOpacity>
