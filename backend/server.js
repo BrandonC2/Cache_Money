@@ -23,12 +23,14 @@ db.once('open', () => console.log('Connected to MongoDB successfully!'));
 
 // Import routes
 const userRoutes = require('./routes/userRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 // const inventoryRoutes = require('./routes/inventoryRoutes');
 // const recipeRoutes = require('./routes/recipeRoutes');
 // const receiptRoutes = require('./routes/receiptRoutes');
 
 // Mount routes
 app.use('/api/users', userRoutes);
+app.use('/api/inventory', inventoryRoutes);
 // app.use('/api/inventory', inventoryRoutes);
 // app.use('/api/recipes', recipeRoutes);
 // app.use('/api/receipts', receiptRoutes);

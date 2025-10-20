@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DropDownPicker from "react-native-dropdown-picker";
+import apiClient from '../lib/apiClient';
+import API_BASE from '../config/api';
 /*
 import axios from "axios";
 const API = "server url"
@@ -33,10 +35,28 @@ export default function KitchenHomepage({ navigation }) {
   const [expire, setExpire] = useState("");
   const [desc, setDesc] = useState("");
   const [editId, setEditId] = useState(null);
+  const [items, setItems] = useState([]);
+
+  // Dropdown state for DropDownPicker
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null);
+  const [ingredients, setIngredients] = useState([
+    { label: 'Tomato', value: 'tomato' },
+    { label: 'Onion', value: 'onion' },
+  ]);
+
+  // simple icons list for demo
+  const icons = ["ios-restaurant", "ios-egg", "ios-apple"];
 
   const fetchItems = async () => {
-    const res = await axios.get({/*put mongo connect url here */});
-    setItems(res.data);
+    try {
+  const res = await apiClient.get('/api/inventory');
+      setItems(res.data || []);
+      console.log('Fetched items:', res.data);
+    } catch (err) {
+      console.error('fetchItems error:', err.message || err);
+      setItems([]);
+    }
   };
 
   useEffect(() => {
@@ -45,26 +65,43 @@ export default function KitchenHomepage({ navigation }) {
 
   const saveItem = async () => {
     if (!name) return;
-    if (editId) {
-      await axios.put(`${API}/${editId}`, { name, description: desc });
-      setEditId(null);
-    } else {
-      await axios.post(API, { name, description: desc });
+    try {
+      if (editId) {
+  await apiClient.put(`/api/inventory/${editId}`, { name, description: desc });
+        setEditId(null);
+      } else {
+  await apiClient.post('/api/inventory', { name, description: desc });
+      }
+      setName("");
+      setDesc("");
+      fetchItems();
+    } catch (err) {
+      console.error('saveItem error:', err.message || err);
     }
-    setName("");
-    setDesc("");
-    fetchItems();
   };
 
   const removeItem = async (id) => {
-    await axios.delete(`${API}/${id}`);
-    fetchItems();
+    try {
+  await apiClient.delete(`/api/inventory/${id}`);
+      fetchItems();
+    } catch (err) {
+      console.error('removeItem error:', err.message || err);
+    }
   };
   
   const startEdit = (item) => {
     setName(item.name);
     setDesc(item.description);
     setEditId(item._id);
+  };
+
+  const handleSelect = (val) => {
+    console.log('Selected:', val);
+    setValue(val);
+  };
+
+  const handleRemove = (iconName) => {
+    console.log('Remove icon tapped:', iconName);
   };
 
   return (
