@@ -35,78 +35,10 @@ export default function KitchenHomepage({ navigation }) {
   const [expire, setExpire] = useState("");
   const [desc, setDesc] = useState("");
   const [editId, setEditId] = useState(null);
-  const [items, setItems] = useState([]);
-
-  // Dropdown state for DropDownPicker
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null);
-  const [ingredients, setIngredients] = useState([
-    { label: 'Tomato', value: 'tomato' },
-    { label: 'Onion', value: 'onion' },
-  ]);
-
-  // simple icons list for demo
-  const icons = ["ios-restaurant", "ios-egg", "ios-apple"];
-
-  const fetchItems = async () => {
-    try {
-  const res = await apiClient.get('/api/inventory');
-      setItems(res.data || []);
-      console.log('Fetched items:', res.data);
-    } catch (err) {
-      console.error('fetchItems error:', err.message || err);
-      setItems([]);
-    }
-  };
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const saveItem = async () => {
-    if (!name) return;
-    try {
-      if (editId) {
-  await apiClient.put(`/api/inventory/${editId}`, { name, description: desc });
-        setEditId(null);
-      } else {
-  await apiClient.post('/api/inventory', { name, description: desc });
-      }
-      setName("");
-      setDesc("");
-      fetchItems();
-    } catch (err) {
-      console.error('saveItem error:', err.message || err);
-    }
-  };
-
-  const removeItem = async (id) => {
-    try {
-  await apiClient.delete(`/api/inventory/${id}`);
-      fetchItems();
-    } catch (err) {
-      console.error('removeItem error:', err.message || err);
-    }
-  };
   
-  const startEdit = (item) => {
-    setName(item.name);
-    setDesc(item.description);
-    setEditId(item._id);
-  };
-
-  const handleSelect = (val) => {
-    console.log('Selected:', val);
-    setValue(val);
-  };
-
-  const handleRemove = (iconName) => {
-    console.log('Remove icon tapped:', iconName);
-  };
-
   return (
     <ImageBackground style={styles.background}>
-      <DropDownPicker
+      {/* <DropDownPicker
         open={open}
         value={value}
         items={ingredients}
@@ -138,7 +70,7 @@ export default function KitchenHomepage({ navigation }) {
             }
           </TouchableOpacity>
         ))}
-      </View>
+      </View> */}
 
       <View style={styles.logoContainer}>
         <Image

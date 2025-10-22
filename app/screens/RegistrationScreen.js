@@ -10,12 +10,6 @@ import {
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE from '../config/api';
-
-/*
-import axios from "axios";
-const API = "server url"
-*/
-
 /*
   Registration Screen functions:
   - Username: Provide a valid username (rules will need to be established)
@@ -70,7 +64,7 @@ export default function RegistrationScreen({ navigation }) {
       const { token } = data;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
-        navigation.navigate('KitchenHomepage');
+        navigation.navigate('KitchenHome');
       }
     } catch (err) {
       console.error('Network/signup error:', err);

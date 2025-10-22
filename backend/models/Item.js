@@ -37,5 +37,4 @@ const itemSchema = new mongoose.Schema({
         ref: "Group",
     },
 });
-
 module.exports = mongoose.model('item', itemSchema);
