@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, {useState, useLayoutEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -29,6 +29,11 @@ const API = "server url"
 
 
 export default function KitchenHomepage({ navigation }) {
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
   const [name, setName] = useState("");
   const [expire, setExpire] = useState("");
   const [desc, setDesc] = useState("");
