@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState, useLayoutEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -20,12 +20,17 @@ import {
 */
 
 export default function RecipeMaker({navigation}) {
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+  
 return (
     <ImageBackground style={styles.background}>
 
       <View style={styles.logoContainer}>
         <Image source={require("../assets/ye.png")} style={styles.logo} />
-        <Text style={styles.title}>Cache Money Made</Text>
+        <Text style={styles.title}>Recipe</Text>
       </View>
       
       <Text style={styles.description}>Cooking Crazy 4 U</Text>

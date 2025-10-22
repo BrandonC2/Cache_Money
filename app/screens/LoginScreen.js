@@ -30,21 +30,6 @@ export default function LoginScreen({navigation}) {
     console.log('API_BASE (Login):', API_BASE);
   }, []);
   
-  const validate = () => {
-
-    // Makes sure not empty or has spaces
-    const userRegex = /^[A-Za-z+0-9]+$/;
-    const passwordRegex = /^[A-Za-z+0-9+(_!@<>)?]+$/;
-  
-    if(!userRegex.test(username) || !passwordRegex.test(password) || username.length < 4 || password.length < 4)
-      setError("Please enter a valid input for each")
-      
-    else {
-      setError("");
-      alert("Valid Information, Thank you! ✅");
-    }
-  };
-
   const handleLogin = async () => {
     setError("");
     // basic client-side validation
