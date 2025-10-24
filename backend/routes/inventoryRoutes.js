@@ -4,9 +4,9 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 
 // GET /api/inventory - list all
-router.get('/', async (req, res) => {
+router.get('/', auth,  async (req, res) => {
   try {
-    const items = await InventoryItem.find().sort({ createdAt: -1 });
+    const items = await InventoryItem.find({user: req.user.id}).sort({ createdAt: -1 });
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { name, description, quantity, expiresAt } = req.body;
-    const item = new InventoryItem({ name, description, quantity, expiresAt });
+    const item = new InventoryItem({ name, description, quantity, expiresAt, user: req.user.id });
     await item.save();
     res.status(201).json(item);
   } catch (err) {
@@ -28,7 +28,7 @@ router.post('/', auth, async (req, res) => {
 // PUT /api/inventory/:id - update (protected)
 router.put('/:id', auth, async (req, res) => {
   try {
-    const item = await InventoryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await InventoryItem.findByIdAndUpdate({_id: req.params.id, user:req.user.id}, req.body, { new: true });
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json(item);
   } catch (err) {
@@ -39,7 +39,7 @@ router.put('/:id', auth, async (req, res) => {
 // DELETE /api/inventory/:id (protected)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const item = await InventoryItem.findByIdAndDelete(req.params.id);
+    const item = await InventoryItem.findByIdAndDelete({_id: req.params.id, user:req.user.id});
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.json({ ok: true });
   } catch (err) {
