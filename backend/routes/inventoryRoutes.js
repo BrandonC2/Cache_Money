@@ -4,7 +4,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 
 // GET /api/inventory - list all
-router.get('/', async (req, res) => {
+router.get('/', auth,  async (req, res) => {
   try {
     const items = await InventoryItem.find().sort({ createdAt: -1 });
     res.json(items);
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { name, description, quantity, expiresAt } = req.body;
-    const item = new InventoryItem({ name, description, quantity, expiresAt });
+    const item = new InventoryItem({ name, description, quantity, expiresAt, user: req.user.id });
     await item.save();
     res.status(201).json(item);
   } catch (err) {
