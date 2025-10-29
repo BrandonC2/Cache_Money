@@ -1,19 +1,13 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 const router = express.Router();
 
-// REGISTER
-router.post("/register", async (req, res) => {
-  try {
-    const user = new User(req.body);
-    await user.save();
-    res.json({ message: "User registered!" });
-  } 
-  catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// for now we have:
+// signin, and signup
+// /me route later
+// 
 
 // Sign in route
 // POST /api/users/signin
@@ -53,4 +47,28 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+// DELETE /api/users/:id (protected)
+// Only allow the authenticated user to delete their own account, or an admin.
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const requesterId = req.userId;
+
+    // If the requester is not the same as the target, check admin flag on requester
+    if (requesterId !== targetUserId) {
+      // load requester to check admin privileges
+      const requester = await User.findById(requesterId).select('+isAdmin');
+      if (!requester || !requester.isAdmin) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
+    const deleted = await User.findByIdAndDelete(targetUserId);
+    if (!deleted) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ ok: true, message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = router;
