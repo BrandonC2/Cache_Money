@@ -27,23 +27,10 @@ export default function UpcomingScreen({navigation}) {
 return (
     <ImageBackground style={styles.background}>
 
-      <View style={styles.logoContainer}>
-        <Image source={require("../assets/ye.png")} style={styles.logo} />
-        <Text style={styles.title}>Upcoming</Text>
-      </View>
+      <Text style={styles.title}>Upcoming</Text>
       
       <Text style={styles.description}>Cooking Crazy 4 U</Text>
 
-      <View style ={styles.buttons}>
-        
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate("Login")}>
-          <Text style ={{fontSize: 24, color: "black"}}>Login</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Registration")}>
-          <Text style ={{fontSize: 24, color: "black"}}>Sign-Up</Text>
-        </TouchableOpacity>
-        </View>
     </ImageBackground>
     );
 }

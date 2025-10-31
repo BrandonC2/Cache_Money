@@ -113,13 +113,25 @@ export default function LoginScreen({navigation}) {
 
          {/* User Name Block */}
     <View style={styles.inputContainer}>
-      <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} />
+      <TextInput 
+        placeholder="Username" 
+        value={username} 
+        onChangeText={setUsername} 
+        autoCapitalize="none"
+        style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} 
+      />
     </View>
     <View style={[styles.line,{top: 33}]}></View>
         {/* Password Block */}
         <View style={styles.inputContainer}>
-            <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
-            </TextInput>
+            <TextInput 
+              placeholder="Password" 
+              value={password} 
+              onChangeText={setPassword}
+              autoCapitalize="none" 
+              secureTextEntry={true}
+              style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
+            />
         </View>
         <View style={[styles.line,{top: 63}]}></View>
 

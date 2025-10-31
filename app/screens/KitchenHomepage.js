@@ -108,26 +108,10 @@ export default function KitchenHomepage({ navigation }) {
         ))}
       </View> */}
 
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/Just_Icon.png")}
-          style={styles.logo}
-        />
-        <Text style={styles.title}>Cache Money Made</Text>
-      </View>
-
       <Text style={[styles.description, { position: "relative", top: -30 }]}>
-        {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U Yay'}
+        {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
       </Text>
       
-      <View style={styles.buttons}>
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={handleLogout}
-        >
-          <Text style={{ fontSize: 24, color: "black" }}>Logout</Text>
-        </TouchableOpacity>
-      </View>
     </ImageBackground>
   );
 }
