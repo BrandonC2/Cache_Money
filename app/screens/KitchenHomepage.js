@@ -1,4 +1,5 @@
-import React, {useState, useLayoutEffect } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState, useLayoutEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -41,6 +42,36 @@ export default function KitchenHomepage({ navigation }) {
   const [desc, setDesc] = useState("");
   const [editId, setEditId] = useState(null);
   
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const storedUsername = await AsyncStorage.getItem('username');
+        if (storedUsername) {
+          setUsername(storedUsername);
+        }
+        console.log('Loaded username from AsyncStorage:', storedUsername);
+      } catch (error) {
+        console.error('Failed to load username:', error);
+      }
+    };
+    loadUser();
+  }, []);
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('username');
+      console.log('✅ Logged out successfully');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
   return (
     <ImageBackground style={styles.background}>
       {/* <DropDownPicker
@@ -85,18 +116,16 @@ export default function KitchenHomepage({ navigation }) {
         <Text style={styles.title}>Cache Money Made</Text>
       </View>
 
-      <Text
-        style={[styles.description, { position: "relative", top: -30 }]}
-      >
-        Cooking Crazy 4 U
+      <Text style={[styles.description, { position: "relative", top: -30 }]}>
+        {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U Yay'}
       </Text>
       
       <View style={styles.buttons}>
         <TouchableOpacity
           style={styles.loginButton}
-          onPress={() => navigation.navigate("Login")}
+          onPress={handleLogout}
         >
-          <Text style={{ fontSize: 24, color: "black" }}>Login</Text>
+          <Text style={{ fontSize: 24, color: "black" }}>Logout</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -26,6 +26,22 @@ export default function LoginScreen({navigation}) {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (token) {
+          console.log('User already logged in, navigating to KitchenHome');
+          navigation.replace('KitchenHome'); // replace so user can’t go “back” to login
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
+    };
+    
+    checkLoginStatus();
+  }, []);
+
   React.useEffect(() => {
     console.log('API_BASE (Login):', API_BASE);
   }, []);
@@ -45,6 +61,8 @@ export default function LoginScreen({navigation}) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username, password }),
+
+
       });
         // safe JSON parse: backend might return empty body or non-JSON on error
         const text = await res.text();
@@ -57,14 +75,18 @@ export default function LoginScreen({navigation}) {
         setLoading(false);
         return;
       }
-      const { token } = data;
+      const { token, username: returnedUsername, user } = data;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
-        // navigate to main app screen after login
-        navigation.navigate('KitchenHome');
-      } else {
+        const nameToSave = user?.username || username;
+        if (nameToSave) {
+          await AsyncStorage.setItem('username', nameToSave);
+          console.log('Saved username:', nameToSave);
+        }
+          navigation.navigate('KitchenHome');
+        } else {
           setError('No token received from server');
-      }
+        }
     } catch (err) {
         console.error('Network/login error:', err);
         setError(err.message || 'Network error');

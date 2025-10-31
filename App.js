@@ -10,6 +10,7 @@ import LoginScreen from './app/screens/LoginScreen';
 import RegistrationScreen from './app/screens/RegistrationScreen';
 import AboutScreen from './app/screens/AboutScreen';
 import KitchenHomepage from './app/screens/KitchenHomepage';
+import SplashScreen from './app/screens/TransitionScreen';
 
 //Currently not the main thing we are focusing on, 
 // I just them here to get the nav bar working
@@ -142,7 +143,7 @@ export default function App() {
 
     {/* chnage to "About when fixed */}
     <Stack.Navigator initialRouteName="About">
-
+      <Stack.Screen name = "SplashScreen" component ={SplashScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
       {/*   uncomment when about is fixed*/}
