@@ -74,6 +74,7 @@ export default function KitchenHomepage({ navigation }) {
   };
   return (
     <ImageBackground style={styles.background}>
+    
       {/* <DropDownPicker
         open={open}
         value={value}
