@@ -1,49 +1,47 @@
-const express = require('express');
-const InventoryItem = require('../models/InventoryItem');
+const express = require("express");
 const router = express.Router();
-const auth = require('../middleware/auth');
+const Item = require("../models/Item");
 
-// GET /api/inventory - list all
-router.get('/', auth,  async (req, res) => {
+// Add new item
+router.post("/add", async (req, res) => {
   try {
-    const items = await InventoryItem.find().sort({ createdAt: -1 });
-    res.json(items);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const { name, description, foodGroup, expirationDate, room, addedBy } = req.body;
 
-// POST /api/inventory - create (protected)
-router.post('/', auth, async (req, res) => {
-  try {
-    const { name, description, quantity, expiresAt } = req.body;
-    const item = new InventoryItem({ name, description, quantity, expiresAt, user: req.user.id });
+    // Validate required fields
+    if (!name || !foodGroup || !room || !addedBy) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const item = new Item({
+      name,
+      description,
+      foodGroup,
+      expirationDate,
+      room,
+      addedBy,
+    });
+
     await item.save();
-    res.status(201).json(item);
+    res.status(201).json({ message: "Item added successfully!", item });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error adding item:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// PUT /api/inventory/:id - update (protected)
-router.put('/:id', auth, async (req, res) => {
+router.get("/room/:roomName", async (req, res) => {
   try {
-    const item = await InventoryItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!item) return res.status(404).json({ message: 'Not found' });
-    res.json(item);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const { roomName } = req.params;
 
-// DELETE /api/inventory/:id (protected)
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    const item = await InventoryItem.findByIdAndDelete(req.params.id);
-    if (!item) return res.status(404).json({ message: 'Not found' });
-    res.json({ ok: true });
+    if (!roomName) {
+      return res.status(400).json({ message: "Missing room name" });
+    }
+
+    const items = await Item.find({ room: roomName }).sort({ createdAt: -1 });
+    res.status(200).json(items);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error fetching room items:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 

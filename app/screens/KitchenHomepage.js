@@ -1,162 +1,201 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState, useLayoutEffect } from "react";
-import {
-  ImageBackground,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  Image,
-  Text,
+import { 
+  ImageBackground, 
+  StyleSheet, 
+  TouchableOpacity, 
+  View, 
+  Text, 
+  TextInput, 
+  ScrollView,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import DropDownPicker from "react-native-dropdown-picker";
-import apiClient from '../lib/apiClient';
+import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 import API_BASE from '../config/api';
-/*
-import axios from "axios";
-const API = "server url"
-*/
 
-/* 
-  Home Screen functions:
-  - Showcases items in grid form
-  - search bar to query an item
-  - icon taps to add/remove items
-  - "bar" to sort items to query
-
-  Necessary:
-  - Text description of what constitutes a valid Username/Password
-  - Message sent detailing an invalid input (alert possibly)
-  - CRUD to save valid inputs
-*/
-
-
-export default function KitchenHomepage({ navigation }) {
-
-  useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
-
-  const [name, setName] = useState("");
-  const [expire, setExpire] = useState("");
-  const [desc, setDesc] = useState("");
-  const [editId, setEditId] = useState(null);
-  
-  useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
-
+export default function KitchenHomepage() {
+  const navigation = useNavigation();
   const [username, setUsername] = useState('');
+  const [kitchenName, setKitchenName] = useState('');
+  const [password, setPassword] = useState('');
+  const [visitedRooms, setVisitedRooms] = useState([]);
 
+  // Hide header
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  // Load username and visited rooms
   useEffect(() => {
-    const loadUser = async () => {
+    const loadData = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
-        if (storedUsername) {
-          setUsername(storedUsername);
-        }
-        console.log('Loaded username from AsyncStorage:', storedUsername);
-      } catch (error) {
-        console.error('Failed to load username:', error);
+        const roomsStr = await AsyncStorage.getItem('visitedRooms');
+        if (storedUsername) setUsername(storedUsername);
+        if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
+      } catch (e) {
+        console.error('Failed to load data', e);
       }
     };
-    loadUser();
+    loadData();
   }, []);
+
+  // Save room to visitedRooms
+  const saveVisitedRoom = async (room) => {
+    try {
+      let rooms = [...visitedRooms];
+      if (!rooms.includes(room)) {
+        rooms.push(room);
+        await AsyncStorage.setItem('visitedRooms', JSON.stringify(rooms));
+        setVisitedRooms(rooms);
+      }
+    } catch (e) {
+      console.error('Failed to save visited room', e);
+    }
+  };
+
+  // Create room
+  const createRoom = async () => {
+    if (!kitchenName || !password) {
+      Alert.alert('Error', 'Please enter a room name and password');
+      return;
+    }
+    try {
+      const res = await axios.post(`${API_BASE}/kitchens/create`, {
+        name: kitchenName,
+        password
+      });
+      Alert.alert('Success', res.data.message);
+      await saveVisitedRoom(kitchenName);
+      navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
+    } catch (err) {
+      console.error('Create room error:', err.response?.data || err.message);
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    }
+  };
+
+  // Join room
+  const joinRoom = async () => {
+    if (!kitchenName || !password) {
+      Alert.alert('Error', 'Please enter a room name and password');
+      return;
+    }
+    try {
+      const res = await axios.post(`${API_BASE}/kitchens/join`, {
+        name: kitchenName,
+        password
+      });
+      Alert.alert('Success', res.data.message);
+      await saveVisitedRoom(kitchenName);
+      navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
+    } catch (err) {
+      console.error('Join room error:', err.response?.data || err.message);
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    }
+  };
+
+  // Logout
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('username');
-      console.log('✅ Logged out successfully');
       navigation.navigate('Login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Logout error:', error);
     }
   };
+
   return (
     <ImageBackground style={styles.background}>
-    
-      {/* <DropDownPicker
-        open={open}
-        value={value}
-        items={ingredients}
-        setOpen={setOpen}
-        setValue={setValue}
-        setItems={setIngredients}
-        onChangeValue={handleSelect} // ✅ triggered when user picks an item
-        placeholder="Select an icon"
-      />
-
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          marginTop: 20,
-          justifyContent: "center",
-        }}
-      >
-        {icons.map((iconName, idx) => (
-          <TouchableOpacity
-            key={idx}
-            onPress={() => handleRemove(iconName)} // ✅ tap icon to remove
-            style={{ margin: 5, alignItems: "center" }}
-          >
-            <Ionicons name={iconName} size={50} color="blue" />
-            <Text>{iconName}</Text>
-            {
-            //<Text style={{ fontSize: 12, color: "red" }}>(tap to remove)</Text>
-            }
-          </TouchableOpacity>
-        ))}
-      </View> */}
-
-      <Text style={[styles.description, { position: "relative", top: -30 }]}>
+      <Text style={styles.title}>
         {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
       </Text>
-      
+
+      {/* Create/Join Room Inputs */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          placeholder="Room name"
+          value={kitchenName}
+          onChangeText={setKitchenName}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+        />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          <TouchableOpacity style={styles.button} onPress={createRoom}>
+            <Text style={styles.buttonText}>Create Room</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={joinRoom}>
+            <Text style={styles.buttonText}>Join Room</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Recently Visited Rooms */}
+      <ScrollView style={{ width: '100%', marginTop: 20, paddingHorizontal: 20 }}>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>Recently Visited Kitchens:</Text>
+        {visitedRooms.map((room, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => navigation.navigate('KitchenCollection', { roomName: room, username })}
+            style={styles.quickJoinButton}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>{room}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={24} color="white" />
+        <Text style={styles.buttonText}>Logout</Text>
+      </TouchableOpacity>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  background: { flex: 1, justifyContent: "flex-start", alignItems: "center", paddingTop: 60 },
+  title: { fontSize: 24, fontWeight: '600', color: '#333', marginBottom: 20 },
+  inputContainer: { width: '90%' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    backgroundColor: '#fff'
+  },
+  button: {
     flex: 1,
-    justifyContent: "flex-end",
-    alignItems: "center",
+    backgroundColor: '#53B175',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: 'center'
   },
-  loginButton: {
-    width: 100,
-    height: 67,
-    backgroundColor: "#53B175",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 19,
-    marginBottom: 18,
-    bottom: "15%",
-    shadowColor: "black",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 3,
+  buttonText: { color: 'white', fontWeight: 'bold' },
+  quickJoinButton: {
+    padding: 12,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+    marginBottom: 10,
+    alignItems: 'center'
   },
-  registerButton: {
-    width: 100,
-    height: 67,
-    backgroundColor: "#5c9ffcff",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 19,
-    marginBottom: 18,
-    bottom: "15%",
-  },
-  logo: {
-    width: 200,
-    height: 200,
-    position: "absolute",
-    top: 70,
-  },
-  logoContainer: {
-    position: "absolute",
-    top: 70,
-    alignItems: "center",
-  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ff4d4d',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 20
+  }
 });

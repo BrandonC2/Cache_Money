@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const kitchenSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
@@ -23,4 +23,4 @@ kitchenSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-export default mongoose.model("Kitchen", kitchenSchema);
+module.exports = mongoose.model("Kitchen", kitchenSchema);

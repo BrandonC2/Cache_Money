@@ -11,8 +11,9 @@ import RegistrationScreen from './app/screens/RegistrationScreen';
 import AboutScreen from './app/screens/AboutScreen';
 import KitchenHomepage from './app/screens/KitchenHomepage';
 import SplashScreen from './app/screens/TransitionScreen';
-import KitchenRosterScreen from './app/screens/KitchenRosterScreen';
+import KitchenCollection from './app/screens/KitchenCollectionScreen';
 import KitchenScreen from './app/screens/KitchenScreen';
+import AddScreen from './app/screens/ItemAddScreen';
 
 //Currently not the main thing we are focusing on, 
 // I just them here to get the nav bar working
@@ -149,8 +150,9 @@ export default function App() {
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
       {/*Not navigatable yet...; important for Q3*/}
-      <Stack.Screen name = "KitchenRoster" component ={KitchenRosterScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "KitchenCollection" component ={KitchenCollection} options={{ headerShown: false }}/>
       <Stack.Screen name = "Kitchen" component ={KitchenScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "ManualAdd" component ={AddScreen} options={{ headerShown: false }}/>
       {/*   uncomment when about is fixed*/}
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
 
