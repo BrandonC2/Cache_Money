@@ -108,7 +108,10 @@ export default function KitchenHomepage() {
   };
 
   return (
-    <ImageBackground style={styles.background}>
+    <ImageBackground 
+        style={styles.background}
+        source={require("../assets/grid_paper.png")}
+    >
       <Text style={styles.title}>
         {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
       </Text>
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    backgroundColor: '#53B175',
+    backgroundColor: '#4D693A',
     padding: 12,
     borderRadius: 8,
     marginHorizontal: 5,

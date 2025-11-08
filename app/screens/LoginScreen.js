@@ -160,7 +160,7 @@ export default function LoginScreen({navigation}) {
         <View style={styles.returnContainer}>
           <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
-            <Text style ={{fontSize: 18, color: "#53B175", position:'relative', top:10}}>Sign-Up</Text>
+            <Text style ={{fontSize: 18, color: "#4D693A", position:'relative', top:10}}>Sign-Up</Text>
           </TouchableOpacity>
         </View>        
         {error ? <Text style={{color:"red"}}>{error}</Text> : null}
@@ -238,8 +238,8 @@ const styles = StyleSheet.create({
       borderRadius: 10,
       borderWidth: 3,
       //colors
-      backgroundColor: "#53B175",
-      borderColor: "#53B175",
+      backgroundColor: "#4D693A",
+      borderColor: "#4D693A",
       color: "#161515ff",
       //text settings
       alignItems: "center",

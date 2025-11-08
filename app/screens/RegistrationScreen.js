@@ -164,7 +164,7 @@ export default function RegistrationScreen({ navigation }) {
             <View style={styles.returnContainer}>
               <Text style ={{fontSize: 18, color: "#00000",top:'35%'}}>Already have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style ={{fontSize:  18, color: "#53B175",top:'71%'}}>Login</Text>
+                <Text style ={{fontSize:  18, color: "#4D693A",top:'71%'}}>Login</Text>
               </TouchableOpacity>
             </View>
             
@@ -327,8 +327,8 @@ const styles = StyleSheet.create({
       borderRadius: 10,
       borderWidth: 3,
       //colors
-      backgroundColor: "#53B175",
-      borderColor: "#53B175",
+      backgroundColor: "#4D693A",
+      borderColor: "#4D693A",
       color: "#161515ff",
       //text settings
       alignItems: "center",

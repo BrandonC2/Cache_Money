@@ -69,7 +69,7 @@ export default function KitchenCollection({ navigation }) {
         <Text style={styles.header}>Items in {selectedRoom}</Text>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#53B175" />
+          <ActivityIndicator size="large" color="#4D693A" />
         ) : roomItems.length === 0 ? (
           <Text style={styles.emptyText}>No items in this kitchen yet.</Text>
         ) : (
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16, color: "#007bff", marginBottom: 10 },
   roomButton: {
     padding: 14,
-    backgroundColor: "#53B175",
+    backgroundColor: "#4D693A",
     borderRadius: 10,
     marginVertical: 6,
   },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   itemInfo: { fontSize: 15, color: "#555" },
   itemDesc: { fontStyle: "italic", color: "#666", marginTop: 4 },
   addButton: {
-    backgroundColor: "#53B175",
+    backgroundColor: "#4D693A",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
