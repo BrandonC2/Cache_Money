@@ -36,7 +36,9 @@ export default function KitchenHomepage() {
         if (storedUsername) setUsername(storedUsername);
         if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
       } catch (e) {
-        console.error('Failed to load data', e);
+        // console.error('Failed to load data', e);
+        Alert.alert('Error','Failed to load data: ' + e.message);
+        
       }
     };
     loadData();
@@ -52,7 +54,8 @@ export default function KitchenHomepage() {
         setVisitedRooms(rooms);
       }
     } catch (e) {
-      console.error('Failed to save visited room', e);
+      // console.error('Failed to save visited room', e);
+      Alert.alert('Error','Failed to save visited room: ' + e.message);
     }
   };
 
@@ -71,7 +74,7 @@ export default function KitchenHomepage() {
       await saveVisitedRoom(kitchenName);
       navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
     } catch (err) {
-      console.error('Create room error:', err.response?.data || err.message);
+      // console.error('Create room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
@@ -91,7 +94,7 @@ export default function KitchenHomepage() {
       await saveVisitedRoom(kitchenName);
       navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
     } catch (err) {
-      console.error('Join room error:', err.response?.data || err.message);
+      // console.error('Join room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
@@ -103,7 +106,8 @@ export default function KitchenHomepage() {
       await AsyncStorage.removeItem('username');
       navigation.navigate('Login');
     } catch (error) {
-      console.error('Logout error:', error);
+      // console.error('Logout error:', error);
+      Alert.alert('Error','Logout error: ' + error.message);
     }
   };
 
@@ -115,7 +119,7 @@ export default function KitchenHomepage() {
       <Text style={styles.title}>
         {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
       </Text>
-
+      <View style={styles.Box}>
       {/* Create/Join Room Inputs */}
       <View style={styles.inputContainer}>
         <TextInput
@@ -124,6 +128,7 @@ export default function KitchenHomepage() {
           onChangeText={setKitchenName}
           style={styles.input}
         />
+      <View style={styles.line} />
         <TextInput
           placeholder="Password"
           secureTextEntry
@@ -131,6 +136,7 @@ export default function KitchenHomepage() {
           onChangeText={setPassword}
           style={styles.input}
         />
+      <View style={styles.line} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
           <TouchableOpacity style={styles.button} onPress={createRoom}>
             <Text style={styles.buttonText}>Create Room</Text>
@@ -140,7 +146,8 @@ export default function KitchenHomepage() {
           </TouchableOpacity>
         </View>
       </View>
-
+      <View style={[styles.line, {left: 1, bottom: 0}]} />
+      {/* <View style={styles.separator} /> */}
       {/* Recently Visited Rooms */}
       <ScrollView style={{ width: '100%', marginTop: 20, paddingHorizontal: 20 }}>
         <Text style={{ fontSize: 18, marginBottom: 10 }}>Recently Visited Kitchens:</Text>
@@ -150,11 +157,11 @@ export default function KitchenHomepage() {
             onPress={() => navigation.navigate('KitchenCollection', { roomName: room, username })}
             style={styles.quickJoinButton}
           >
-            <Text style={{ color: 'white', fontWeight: 'bold' }}>{room}</Text>
+            <Text style={{ color: 'black', fontWeight: 'bold' }}>{room}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-
+      </View>
       {/* Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Ionicons name="log-out-outline" size={24} color="white" />
@@ -166,16 +173,16 @@ export default function KitchenHomepage() {
 
 const styles = StyleSheet.create({
   background: { flex: 1, justifyContent: "flex-start", alignItems: "center", paddingTop: 60 },
-  title: { fontSize: 24, fontWeight: '600', color: '#333', marginBottom: 20 },
-  inputContainer: { width: '90%' },
+  title: { fontSize: 30, fontWeight: '600', color: '#333', marginBottom: 20 },
+  inputContainer: { width: '100%',paddingHorizontal: 20, },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: 'transparent',
+    borderRadius: 0,
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
-    backgroundColor: '#fff'
+    backgroundColor: 'transparent'
   },
   button: {
     flex: 1,
@@ -188,8 +195,10 @@ const styles = StyleSheet.create({
   buttonText: { color: 'white', fontWeight: 'bold' },
   quickJoinButton: {
     padding: 12,
-    backgroundColor: '#007bff',
+    backgroundColor: 'transparent',
     borderRadius: 5,
+    borderWidth: 1, 
+    borderColor: 'black',
     marginBottom: 10,
     alignItems: 'center'
   },
@@ -199,6 +208,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#ff4d4d',
     padding: 12,
     borderRadius: 8,
-    marginTop: 20
+    marginTop: 20,
+  },
+  Box: {
+    flex: 1, 
+    width: '90%',
+    backgroundColor: 'transparent', 
+    borderWidth: 1, 
+    borderRadius: 15,
+    borderColor: "black",
+    paddingBottom: 5, 
+    
+  },
+  line: {
+    
+    width: 366,
+    backgroundColor: 'black',
+    right: 19,
+    marginVertical: 3,
+    height: 1,
+    
+
   }
+  
+
 });
