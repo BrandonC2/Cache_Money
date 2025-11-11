@@ -32,8 +32,8 @@ export default function KitchenHomepage() {
     const loadData = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
-        const roomsStr = await AsyncStorage.getItem('visitedRooms');
         if (storedUsername) setUsername(storedUsername);
+        const roomsStr = await AsyncStorage.getItem('visitedRooms');
         if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
       } catch (e) {
         console.error('Failed to load data', e);
@@ -42,12 +42,15 @@ export default function KitchenHomepage() {
     loadData();
   }, []);
 
-  // Save room to visitedRooms
-  const saveVisitedRoom = async (room) => {
+  // Save visited room with password
+  const saveVisitedRoom = async (room, password) => {
     try {
-      let rooms = [...visitedRooms];
-      if (!rooms.includes(room)) {
-        rooms.push(room);
+      const roomsStr = await AsyncStorage.getItem('visitedRooms');
+      let rooms = roomsStr ? JSON.parse(roomsStr) : [];
+
+      const existing = rooms.find(r => r.name === room);
+      if (!existing) {
+        rooms.push({ name: room, password });
         await AsyncStorage.setItem('visitedRooms', JSON.stringify(rooms));
         setVisitedRooms(rooms);
       }
@@ -58,42 +61,78 @@ export default function KitchenHomepage() {
 
   // Create room
   const createRoom = async () => {
-    if (!kitchenName || !password) {
+    if (!username) {
+      Alert.alert('Error', 'User not loaded. Please log in again.');
+      return;
+    }
+    const trimmedName = kitchenName.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedName || !trimmedPassword) {
       Alert.alert('Error', 'Please enter a room name and password');
       return;
     }
+
     try {
-      const res = await axios.post(`${API_BASE}/kitchens/create`, {
-        name: kitchenName,
-        password
+      const res = await axios.post(`${API_BASE}/api/kitchens/create`, {
+        name: trimmedName,
+        password: trimmedPassword,
+        createdBy: username,
       });
+
       Alert.alert('Success', res.data.message);
-      await saveVisitedRoom(kitchenName);
-      navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
+
+      // Save room with password
+      await saveVisitedRoom(trimmedName, trimmedPassword);
+
+      // Autofill inputs so join works immediately
+      setKitchenName(trimmedName);
+      setPassword(trimmedPassword);
+
+      navigation.navigate('KitchenCollection', { roomName: trimmedName, username });
     } catch (err) {
       console.error('Create room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
 
-  // Join room
   const joinRoom = async () => {
-    if (!kitchenName || !password) {
-      Alert.alert('Error', 'Please enter a room name and password');
+  if (!username) {
+    Alert.alert('Error', 'User not loaded. Please log in again.');
+    return;
+  }
+  if (!kitchenName || !password) {
+    Alert.alert('Error', 'Please enter a room name and password');
+    return;
+  }
+
+  try {
+    const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
+      name: kitchenName.trim(),  // trim to match backend
+      password: password.trim(), // trim to match backend
+      username: username.trim(),
+    });
+
+    Alert.alert('Success', res.data.message);
+    await saveVisitedRoom(kitchenName.trim(), password.trim());
+
+    navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
+  } catch (err) {
+    console.error('Join room error:', err.response?.data || err.message);
+    Alert.alert('Error', err.response?.data?.message || err.message);
+  }
+};
+
+
+  // Quick join using visited rooms
+  const quickJoin = async (room) => {
+    if (!room.password) {
+      Alert.alert('Error', 'No password stored for this room.');
       return;
     }
-    try {
-      const res = await axios.post(`${API_BASE}/kitchens/join`, {
-        name: kitchenName,
-        password
-      });
-      Alert.alert('Success', res.data.message);
-      await saveVisitedRoom(kitchenName);
-      navigation.navigate('KitchenCollection', { roomName: kitchenName, username });
-    } catch (err) {
-      console.error('Join room error:', err.response?.data || err.message);
-      Alert.alert('Error', err.response?.data?.message || err.message);
-    }
+    setKitchenName(room.name);
+    setPassword(room.password);
+    joinRoom();
   };
 
   // Logout
@@ -147,10 +186,10 @@ export default function KitchenHomepage() {
         {visitedRooms.map((room, index) => (
           <TouchableOpacity
             key={index}
-            onPress={() => navigation.navigate('KitchenCollection', { roomName: room, username })}
+            onPress={() => quickJoin(room)}
             style={styles.quickJoinButton}
           >
-            <Text style={{ color: 'white', fontWeight: 'bold' }}>{room}</Text>
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>{room.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

@@ -11,6 +11,7 @@ const kitchenSchema = new mongoose.Schema({
       timestamp: { type: Date, default: Date.now },
     },
   ],
+  members: [{ type: String }], // ✅ store usernames that joined
 });
 
 kitchenSchema.pre("save", async function (next) {

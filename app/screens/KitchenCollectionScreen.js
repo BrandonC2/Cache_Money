@@ -11,26 +11,31 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import API_BASE from "../config/api";
 
-export default function KitchenCollection({ navigation }) {
+export default function KitchenCollection({ navigation, route }) {
   const [username, setUsername] = useState("");
   const [visitedRooms, setVisitedRooms] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(
+    route.params?.roomName || null
+  );
   const [roomItems, setRoomItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
+  // Reload items when screen gains focus
   useEffect(() => {
-  const unsubscribe = navigation.addListener('focus', () => {
-    if (selectedRoom) loadRoomItems(selectedRoom);
-  });
-  return unsubscribe;
-}, [navigation, selectedRoom]);
-  // Load user data and visited rooms
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (selectedRoom) loadRoomItems(selectedRoom);
+    });
+    return unsubscribe;
+  }, [navigation, selectedRoom]);
+
+  // Load username and visited rooms
   useEffect(() => {
     const loadData = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem("username");
-        const roomsStr = await AsyncStorage.getItem("visitedRooms");
         if (storedUsername) setUsername(storedUsername);
+
+        const roomsStr = await AsyncStorage.getItem("visitedRooms");
         if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
       } catch (e) {
         console.error("Failed to load data", e);
@@ -62,10 +67,9 @@ export default function KitchenCollection({ navigation }) {
   if (selectedRoom) {
     return (
       <View style={styles.container}>
-        <TouchableOpacity onPress={handleBack}>
-          <Text style={styles.backText}>← Back to Kitchens</Text>
-        </TouchableOpacity>
-
+        <TouchableOpacity onPress={() => navigation.navigate("KitchenHome")}>
+        <Text style={styles.backText}>← Return</Text>
+      </TouchableOpacity>
         <Text style={styles.header}>Items in {selectedRoom}</Text>
 
         {loading ? (
@@ -81,13 +85,23 @@ export default function KitchenCollection({ navigation }) {
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemInfo}>🍽 {item.foodGroup}</Text>
                 {item.expirationDate && (
-                  <Text style={styles.itemInfo}>
+                  <Text
+                    style={[
+                      styles.itemInfo,
+                      {
+                        color:
+                          new Date(item.expirationDate) < new Date()
+                            ? "#d81e1e"
+                            : "#000",
+                      },
+                    ]}
+                  >
                     ⏰ {new Date(item.expirationDate).toDateString()}
                   </Text>
                 )}
-                {item.description ? (
+                {item.description && (
                   <Text style={styles.itemDesc}>{item.description}</Text>
-                ) : null}
+                )}
               </View>
             )}
           />
@@ -95,14 +109,16 @@ export default function KitchenCollection({ navigation }) {
 
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate("ManualAdd", { roomName: selectedRoom })}
+          onPress={() =>
+            navigation.navigate("ManualAdd", { roomName: selectedRoom })
+          }
         >
           <Text style={styles.addText}>➕ Add Item</Text>
         </TouchableOpacity>
       </View>
     );
   }
-
+  /*
   // --- Otherwise, show list of kitchens ---
   return (
     <View style={styles.container}>
@@ -114,18 +130,19 @@ export default function KitchenCollection({ navigation }) {
 
       <FlatList
         data={visitedRooms}
-        keyExtractor={(item) => item}
+        keyExtractor={(item) => item.name} // Each item is {name, password}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => loadRoomItems(item)}
+            onPress={() => loadRoomItems(item.name)} // Always pass string
             style={styles.roomButton}
           >
-            <Text style={styles.roomText}>{item}</Text>
+            <Text style={styles.roomText}>{item.name}</Text>
           </TouchableOpacity>
         )}
       />
     </View>
   );
+  */
 }
 
 const styles = StyleSheet.create({

@@ -29,6 +29,9 @@ router.post("/add", async (req, res) => {
   }
 });
 
+// remove item
+
+
 router.get("/room/:roomName", async (req, res) => {
   try {
     const { roomName } = req.params;
@@ -44,5 +47,7 @@ router.get("/room/:roomName", async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
+
 
 module.exports = router;
