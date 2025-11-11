@@ -37,10 +37,10 @@ function NavigationBar() {
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
             position: 'absolute',
-            backgroundColor: '#e8f0e8ff',
+            backgroundColor: '#E5EBC8',
             // bottom: 20, 
         },
-        tabBarActiveTintColor: '#16e716ff',
+        tabBarActiveTintColor: '#4D693A',
         tabBarInactiveTintColor: '#000000ff',  
       }}
       >

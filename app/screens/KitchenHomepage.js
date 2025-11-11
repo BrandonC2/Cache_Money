@@ -63,7 +63,7 @@ export default function KitchenHomepage() {
       return;
     }
     try {
-      const res = await axios.post(`${API_BASE}/kitchens/create`, {
+      const res = await axios.post(`${API_BASE}/api/kitchens/create`, {
         name: kitchenName,
         password
       });
@@ -83,7 +83,7 @@ export default function KitchenHomepage() {
       return;
     }
     try {
-      const res = await axios.post(`${API_BASE}/kitchens/join`, {
+      const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
         name: kitchenName,
         password
       });
