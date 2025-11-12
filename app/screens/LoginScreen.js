@@ -31,8 +31,8 @@ export default function LoginScreen({navigation}) {
       try {
         const token = await AsyncStorage.getItem('authToken');
         if (token) {
-          console.log('User already logged in, navigating to KitchenHome');
-          navigation.replace('KitchenHome'); // replace so user can’t go “back” to login
+          console.log('User already logged in, navigating to MainNavBar');
+          navigation.replace('MainNavBar'); // replace so user can't go "back" to login
         }
       } catch (error) {
         console.error('Error checking login status:', error);
@@ -83,7 +83,8 @@ export default function LoginScreen({navigation}) {
           await AsyncStorage.setItem('username', nameToSave);
           console.log('Saved username:', nameToSave);
         }
-          navigation.navigate('KitchenHome');
+        // Navigate to main tab navigation after successful login
+        navigation.replace('MainNavBar');
         } else {
           setError('No token received from server');
         }

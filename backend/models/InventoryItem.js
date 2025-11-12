@@ -2,16 +2,22 @@ const mongoose = require('mongoose');
 
 const inventorySchema = new mongoose.Schema({
 
-  // user: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'User',
-  //   required: true,
-  // },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+
+  room: {
+    type: String,
+    required: true, // Room name for scoping items
+  },
 
   name: { type: String, required: true },
   description: { type: String },
+  foodGroup: { type: String, default: 'Other' }, // Protein, Grain, Dairy, Fruit, Vegetable, Spice
   quantity: { type: Number, default: 1 },
-  expiresAt: { type: Date },
+  expirationDate: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 

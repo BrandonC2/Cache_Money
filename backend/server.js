@@ -30,11 +30,13 @@ mongoose
 const userRoutes = require("./routes/userRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const kitchenRoutes = require("./routes/kitchenRoutes");
+const receiptRoutes = require("./routes/receiptRoutes");
 
 // ✅ Mount routes
 app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/kitchens", kitchenRoutes);
+app.use("/api/receipts", receiptRoutes);
 
 // ✅ Health check
 app.get("/health", (req, res) =>
@@ -110,5 +112,5 @@ app.use((err, req, res, next) => {
 });
 
 // --- START SERVER --- //
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -21,6 +21,8 @@ import UpcomingScreen from './app/screens/UpcomingScreen';
 import RecipeMaker from './app/screens/RecipeMakerScreen';
 import GroceryListScreen from './app/screens/GroceryListScreen';
 import CameraScreen from './app/screens/CameraScreen';
+import ReceiptReviewScreen from './app/screens/ReceiptReviewScreen';
+import SettingsScreen from './app/screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,16 +34,21 @@ function NavigationBar() {
       screenOptions ={{
         
         tabBarStyle: {
-            height: 80,
+            height: 65,
         
-            borderTopLeftRadius: 30,
-            borderTopRightRadius: 30,
-            position: 'absolute',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
             backgroundColor: '#E5EBC8',
-            // bottom: 20, 
+            borderTopWidth: 1,
+            borderTopColor: '#ddd',
+            paddingBottom: 8,
         },
         tabBarActiveTintColor: '#4D693A',
-        tabBarInactiveTintColor: '#000000ff',  
+        tabBarInactiveTintColor: '#999999',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          marginBottom: 4,
+        },
       }}
       >
       <Tab.Screen name ='Pantry' component = {KitchenHomepage} options={{
@@ -159,7 +166,8 @@ export default function App() {
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
-
+      <Stack.Screen name = "ReceiptReview" component ={ReceiptReviewScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "Settings" component ={SettingsScreen} options={{ headerShown: false }}/>
 
     </Stack.Navigator>
 

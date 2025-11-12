@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const bcryptjs = require('bcryptjs');
 const router = express.Router();
 
 // for now we have:
@@ -42,6 +43,107 @@ router.post('/signup', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     const safeUser = { id: user._id, username: user.username, email: user.email };
     res.status(201).json({ token, user: safeUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/users/profile (protected)
+// Get current user profile
+router.get('/profile', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/profile/username (protected)
+// Change username
+router.put('/profile/username', auth, async (req, res) => {
+  try {
+    const { newUsername } = req.body;
+
+    if (!newUsername || newUsername.trim().length < 3) {
+      return res.status(400).json({ message: 'Username must be at least 3 characters' });
+    }
+
+    // Check if username already exists
+    const existing = await User.findOne({ username: newUsername });
+    if (existing) {
+      return res.status(409).json({ message: 'Username already taken' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { username: newUsername },
+      { new: true }
+    ).select('-password');
+
+    res.json({ ok: true, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/profile/password (protected)
+// Change password
+router.put('/profile/password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Verify current password
+    const isValid = await user.comparePassword(currentPassword);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ ok: true, message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/users/profile/delete (protected)
+// Delete account (requires password confirmation)
+router.post('/profile/delete', auth, async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required to delete account' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Verify password
+    const isValid = await user.comparePassword(password);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Password is incorrect' });
+    }
+
+    // Delete user
+    await User.findByIdAndDelete(req.userId);
+
+    res.json({ ok: true, message: 'Account deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
