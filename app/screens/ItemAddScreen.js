@@ -43,7 +43,14 @@ export default function AddScreen({ navigation }) {
 
   try {
     const username = await AsyncStorage.getItem("username");
-    const roomName = await AsyncStorage.getItem("lastRoom");
+    // Prefer per-user lastRoom key, fallback to global lastRoom for compatibility
+    let roomName = null;
+    if (username) {
+      roomName = await AsyncStorage.getItem(`lastRoom_${username}`);
+    }
+    if (!roomName) {
+      roomName = await AsyncStorage.getItem("lastRoom");
+    }
 
     console.log(`📦 ItemAddScreen.addItem()`);
     console.log(`   username: ${username}`);

@@ -3,6 +3,13 @@ const router = express.Router();
 const util = require("util");
 const InventoryItem = require("../models/InventoryItem");
 const auth = require("../middleware/auth");
+const Kitchen = require("../models/Kitchen");
+const User = require("../models/User");
+
+// Helper to escape user input for regex
+function escapeRegExp(string) {
+  return String(string).replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+}
 
 // TEST ENDPOINT: GET /api/inventory/test/mongo-query
 router.get("/test/mongo-query", auth, async (req, res) => {
@@ -102,40 +109,45 @@ router.get("/", auth, async (req, res) => {
     }
 
     const trimmedRoom = room.trim();
+    // Normalize room by resolving the Kitchen record (case-insensitive)
+    const kitchen = await Kitchen.findOne({ name: { $regex: `^${escapeRegExp(trimmedRoom)}$`, $options: 'i' } });
+    if (!kitchen) {
+      console.error(`❌ POST /inventory: Room not found: "${trimmedRoom}"`);
+      return res.status(400).json({ message: 'Room not found' });
+    }
+    const normalizedRoomName = kitchen.name;
     console.log(`\n📦 GET /inventory REQUEST`);
     console.log(`   userId: ${req.userId} (type: ${typeof req.userId}, constructor: ${req.userId?.constructor?.name})`);
     console.log(`   room param: "${room}"`);
     console.log(`   trimmedRoom: "${trimmedRoom}"`);
     
-    // Query for items that belong to this user AND this specific room
-    const query = { userId: req.userId, room: trimmedRoom };
-    console.log(`   MongoDB query: userId="${req.userId}", room="${trimmedRoom}"`);
-    console.log(`   Query object keys: ${Object.keys(query).join(', ')}`);
-    console.log(`   Query object: ${JSON.stringify(query, null, 2)}`);
-    
-    const items = await InventoryItem.find(query).sort({
-      createdAt: -1,
-    });
-    
-    // Log the actual MongoDB command
-    console.log(`\n   🔍 DEBUGGING QUERY:`);
-    console.log(`      MongoDB query object: { userId: ObjectId("${req.userId}"), room: "${trimmedRoom}" }`);
-    console.log(`      Items found: ${items.length}`);
-    
-    if (items.length === 0) {
-      // If no items found, check ALL items for this user
-      const allItems = await InventoryItem.find({ userId: req.userId });
-      console.log(`\n   ⚠️ NO ITEMS MATCHED QUERY! Total items for user: ${allItems.length}`);
-      console.log(`   All items in DB:`);
-      allItems.forEach((item, idx) => {
-        console.log(`      [${idx}] name="${item.name}", room="${item.room}"`);
-      });
-    } else {
-      console.log(`   Items that matched the query:`);
-      items.forEach((item, idx) => {
-        console.log(`      [${idx}] name="${item.name}", room="${item.room}", room type: ${typeof item.room}`);
-      });
+    // Ensure the kitchen exists and the user is a member (kitchen already resolved above)
+
+    // Membership check: kitchen.members stores usernames (strings). Resolve current user's username.
+    let currentUsername = null;
+    try {
+      const user = await User.findById(req.userId);
+      if (user && user.username) currentUsername = user.username;
+    } catch (e) {
+      console.error('Error resolving user for membership check:', e);
     }
+
+    const memberMatch =
+      (currentUsername && kitchen.members.includes(currentUsername)) ||
+      kitchen.members.includes(String(req.userId)) ||
+      kitchen.members.includes(req.userId);
+    if (!memberMatch) {
+      console.log(`   User ${req.userId} (username=${currentUsername}) is not listed as a member of kitchen "${kitchen.name}"`);
+      // Still allow reads to support legacy behavior. If you prefer to enforce membership strictly, uncomment the line below.
+      // return res.status(403).json({ message: 'Forbidden: not a member of this room' });
+    }
+
+  // Query for items that belong to this room (shared across members)
+  const query = { room: { $regex: `^${escapeRegExp(kitchen.name)}$`, $options: 'i' } };
+  console.log(`   MongoDB query: room (case-insensitive) matching "${kitchen.name}"`);
+  console.log(`   Query object: ${JSON.stringify(query, null, 2)}`);
+
+  const items = await InventoryItem.find(query).sort({ createdAt: -1 });
     
     console.log(`✅ Query returned ${items.length} items for room: "${trimmedRoom}"`);
     if (items.length > 0) {
@@ -179,6 +191,14 @@ router.post("/", auth, async (req, res) => {
     }
 
     const trimmedRoom = room.trim();
+    // Resolve canonical kitchen name for consistency
+    const kitchen = await Kitchen.findOne({ name: { $regex: `^${escapeRegExp(trimmedRoom)}$`, $options: 'i' } });
+    if (!kitchen) {
+      console.error(`❌ POST /inventory: Room not found: "${trimmedRoom}"`);
+      return res.status(400).json({ message: 'Room not found' });
+    }
+    const normalizedRoomName = kitchen.name;
+
     console.log(`   Extracted fields:`);
     console.log(`      name: "${name}"`);
     console.log(`      room: "${room}"`);
@@ -188,7 +208,7 @@ router.post("/", auth, async (req, res) => {
 
     const item = new InventoryItem({
       userId: req.userId,
-      room: trimmedRoom,
+      room: normalizedRoomName,
       name: name.trim(),
       description,
       foodGroup: foodGroup || "Other",

@@ -32,18 +32,19 @@ export default function KitchenHomepage() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // Load username and visited rooms
+  // Load username and visited rooms (per-user)
   useEffect(() => {
     const loadData = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem('username');
-        if (storedUsername) setUsername(storedUsername);
-        const roomsStr = await AsyncStorage.getItem('visitedRooms');
-        if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
+        if (storedUsername) {
+          setUsername(storedUsername);
+          const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
+          if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
+          else setVisitedRooms([]);
+        }
       } catch (e) {
-        // console.error('Failed to load data', e);
         Alert.alert('Error','Failed to load data: ' + e.message);
-        
       }
     };
     loadData();
@@ -52,17 +53,17 @@ export default function KitchenHomepage() {
   // Save visited room with password
   const saveVisitedRoom = async (room, password) => {
     try {
-      const roomsStr = await AsyncStorage.getItem('visitedRooms');
+      const currentUsername = username || (await AsyncStorage.getItem('username'));
+      const key = `visitedRooms_${currentUsername}`;
+      const roomsStr = await AsyncStorage.getItem(key);
       let rooms = roomsStr ? JSON.parse(roomsStr) : [];
-
       const existing = rooms.find(r => r.name === room);
       if (!existing) {
         rooms.push({ name: room, password });
-        await AsyncStorage.setItem('visitedRooms', JSON.stringify(rooms));
+        await AsyncStorage.setItem(key, JSON.stringify(rooms));
         setVisitedRooms(rooms);
       }
     } catch (e) {
-      // console.error('Failed to save visited room', e);
       Alert.alert('Error','Failed to save visited room: ' + e.message);
     }
   };
@@ -184,14 +185,15 @@ export default function KitchenHomepage() {
       Alert.alert('Error', 'Room name cannot be empty');
       return;
     }
-
+    const currentUsername = username || (await AsyncStorage.getItem('username'));
+    const key = `visitedRooms_${currentUsername}`;
     const updatedRooms = [...visitedRooms];
     updatedRooms[editingRoomIndex] = {
       name: editRoomName.trim(),
       password: editRoomPassword.trim(),
     };
     setVisitedRooms(updatedRooms);
-    await AsyncStorage.setItem('visitedRooms', JSON.stringify(updatedRooms));
+    await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
     setShowEditModal(false);
     Alert.alert('Success', 'Room updated');
   };
@@ -206,9 +208,11 @@ export default function KitchenHomepage() {
         {
           text: 'Delete',
           onPress: async () => {
+            const currentUsername = username || (await AsyncStorage.getItem('username'));
+            const key = `visitedRooms_${currentUsername}`;
             const updatedRooms = visitedRooms.filter((_, i) => i !== index);
             setVisitedRooms(updatedRooms);
-            await AsyncStorage.setItem('visitedRooms', JSON.stringify(updatedRooms));
+            await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
             Alert.alert('Success', 'Room deleted');
           },
           style: 'destructive',
@@ -240,6 +244,7 @@ export default function KitchenHomepage() {
           placeholder="Room name"
           value={kitchenName}
           onChangeText={setKitchenName}
+          autoCapitalize="none"
           style={styles.input}
         />
       <View style={styles.line} />
@@ -248,6 +253,7 @@ export default function KitchenHomepage() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
           style={styles.input}
         />
       <View style={styles.line} />
@@ -307,6 +313,7 @@ export default function KitchenHomepage() {
             <TextInput
               value={editRoomName}
               onChangeText={setEditRoomName}
+              autoCapitalize="none"
               style={styles.modalInput}
               placeholder="Enter new room name"
             />
@@ -315,6 +322,7 @@ export default function KitchenHomepage() {
             <TextInput
               value={editRoomPassword}
               onChangeText={setEditRoomPassword}
+              autoCapitalize="none"
               style={styles.modalInput}
               placeholder="Enter new password"
               secureTextEntry

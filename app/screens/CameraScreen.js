@@ -63,8 +63,15 @@ export default function CameraScreen({ navigation }) {
         return;
       }
 
-      // Get the room name from AsyncStorage
-      const roomName = await AsyncStorage.getItem("lastRoom");
+      // Get the room name from AsyncStorage (per-user preferred)
+      let roomName = null;
+      try {
+        const username = await AsyncStorage.getItem('username');
+        if (username) roomName = await AsyncStorage.getItem(`lastRoom_${username}`);
+      } catch (e) {
+        console.error('Error reading per-user lastRoom:', e);
+      }
+      if (!roomName) roomName = await AsyncStorage.getItem("lastRoom");
 
       // NOTE: Real OCR integration is pending. Instead of showing a mock
       // auto-generated list, we pass the captured photo URI to the review
@@ -84,8 +91,15 @@ export default function CameraScreen({ navigation }) {
   };
 
   const handleManualEntry = async () => {
-    // Get the room name from AsyncStorage for manual entry too
-    const roomName = await AsyncStorage.getItem("lastRoom");
+    // Get the room name from AsyncStorage for manual entry too (per-user preferred)
+    let roomName = null;
+    try {
+      const username = await AsyncStorage.getItem('username');
+      if (username) roomName = await AsyncStorage.getItem(`lastRoom_${username}`);
+    } catch (e) {
+      console.error('Error reading per-user lastRoom:', e);
+    }
+    if (!roomName) roomName = await AsyncStorage.getItem("lastRoom");
     navigation.navigate("ReceiptReview", {
       photoUri: null,
       rawText: "",

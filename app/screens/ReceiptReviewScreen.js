@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import apiClient from "../lib/apiClient";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * ReceiptReviewScreen: Review and edit receipt items before importing to inventory
@@ -22,7 +23,10 @@ import apiClient from "../lib/apiClient";
  * - Clicking save uploads to backend and imports to inventory
  */
 export default function ReceiptReviewScreen({ route, navigation }) {
-  const { photoUri, rawText, roomName } = route.params || {};
+  const { photoUri, rawText } = route.params || {};
+  // roomName may be passed from Camera or Kitchen screens; if not, read from AsyncStorage (per-user lastRoom)
+  const passedRoomName = route.params?.roomName;
+  const [roomNameState, setRoomNameState] = useState(passedRoomName || null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,6 +53,26 @@ export default function ReceiptReviewScreen({ route, navigation }) {
       headerBackTitle: "Back",
     });
   }, [navigation]);
+
+  // Resolve room name: prefer route param, then per-user lastRoom, then global lastRoom
+  useEffect(() => {
+    const resolveRoom = async () => {
+      if (passedRoomName && passedRoomName.trim()) {
+        setRoomNameState(passedRoomName.trim());
+        return;
+      }
+      try {
+        const username = await AsyncStorage.getItem('username');
+        let rn = null;
+        if (username) rn = await AsyncStorage.getItem(`lastRoom_${username}`);
+        if (!rn) rn = await AsyncStorage.getItem('lastRoom');
+        if (rn) setRoomNameState(rn);
+      } catch (e) {
+        console.error('Error resolving roomName in ReceiptReview:', e);
+      }
+    };
+    resolveRoom();
+  }, [passedRoomName]);
 
   // Upload receipt to backend
   useEffect(() => {
@@ -122,14 +146,14 @@ export default function ReceiptReviewScreen({ route, navigation }) {
       // Update receipt with edited items (add room name to each item)
       const itemsWithRoom = items.map(item => ({
         ...item,
-        room: roomName || "Default"
+        room: roomNameState || "Default"
       }));
       
       await apiClient.put(`/receipts/${receiptId}`, { items: itemsWithRoom });
 
       // Import to inventory
       const importResponse = await apiClient.post(`/receipts/${receiptId}/import`, {
-        room: roomName || "Default"
+        room: roomNameState || "Default"
       });
 
       if (importResponse.data.ok) {

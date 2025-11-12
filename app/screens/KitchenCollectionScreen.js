@@ -204,15 +204,16 @@ export default function KitchenCollection({ navigation, route }) {
     }
   }, [selectedRoom]);
 
-  // Load username and visited rooms
+  // Load username and visited rooms (per-user)
   useEffect(() => {
     const loadData = async () => {
       try {
         const storedUsername = await AsyncStorage.getItem("username");
-        if (storedUsername) setUsername(storedUsername);
-
-        const roomsStr = await AsyncStorage.getItem("visitedRooms");
-        if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
+        if (storedUsername) {
+          setUsername(storedUsername);
+          const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
+          if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
+        }
       } catch (e) {
         console.error("Failed to load data", e);
       }
@@ -225,9 +226,18 @@ export default function KitchenCollection({ navigation, route }) {
     console.log(`🔄 loadRoomItems called with roomName: "${roomName}"`);
     setLoading(true);
     try {
-      // Save lastRoom to AsyncStorage for ItemAddScreen
-      await AsyncStorage.setItem("lastRoom", roomName);
-      console.log(`📝 Saved lastRoom to AsyncStorage: "${roomName}"`);
+      // Save lastRoom to AsyncStorage for ItemAddScreen (per-user + global fallback)
+      try {
+        if (username) {
+          await AsyncStorage.setItem(`lastRoom_${username}`, roomName);
+          console.log(`📝 Saved lastRoom_${username} to AsyncStorage: "${roomName}"`);
+        }
+        // Also write global key for backward compatibility
+        await AsyncStorage.setItem('lastRoom', roomName);
+        console.log(`📝 Saved lastRoom (global) to AsyncStorage: "${roomName}"`);
+      } catch (e) {
+        console.error('Error saving lastRoom to AsyncStorage:', e);
+      }
       // Backend now returns user's inventory items scoped by room
       const url = `/inventory?room=${encodeURIComponent(roomName)}`;
       console.log(`🌐 Fetching from: ${url}`);
