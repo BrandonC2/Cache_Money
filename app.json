@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "LetMeCook",
-    "slug": "LetMeCook",
+    "name": "Cache",
+    "slug": "Cache",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/ye.png",
+    "icon": "./app/assets/cache_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./app/assets/ye.png",
+      "image": "./app/assets/cache_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./app/assets/ye.png",
+        "foregroundImage": "./app/assets/cache_logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
