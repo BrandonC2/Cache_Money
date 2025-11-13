@@ -18,85 +18,139 @@ import Animated, {
 
 export default function AboutScreen({ navigation }) {
 
-  const rotate = useSharedValue(0);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${rotate.value}deg` }],
-    };
-  });
-
-  useEffect(() => {
-    rotate.value = withRepeat(
-      withTiming(360, {
-        duration: 2000,
-        easing: Easing.linear,
-      }),
-      -1, // infinite
-      false
-    );
-  }, []);
-
   return (
-    <ImageBackground
-      style={styles.background}
-      source={require("../assets/fridge_image.jpg")}
-    >
-      <View style={styles.topContainer}>
+    <View style = {styles.background}>
+      <View style = {styles.shape_containter}>
+        <View style={styles.rectangle}>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => navigation.navigate("Login")}
+            >
+              <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
 
-      <Image
-        style = {styles.logo}
-        source = {require('../assets/Just_Icon.png')}
-        >
-      </Image>
-        {/* <Animated.Image
-          source={require("../assets/ye.png")}
-          style={[styles.logo, animatedStyle]} // 👈 apply animation here
-        /> */}
-        <Image
-          style = {styles.titleImage}
-          source = {require("../assets/cooking_crazy_4u_p.png")}/>
-    
-        {/* <Text style={styles.title}>Cache Money Made</Text> */}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => navigation.navigate("Registration")}
+            >
+              <Text style={styles.buttonText}>Sign-Up</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => navigation.navigate("MainNavBar")}
+            >
+              <Text style={styles.buttonText}>Homepage</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-
-      {/* <Text style={styles.description}>Cooking Crazy 4 U</Text> */}
-
-
-      {/* Container for the bottom buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Login")}
-        >
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("Registration")}
-        >
-          <Text style={styles.buttonText}>Sign-Up</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("MainNavBar")}
-        >
-          <Text style={styles.buttonText}>Homepage</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+    </View>
   );
 }
+  // const rotate = useSharedValue(0);
+
+  // const animatedStyle = useAnimatedStyle(() => {
+  //   return {
+  //     transform: [{ rotate: `${rotate.value}deg` }],
+  //   };
+  // });
+
+  // useEffect(() => {
+  //   rotate.value = withRepeat(
+  //     withTiming(360, {
+  //       duration: 2000,
+  //       easing: Easing.linear,
+  //     }),
+  //     -1, // infinite
+  //     false
+  //   );
+  // }, []);
+
+//   return (
+//     <ImageBackground
+//       style={styles.background}
+//       source={require("../assets/fridge_image.jpg")}
+//     >
+//       <View style={styles.topContainer}>
+
+//       <Image
+//         style = {styles.logo}
+//         source = {require('../assets/Just_Icon.png')}
+//         >
+//       </Image>
+//         {/* <Animated.Image
+//           source={require("../assets/ye.png")}
+//           style={[styles.logo, animatedStyle]} // 👈 apply animation here
+//         /> */}
+//         <Image
+//           style = {styles.titleImage}
+//           source = {require("../assets/cooking_crazy_4u_p.png")}/>
+    
+//         {/* <Text style={styles.title}>Cache Money Made</Text> */}
+//       </View>
+
+//       {/* <Text style={styles.description}>Cooking Crazy 4 U</Text> */}
+
+
+//       {/* Container for the bottom buttons */}
+//       <View style={styles.buttonContainer}>
+//         <TouchableOpacity
+//           style={styles.button}
+//           onPress={() => navigation.navigate("Login")}
+//         >
+//           <Text style={styles.buttonText}>Login</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={styles.button}
+//           onPress={() => navigation.navigate("Registration")}
+//         >
+//           <Text style={styles.buttonText}>Sign-Up</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={styles.button}
+//           onPress={() => navigation.navigate("MainNavBar")}
+//         >
+//           <Text style={styles.buttonText}>Homepage</Text>
+//         </TouchableOpacity>
+//       </View>
+//     </ImageBackground>
+//   );
+// }
 
 const styles = StyleSheet.create({
   background: {
+    backgroundColor: '#E2D8AC',
     flex: 1,
     // distributes everything vertically with space between the sections
-    justifyContent: "space-around",
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+  },
+  shape_containter: {
+    height: 400,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // margin: 10,
+  },
+  rectangle: {
+    // top: '50%',
+    width: '100%',
+    height: 400,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2ECD5',
+    borderRadius: 30,
+    // shadow for ios users
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    // shadow for android users
+    elevation: 8,
   },
   // holds the logo and title
   topContainer: {
@@ -115,8 +169,8 @@ const styles = StyleSheet.create({
     top: "38%",
   },
   buttonContainer: {
-    width: "95%",
-    alignItems: 'center',
+    width: "90%",
+    // alignItems: 'center',
   },
   button: {
     width: '100%',
@@ -126,7 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 19,
     marginBottom: 18,
-    bottom: "15%",
     // shadow for ios users
     shadowColor: 'black',
     shadowOffset: {width: 0, height: 4},
