@@ -14,6 +14,8 @@ import SplashScreen from './app/screens/TransitionScreen';
 import KitchenCollection from './app/screens/KitchenCollectionScreen';
 import KitchenScreen from './app/screens/KitchenScreen';
 import AddScreen from './app/screens/ItemAddScreen';
+import 'react-native-reanimated';
+
 
 //Currently not the main thing we are focusing on, 
 // I just them here to get the nav bar working
@@ -23,6 +25,7 @@ import GroceryListScreen from './app/screens/GroceryListScreen';
 import CameraScreen from './app/screens/CameraScreen';
 import ReceiptReviewScreen from './app/screens/ReceiptReviewScreen';
 import SettingsScreen from './app/screens/SettingsScreen';
+import GroceryList from './app/screens/GroceryList';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -102,7 +105,7 @@ function NavigationBar() {
       }} 
       
       />
-      <Tab.Screen name = 'Grocery' component = {GroceryListScreen}options={{
+      <Tab.Screen name = 'Grocery' component = {GroceryList}options={{
         tabBarIcon:({focused}) => (
           <View>
             <Image 
