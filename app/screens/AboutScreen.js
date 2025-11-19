@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Image,
+  Platform,
 } from "react-native";
 
 import Animated, {
@@ -19,9 +20,44 @@ import Animated, {
 export default function AboutScreen({ navigation }) {
 
   return (
-    <View style = {styles.background}>
-      <View style = {styles.shape_containter}>
-        <View style={styles.rectangle}>
+    <View style = {styles.mainContainer}>
+      <View style = {styles.logoArea}>
+        <Image source = {require('../assets/cloud.png')} style = {styles.logoBase}/>
+        <Image source = {require('../assets/basket.png')} style = {styles.logoOverlay}/>
+      </View>
+      <View style = {styles.bottomContainer}>
+        <Image source={require('../assets/crossiant.png')} style = {styles.sillyCrossaint}/>
+        <Image source={require('../assets/orange.png')} style = {styles.sillyOrange}/>
+        <Text style = {styles.phraseText}>
+          Your easy way to keep{'\n'}track of groceries!
+        </Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("Login")}
+        >
+        <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("Registration")}
+        >
+          <Text style={styles.buttonText}>Sign-Up</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate("MainNavBar")}
+        >
+          <Text style={styles.buttonText}>Homepage</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+{/* <View style={styles.rectangle}>
+          <Text style = {styles.phraseText}>Your easy way to keep track of groceries!</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.button}
@@ -44,11 +80,8 @@ export default function AboutScreen({ navigation }) {
               <Text style={styles.buttonText}>Homepage</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
-    </View>
-  );
-}
+        </View> */}
+
   // const rotate = useSharedValue(0);
 
   // const animatedStyle = useAnimatedStyle(() => {
@@ -122,75 +155,132 @@ export default function AboutScreen({ navigation }) {
 // }
 
 const styles = StyleSheet.create({
-  background: {
-    backgroundColor: '#E2D8AC',
+  mainContainer: {
     flex: 1,
-    // distributes everything vertically with space between the sections
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#E2D8AC',
   },
-  shape_containter: {
-    height: 400,
-    width: '100%',
-    alignItems: 'center',
+  // top half of the screen, where logo will be
+  logoArea: {
+    flex: 1,
     justifyContent: 'center',
-    // margin: 10,
-  },
-  rectangle: {
-    // top: '50%',
-    width: '100%',
-    height: 400,
     alignItems: 'center',
+  },
+  logoContainer: {
+    width: 250,
+    height: 250,
     justifyContent: 'center',
-    backgroundColor: '#F2ECD5',
-    borderRadius: 30,
-    // shadow for ios users
-    shadowColor: 'black',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    // shadow for android users
-    elevation: 8,
-  },
-  // holds the logo and title
-  topContainer: {
     alignItems: 'center',
+    position: 'relative',
   },
-  titleImage: {
-    width: 350,
-    height: 350,
+  logoBase: {
+    width: '60%',
+    height: '60%',
     resizeMode: 'contain',
-    top: '15%',
   },
-  logo: {
-    width: 200,
-    height: 200,
-    resizeMode: "contain",
-    top: "38%",
+  logoOverlay: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
-  buttonContainer: {
-    width: "90%",
-    // alignItems: 'center',
+  // bottom half of the screen, where buttons and text will be
+  bottomContainer: {
+    flex: 1.2,
+    backgroundColor: '#F2ECD5',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 30,
+    width: '100%',
+        ...Platform.select({
+      ios: {
+        // shadow for ios users
+        shadowColor: 'black',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  sillyOrange: {
+    position: 'absolute',
+    top: -60,
+    right: 20,
+    width: 115,
+    height: 115,
+    resizeMode: 'contain',
+    transform: [{scaleX: -1}],
+    // doesnt work for images ig :/
+    ...Platform.select({
+      ios: {
+        // shadow for ios users
+        shadowColor: 'black',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  sillyCrossaint: {
+    position: 'absolute',
+    top: -50,
+    left: 20,
+    width: 115,
+    height: 115,
+    resizeMode: 'contain',
+    transform: [{rotate: '-15deg'}],
+    // doesnt work for images ig :/
+    ...Platform.select({
+      ios: {
+        // shadow for ios users
+        shadowColor: 'black',
+        shadowOffset: {width: 9, height: 4},
+        shadowOpacity: 0.8,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   button: {
-    width: '100%',
+    width: '90%',
     height: 67,
     backgroundColor: "#4D693A",
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 19,
     marginBottom: 18,
-    // shadow for ios users
-    shadowColor: 'black',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    // shadow for android users
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        // shadow for ios users
+        shadowColor: 'black',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   buttonText: {
     fontSize: 20,
     color: '#FFF9FF'
-  }
-
-});
+  },
+  phraseText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#785D49',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+})
