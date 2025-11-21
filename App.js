@@ -151,6 +151,7 @@ export default function App() {
   - Registration: User can Sign up for an account (CRUD implementation for storage still needed)
   - Login: User can Sign in to their account (CRUD implementation for storage still needed)
   */
+  
   return(
   <NavigationContainer>
 
@@ -173,7 +174,7 @@ export default function App() {
       <Stack.Screen name = "Settings" component ={SettingsScreen} options={{ headerShown: false }}/>
 
     </Stack.Navigator>
-
   </NavigationContainer>
+
   );
 }

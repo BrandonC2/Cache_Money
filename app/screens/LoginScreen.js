@@ -96,93 +96,37 @@ export default function LoginScreen({navigation}) {
     }
   }
   return (
-    <ImageBackground
-      style={styles.background}
-      // source={require("../assets/IMG_1.jpg")}
-    >
-      <View style={styles.logoContainer}>
-        <Image source={require("../assets/Just_Icon.png")} style={styles.logo} />
-        {/* <Text style={styles.title}>Cache Money Made</Text> */}
+    <View style = {styles.mainContainer}>
+      <View style = {styles.logoArea}>
+        <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
       </View>
-
-      <View style={styles.infoContainer}>
-        {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
-        
-        {/* Title text */}
-        <Text style ={{fontSize: 30, color: "black", position:'relative', right:140,}}>Login</Text>
-        <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
-
-         {/* User Name Block */}
-    <View style={styles.inputContainer}>
-      <TextInput 
-        placeholder="Username" 
-        value={username} 
-        onChangeText={setUsername} 
-        autoCapitalize="none"
-        style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} 
-      />
+      <View style = {styles.informationSection}>
+        <Text>Bello</Text>
+      </View>
     </View>
-    <View style={[styles.line,{top: 33}]}></View>
-        {/* Password Block */}
-        <View style={styles.inputContainer}>
-            <TextInput 
-              placeholder="Password" 
-              value={password} 
-              onChangeText={setPassword}
-              autoCapitalize="none" 
-              secureTextEntry={true}
-              style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
-            />
-        </View>
-        <View style={[styles.line,{top: 63}]}></View>
-
-      {/* Forgot password block */}
-      <View style={styles.returnContainer}>
-          <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
-            <Text style ={{fontSize: 18, color: "black", position: 'relative', top: 15, left: 110}}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Login Block */}
-         <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
-            <Text style ={{fontSize: 18, color: "white"}}>{loading ? 'Logging in...' : 'Login'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Return Block */}
-        <View style={styles.returnContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
-            <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Sign up Link */}
-        <View style={styles.returnContainer}>
-          <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
-            <Text style ={{fontSize: 18, color: "#4D693A", position:'relative', top:10}}>Sign-Up</Text>
-          </TouchableOpacity>
-        </View>        
-        {error ? <Text style={{color:"red"}}>{error}</Text> : null}
-      </View>
-    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-
-  background: {
+  mainContainer: {
     flex: 1,
-    color: "white",
-    alignItems: "center",
+    backgroundColor: '#F2ECD5',
   },
-
-  infoContainer: {
+  // background: {
+  //   flex: 1,
+  //   color: "white",
+  //   alignItems: "center",
+  // },
+  logoArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // infoContainer: {
     
-    flex: 1,
-    alignItems: "center",
-  },
+  //   flex: 1,
+  //   alignItems: "center",
+  // },
 
   title: {
     fontSize: 24,
@@ -193,24 +137,27 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 100,
-    height: 100,
-    width: 200,
-    height: 200,
-    right: 10,
-    // marginTop: 100,
-    
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
-   logoContainer: {
+  informationSection: {
+    flex: 1.5,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 30,
+    width: '100%'
+  },
+  //  logoContainer: {
 
-    marginTop: 10,
+  //   marginTop: 10,
    
-    //flex: 1,
-    //marginHorizontal: 60,
-    //position: "absolute",
-    alignItems: "center",
-    flexDirection: "row",
-  },
+  //   //flex: 1,
+  //   //marginHorizontal: 60,
+  //   //position: "absolute",
+  //   alignItems: "center",
+  //   flexDirection: "row",
+  // },
 
   returnContainer: {
     marginTop: 50,
@@ -280,5 +227,77 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   }
   
-
 });
+
+  //   <ImageBackground
+  //     style={styles.background}
+  //     // source={require("../assets/IMG_1.jpg")}
+  //   >
+  //     <View style={styles.logoContainer}>
+  //       <Image source={require("../assets/basket.png")} style={styles.logo} />
+  //       {/* <Text style={styles.title}>Cache Money Made</Text> */}
+  //     </View>
+
+  //     <View style={styles.infoContainer}>
+  //       {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
+        
+  //       {/* Title text */}
+  //       <Text style ={{fontSize: 30, color: "black", position:'relative', right:140,}}>Login</Text>
+  //       <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
+
+  //        {/* User Name Block */}
+  //   <View style={styles.inputContainer}>
+  //     <TextInput 
+  //       placeholder="Username" 
+  //       value={username} 
+  //       onChangeText={setUsername} 
+  //       autoCapitalize="none"
+  //       style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} 
+  //     />
+  //   </View>
+  //   <View style={[styles.line,{top: 33}]}></View>
+  //       {/* Password Block */}
+  //       <View style={styles.inputContainer}>
+  //           <TextInput 
+  //             placeholder="Password" 
+  //             value={password} 
+  //             onChangeText={setPassword}
+  //             autoCapitalize="none" 
+  //             secureTextEntry={true}
+  //             style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
+  //           />
+  //       </View>
+  //       <View style={[styles.line,{top: 63}]}></View>
+
+  //     {/* Forgot password block */}
+  //     <View style={styles.returnContainer}>
+  //         <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
+  //           <Text style ={{fontSize: 18, color: "black", position: 'relative', top: 15, left: 110}}>Forgot Password?</Text>
+  //         </TouchableOpacity>
+  //       </View>
+
+  //       {/* Login Block */}
+  //        <View style={styles.returnContainer}>
+  //         <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
+  //           <Text style ={{fontSize: 18, color: "white"}}>{loading ? 'Logging in...' : 'Login'}</Text>
+  //         </TouchableOpacity>
+  //       </View>
+
+  //       {/* Return Block */}
+  //       <View style={styles.returnContainer}>
+  //         <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
+  //           <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
+  //         </TouchableOpacity>
+  //       </View>
+
+  //       {/* Sign up Link */}
+  //       <View style={styles.returnContainer}>
+  //         <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
+  //         <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
+  //           <Text style ={{fontSize: 18, color: "#4D693A", position:'relative', top:10}}>Sign-Up</Text>
+  //         </TouchableOpacity>
+  //       </View>        
+  //       {error ? <Text style={{color:"red"}}>{error}</Text> : null}
+  //     </View>
+  //   </ImageBackground>
+  // );
