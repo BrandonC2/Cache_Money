@@ -7,6 +7,7 @@ import {
   Image,
   Text,
   TextInput,
+  Platform,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE from '../config/api';
@@ -147,7 +148,7 @@ export default function LoginScreen({navigation}) {
                 </Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* Login Button */}
             <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
               <Text style={{fontSize: 18, fontFamily: 'alexandria_light', color: 'white'}}>
@@ -184,16 +185,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   informationSection: {
-    flex: 2,
+    flex: 2.2,
     alignItems: 'center',
-    justifyContent: 'space-evenly',
-    // paddingVertical: 0,
+    justifyContent: 'flex-start',
     width: '100%',
-    // backgroundColor: 'white', // change this later
   },
   infoContainer: {
-    textAlign: 'right',
-    flex: 1,
     width: '85%'
   },
   title: {
@@ -209,32 +206,28 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   returnContainer: {
-    // marginTop: 50,
-    // alignItems: "center",
-    // flexWrap: "wrap",
-    //flex: 1,
     paddingTop: 15,
-    marginHorizontal: 209,
-    width: '85%'
+    alignItems: 'flex-end',
+    width: '100%'
   },
   signUp: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
+    paddingTop: 25,
+    width: '100%'
   },
   inputContainer: {
     marginTop: 40,
+    width: '100%'
   },
   backButton: {
-      //opacity: 0,
       //Position (higher the value further from the margin)
-      position: 'relative',
-      top: 20,
+      marginTop: 30,
       //Button dimensions
-      width: 364,
+      width: '100%',
       height: 67,
-      borderRadius: 10,
+      borderRadius: 19,
       borderWidth: 3,
       //colors
       backgroundColor: "#4D693A",
@@ -243,22 +236,38 @@ const styles = StyleSheet.create({
       //text settings
       alignItems: "center",
       justifyContent: 'center',
-      fontFamily: "sans-serif",
+      fontFamily: "alexandria_light",
       fontSize: 20,
       //shadow settings
-      shadowColor: '#070707ff',
-      shadowOffset: {width: 3, height:4},
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 8,
+    ...Platform.select({
+          ios: {
+            // shadow for ios users
+            shadowColor: 'black',
+            shadowOffset: {width: 0, height: 4},
+            shadowOpacity: 0.25,
+            shadowRadius: 3,
+          },
+          android: {
+            elevation: 3,
+          },
+        }),
     },
-
   input: {
       backgroundColor: "transparent",
       fontFamily: "alexandria_light",
       fontSize: 18,
       borderBottomColor: '#E2D8AC',
       borderBottomWidth: 1,
+      paddingVertical: 10,
+      width: '100%'
     },
-  
+  sillyBlueberry: {
+    top: 245,
+    left: -15,
+    width: 125,
+    height: 125,
+    position: 'absolute',
+    resizeMode: 'contain',
+    transform: [{scaleX: -1}],
+  },
 });
