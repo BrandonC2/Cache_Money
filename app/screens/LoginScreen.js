@@ -101,7 +101,73 @@ export default function LoginScreen({navigation}) {
         <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
       </View>
       <View style = {styles.informationSection}>
-        <Text>Bello</Text>
+        <View style = {styles.infoContainer}>
+
+          {/* Error Handling */}
+          {error ? <Text style={{fontFamily: 'alexandria_regular', color:'red', marginBottom: 10}}>{error}</Text> : null}
+
+          {/* Title Text */}
+          <Text style = {{fontSize: 30, fontFamily: 'alexandria_light', color: 'black', position: 'relative',}}>
+            Log In
+          </Text>
+          <Text style = {{fontSize: 16, fontFamily: 'alexandria_light', color: 'grey', position: 'relative',}}>
+            Enter your username and password
+          </Text>
+
+          {/* Username Entry */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              placeholder="Username"
+              value = {username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
+
+            />
+          </View>
+
+          {/* Password Entry */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              placeholder="Password"
+              value = {password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+              secureTextEntry={true}
+              style={[styles.input, {borderColor: error ? "red" : "#ccc",}]}
+              underlineColorAndroid='transparent'
+            />
+          </View>
+
+          {/* Forgot Password */}
+          <View style={styles.returnContainer}>
+            <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
+                <Text style ={{fontFamily: 'alexandria_regular', fontSize: 16, color: "#4D693A"}}>
+                  Forgot Password?
+                </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Login Button */}
+            <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
+              <Text style={{fontSize: 18, fontFamily: 'alexandria_light', color: 'white'}}>
+                {loading ? 'Logging In...' : 'Login'}
+              </Text>
+            </TouchableOpacity>
+          
+          {/* If a user doesn't have an account */}
+          <View style={styles.signUp}>
+            <Text style = {{fontSize: 16, fontFamily: 'alexandria_light', color: 'black'}}>
+              Don't have an account?{' '}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
+              <Text style={{fontFamily: 'alexandria_light', fontSize: 16, color: "#4D693A"}}>
+                Sign Up
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -112,22 +178,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2ECD5',
   },
-  // background: {
-  //   flex: 1,
-  //   color: "white",
-  //   alignItems: "center",
-  // },
   logoArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // infoContainer: {
-    
-  //   flex: 1,
-  //   alignItems: "center",
-  // },
-
+  informationSection: {
+    flex: 2,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    // paddingVertical: 0,
+    width: '100%',
+    // backgroundColor: 'white', // change this later
+  },
+  infoContainer: {
+    textAlign: 'right',
+    flex: 1,
+    width: '85%'
+  },
   title: {
     fontSize: 24,
     marginVertical: 20,
@@ -135,46 +203,29 @@ const styles = StyleSheet.create({
     color: "white",
     right: 20,
   },
-
   logo: {
     width: 140,
     height: 140,
     resizeMode: 'contain',
   },
-  informationSection: {
-    flex: 1.5,
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    paddingVertical: 30,
-    width: '100%'
-  },
-  //  logoContainer: {
-
-  //   marginTop: 10,
-   
-  //   //flex: 1,
-  //   //marginHorizontal: 60,
-  //   //position: "absolute",
-  //   alignItems: "center",
-  //   flexDirection: "row",
-  // },
-
   returnContainer: {
-    marginTop: 50,
-    alignItems: "center",
-    flexWrap: "wrap",
+    // marginTop: 50,
+    // alignItems: "center",
+    // flexWrap: "wrap",
     //flex: 1,
-    //marginHorizontal: 100,
+    paddingTop: 15,
+    marginHorizontal: 209,
+    width: '85%'
   },
-
+  signUp: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
   inputContainer: {
-    //marginTop: 50,
-    position: 'relative',
-    top: 80,
-    alignItems: "center",
-    flexDirection: "row",
+    marginTop: 40,
   },
-
   backButton: {
       //opacity: 0,
       //Position (higher the value further from the margin)
@@ -203,101 +254,11 @@ const styles = StyleSheet.create({
     },
 
   input: {
-      height: 60,
-      width: 350,
-      borderRadius: 15,
-      borderWidth: 0,
-      textShadowColor: "#121111ff",
-      marginVertical: 8,
-      //paddingHorizontal: 10,
       backgroundColor: "transparent",
-      borderColor: "#fff",
-      color: "#161515ff",
-      fontFamily: "sans-serif",
-      fontSize: 24,
+      fontFamily: "alexandria_light",
+      fontSize: 18,
+      borderBottomColor: '#E2D8AC',
+      borderBottomWidth: 1,
     },
-  line: {
-    position: 'relative',
-    top: 55,
-    width: 364,
-    height: 1.5,
-    backgroundColor: '#E2E2E2',
-    // marginLeft: 5,
-    // margineRight: 10,
-    marginVertical: 8,
-  }
   
 });
-
-  //   <ImageBackground
-  //     style={styles.background}
-  //     // source={require("../assets/IMG_1.jpg")}
-  //   >
-  //     <View style={styles.logoContainer}>
-  //       <Image source={require("../assets/basket.png")} style={styles.logo} />
-  //       {/* <Text style={styles.title}>Cache Money Made</Text> */}
-  //     </View>
-
-  //     <View style={styles.infoContainer}>
-  //       {error ? <Text style={{color:"red", flex:1 }}>{error}</Text> : null}
-        
-  //       {/* Title text */}
-  //       <Text style ={{fontSize: 30, color: "black", position:'relative', right:140,}}>Login</Text>
-  //       <Text style ={{fontSize: 15, color: "black", position:'relative', right:71.6,}}>Enter your email and password</Text>
-
-  //        {/* User Name Block */}
-  //   <View style={styles.inputContainer}>
-  //     <TextInput 
-  //       placeholder="Username" 
-  //       value={username} 
-  //       onChangeText={setUsername} 
-  //       autoCapitalize="none"
-  //       style={ [styles.input, {borderColor: error ? "red" : "#ccc",position:'relative', top:-30}]} 
-  //     />
-  //   </View>
-  //   <View style={[styles.line,{top: 33}]}></View>
-  //       {/* Password Block */}
-  //       <View style={styles.inputContainer}>
-  //           <TextInput 
-  //             placeholder="Password" 
-  //             value={password} 
-  //             onChangeText={setPassword}
-  //             autoCapitalize="none" 
-  //             secureTextEntry={true}
-  //             style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
-  //           />
-  //       </View>
-  //       <View style={[styles.line,{top: 63}]}></View>
-
-  //     {/* Forgot password block */}
-  //     <View style={styles.returnContainer}>
-  //         <TouchableOpacity onPress={() => alert("Does Nothing for now")}>
-  //           <Text style ={{fontSize: 18, color: "black", position: 'relative', top: 15, left: 110}}>Forgot Password?</Text>
-  //         </TouchableOpacity>
-  //       </View>
-
-  //       {/* Login Block */}
-  //        <View style={styles.returnContainer}>
-  //         <TouchableOpacity style={styles.backButton} onPress={handleLogin} disabled={loading}>
-  //           <Text style ={{fontSize: 18, color: "white"}}>{loading ? 'Logging in...' : 'Login'}</Text>
-  //         </TouchableOpacity>
-  //       </View>
-
-  //       {/* Return Block */}
-  //       <View style={styles.returnContainer}>
-  //         <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("About")}>
-  //           <Text style ={{fontSize: 18, color: "white"}}>Return</Text>
-  //         </TouchableOpacity>
-  //       </View>
-
-  //       {/* Sign up Link */}
-  //       <View style={styles.returnContainer}>
-  //         <Text style ={{fontSize: 18, color: "#00000",position:'relative', top:10}}>Don't have an account? </Text>
-  //         <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
-  //           <Text style ={{fontSize: 18, color: "#4D693A", position:'relative', top:10}}>Sign-Up</Text>
-  //         </TouchableOpacity>
-  //       </View>        
-  //       {error ? <Text style={{color:"red"}}>{error}</Text> : null}
-  //     </View>
-  //   </ImageBackground>
-  // );
