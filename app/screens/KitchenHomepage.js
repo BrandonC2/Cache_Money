@@ -224,7 +224,7 @@ export default function KitchenHomepage() {
   return (
     <ImageBackground 
         style={styles.background}
-        source={require("../assets/grid_paper.png")}
+        source={require("../assets/grid_paper.jpg")}
     >
       {/* Settings button - Top right corner */}
       <TouchableOpacity 

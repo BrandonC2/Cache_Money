@@ -30,7 +30,7 @@ return (
       
        <ImageBackground 
             style={styles.background}
-            source={require("../assets/grid_paper.png")}
+            source={require("../assets/grid_paper.jpg")}
         >
         <View style = {styles.logoArea}>
           <Image source = {require('../assets/basket.png')} style = {styles.logo}/>

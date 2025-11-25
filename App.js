@@ -37,17 +37,17 @@ function NavigationBar() {
       screenOptions ={{
         
         tabBarStyle: {
-            height: 65,
+            height: 80,
         
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            backgroundColor: '#E5EBC8',
+            backgroundColor: '#E2D8AC',
             borderTopWidth: 1,
             borderTopColor: '#ddd',
             paddingBottom: 8,
         },
-        tabBarActiveTintColor: '#4D693A',
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: '#785D49',
+        tabBarInactiveTintColor: '#785D49',
         tabBarLabelStyle: {
           fontSize: 11,
           marginBottom: 4,
