@@ -61,7 +61,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Pantry_B_Icon.png')}
+              source ={require('./app/assets/pantry_new_icon.png')}
               style={{
                 width:25,
                 height:25,
@@ -75,11 +75,11 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Glass_Icon.png')}
+              source ={require('./app/assets/upcoming_new_icon.png')}
           
               style={{
-                width:25,
-                height:25,
+                width:30,
+                height:20,
               }}
             />
 
@@ -109,7 +109,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Grocery_Icon.png')}
+              source ={require('./app/assets/grocery_new_icon.png')}
              
               style={{
                 width:20,
@@ -128,7 +128,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Recipe_Icon.png')}
+              source ={require('./app/assets/recipe_new_icon.png')}
               
               style={{
                 width:25,
