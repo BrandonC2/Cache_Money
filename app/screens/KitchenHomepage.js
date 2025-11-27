@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import { 
+  Image,
   ImageBackground, 
   StyleSheet, 
   TouchableOpacity, 
@@ -226,6 +227,9 @@ export default function KitchenHomepage() {
         style={styles.background}
         source={require("../assets/grid_paper.jpg")}
     >
+      <View style = {styles.logoArea}>
+        <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+      </View>
       {/* Settings button - Top right corner */}
       <TouchableOpacity 
         style={styles.settingsButtonTopRight} 
@@ -234,9 +238,7 @@ export default function KitchenHomepage() {
         <Ionicons name="settings" size={28} color="#4D693A" />
       </TouchableOpacity>
 
-      <Text style={styles.title}>
-        {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
-      </Text>
+      
       <View style={styles.Box}>
       {/* Create/Join Room Inputs */}
       <View style={styles.inputContainer}>
@@ -258,12 +260,14 @@ export default function KitchenHomepage() {
         />
       <View style={styles.line} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          {/* <View style={styles.buttonContainer}> */}
           <TouchableOpacity style={styles.button} onPress={createRoom}>
-            <Text style={styles.buttonText}>Create Room</Text>
+            <Text style={styles.buttonText}>Create</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={joinRoom}>
-            <Text style={styles.buttonText}>Join Room</Text>
+            <Text style={styles.buttonText}>Join</Text>
           </TouchableOpacity>
+          {/* </View> */}
         </View>
       </View>
       <View style={[styles.line, {left: 1, bottom: 0}]} />
@@ -287,9 +291,9 @@ export default function KitchenHomepage() {
                 >
                   <View style={styles.quickJoinContent}>
                     <Text style={styles.quickJoinText}>{room.name}</Text>
-                    <Text style={styles.quickJoinSubtext}>Tap to quick join</Text>
+                    {/* <Text style={styles.quickJoinSubtext}>Tap to quick join</Text> */}
                   </View>
-                  <Text style={styles.quickJoinArrow}>→</Text>
+                  {/* <Text style={styles.quickJoinArrow}>→</Text> */}
                 </TouchableOpacity>
               </View>
             ))}
@@ -345,6 +349,9 @@ export default function KitchenHomepage() {
           </View>
         </View>
       </Modal>
+      <Text style={styles.usernamePrint}>
+        {username ? `${username}` : 'Cooking Crazy 4 U'}
+      </Text>
     </ImageBackground>
   );
 }
@@ -365,6 +372,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: { fontSize: 30, fontWeight: '600', color: '#333', marginBottom: 20 },
+  usernamePrint:  { fontSize: 10, fontWeight: '600', color: '#333', marginBottom:0.1 },
   inputContainer: { width: '100%',paddingHorizontal: 20, },
   input: {
     borderWidth: 1,
@@ -376,13 +384,46 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   button: {
-    flex: 1,
+    // flex: 1,
+    // backgroundColor: '#4D693A',
+    // padding: 12,
+    // borderRadius: 8,
+    // marginHorizontal: 5,
+    // alignItems: 'center',
+    // borderRadius: 20,
+    
+    // height: 32,
+    // width: 10,
+    // Size
+    width: 101,   
+    height: 32,  
+    
+    
     backgroundColor: '#4D693A',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 5,
-    alignItems: 'center'
+    borderRadius: 20,
+    
+    
+    alignItems: 'center',
+    justifyContent: 'center',
+    
+   
+   
+
   },
+  // buttonContainer: {
+  //   // Layout
+  //   flexDirection: 'row',
+  //   justifyContent: 'center', // Centers the group of buttons
+  //   alignItems: 'center',
+  //   gap: 20, // The space between the two buttons
+    
+  //   // Size & Border
+  //   width: '100%',
+  //   paddingVertical: 5,
+  //   borderBottomWidth: 1,       // This creates the single line underneath
+  //   borderBottomColor: '#4A3B32',
+    
+  // },
   buttonText: { color: 'white', fontWeight: 'bold' },
   recentlyVisitedContainer: {
     flex: 1,
@@ -407,26 +448,26 @@ const styles = StyleSheet.create({
   },
   quickJoinButton: {
     padding: 14,
-    backgroundColor: '#fff',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
     borderRadius: 8,
     marginBottom: 10,
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    borderColor: '#4A3B32',
+  
   },
   quickJoinContent: {
     flex: 1,
   },
   quickJoinText: {
     color: '#333',
+    textAlign: 'center',
     fontWeight: '600',
     fontSize: 16,
+    alignItems: 'center',
   },
   quickJoinSubtext: {
     color: '#999',
@@ -439,17 +480,15 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   Box: {
-    flex: 1, 
-    width: '90%',
-    backgroundColor: 'transparent', 
-    borderWidth: 1, 
-    borderRadius: 15,
-    borderColor: "black",
-    paddingBottom: 5, 
-    marginBottom: 10,
+    flex: 1, // ✅ Expands to fill available space naturally
+  width: '90%',
+  borderWidth: 1.5,
+  borderColor: '#4A3B32',
+  overflow: 'hidden', // ✅ Ensures nothing spills out of the rounded corner
+    
   },
   line: {
-    width: 366,
+    width: '115%',
     backgroundColor: 'black',
     right: 19,
     marginVertical: 3,
@@ -545,4 +584,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  logo: {
+    width: 100,
+    height: 100,
+    top: -50,
+    resizeMode: 'contain',
+  },
+  // logoArea: {
+  //   flex: 1,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  
 });
