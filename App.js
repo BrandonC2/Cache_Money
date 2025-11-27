@@ -92,7 +92,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Camera_Icon.png')}
+              source ={require('./app/assets/camera_new_icon.png')}
              
               style={{
                 width:65,
