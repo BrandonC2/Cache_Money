@@ -259,8 +259,9 @@ export default function KitchenCollection({ navigation, route }) {
 
   // Go back to list of rooms
   const handleBack = () => {
-    setSelectedRoom(null);
-    setRoomItems([]);
+    // setSelectedRoom(null);
+    // setRoomItems([]);
+    navigation.goBack();
   };
 
   // --- If user has selected a room, show its items ---
