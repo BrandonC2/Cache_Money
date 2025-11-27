@@ -152,7 +152,7 @@ export default function KitchenHomepage() {
         username: username.trim(),
       });
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
       console.error('Quick join room error:', err.response?.data || err.message);
