@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
   },
   gridItemContainer: {
     flex: 1,          
-    maxWidth: '27%', 
+    maxWidth: '33.33%', 
     alignItems: 'center', 
     marginBottom: 20, 
   },
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   Box: {
-  flex: 1,             
+  // flex: 1,             
   width: '90%',        
   alignSelf: 'center', 
   borderWidth: 1.5,
