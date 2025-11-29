@@ -12,6 +12,7 @@ import {
   Alert,
   Modal
 } from "react-native";
+import { useFonts } from 'expo-font';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
@@ -68,6 +69,16 @@ export default function KitchenHomepage() {
       Alert.alert('Error','Failed to save visited room: ' + e.message);
     }
   };
+
+  const [fontsLoaded] = useFonts({
+    'alexandria_bold': require('../assets/fonts/alexandria_bold.ttf'),
+    'alexandria_regular': require('../assets/fonts/alexandria_regular.ttf'),
+    'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   // Create room
   const createRoom = async () => {
@@ -152,7 +163,7 @@ export default function KitchenHomepage() {
         username: username.trim(),
       });
 
-      // Alert.alert('Success', res.data.message);
+      Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
       console.error('Quick join room error:', err.response?.data || err.message);
@@ -243,7 +254,7 @@ export default function KitchenHomepage() {
       {/* Create/Join Room Inputs */}
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Room name"
+          placeholder="Room Name"
           value={kitchenName}
           onChangeText={setKitchenName}
           autoCapitalize="none"
@@ -259,7 +270,7 @@ export default function KitchenHomepage() {
           style={styles.input}
         />
       <View style={styles.line} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', margin: 3 }}>
           {/* <View style={styles.buttonContainer}> */}
           <TouchableOpacity style={styles.button} onPress={createRoom}>
             <Text style={styles.buttonText}>Create</Text>
@@ -372,15 +383,16 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: { fontSize: 30, fontWeight: '600', color: '#333', marginBottom: 20 },
-  usernamePrint:  { fontSize: 10, fontWeight: '600', color: '#333', marginBottom:0.1 },
-  inputContainer: { width: '100%',paddingHorizontal: 20, },
+  usernamePrint:  { fontFamily: "alexandria_regular", fontSize: 10, fontWeight: '600', color: '#333', marginBottom:0.1 },
+  inputContainer: { width: '100%', paddingHorizontal: 20, },
   input: {
+    fontFamily: "alexandria_regular",
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: 0,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 10,
+    paddingVertical: 10,
+    // marginBottom: 10,
     backgroundColor: 'transparent'
   },
   button: {
@@ -397,17 +409,10 @@ const styles = StyleSheet.create({
     // Size
     width: 101,   
     height: 32,  
-    
-    
     backgroundColor: '#4D693A',
     borderRadius: 20,
-    
-    
     alignItems: 'center',
     justifyContent: 'center',
-    
-   
-   
 
   },
   // buttonContainer: {
@@ -424,7 +429,7 @@ const styles = StyleSheet.create({
   //   borderBottomColor: '#4A3B32',
     
   // },
-  buttonText: { color: 'white', fontWeight: 'bold' },
+  buttonText: { color: 'white', fontFamily: "alexandria_bold"},
   recentlyVisitedContainer: {
     flex: 1,
     width: '100%',
@@ -432,8 +437,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   recentlyVisitedTitle: {
+    fontFamily: "alexandria_bold",
     fontSize: 18,
-    marginBottom: 12,
+    marginBottom: 10,
     fontWeight: '600',
     color: '#333',
   },
@@ -468,6 +474,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
     alignItems: 'center',
+    fontFamily: "alexandria_regular",
   },
   quickJoinSubtext: {
     color: '#999',
@@ -481,10 +488,10 @@ const styles = StyleSheet.create({
   },
   Box: {
     flex: 1, // ✅ Expands to fill available space naturally
-  width: '90%',
-  borderWidth: 1.5,
-  borderColor: '#4A3B32',
-  overflow: 'hidden', // ✅ Ensures nothing spills out of the rounded corner
+    width: '90%',
+    borderWidth: 1.5,
+    borderColor: '#4A3B32',
+    overflow: 'hidden', // ✅ Ensures nothing spills out of the rounded corner
     
   },
   line: {
@@ -587,13 +594,13 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    top: -50,
+    position: 'absolute',
     resizeMode: 'contain',
   },
-  // logoArea: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
+  logoArea: {
+    flex: 0.15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   
 });
