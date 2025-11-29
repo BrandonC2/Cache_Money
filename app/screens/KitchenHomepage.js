@@ -487,11 +487,11 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   Box: {
-    flex: 1, // ✅ Expands to fill available space naturally
-    width: '90%',
-    borderWidth: 1.5,
-    borderColor: '#4A3B32',
-    overflow: 'hidden', // ✅ Ensures nothing spills out of the rounded corner
+    flex: 1, 
+  width: '90%',
+  borderWidth: 1.5,
+  borderColor: '#4A3B32',
+  overflow: 'hidden', 
     
   },
   line: {
@@ -602,5 +602,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
   
 });
