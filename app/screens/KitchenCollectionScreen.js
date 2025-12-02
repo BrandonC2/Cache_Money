@@ -278,14 +278,14 @@ export default function KitchenCollection({ navigation, route }) {
       <View style={styles.container}>
         {/* Fixed header bar with Return button */}
         {/* <View style={styles.headerBar}> */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.returnButtonHeader}
             onPress={() => handleBack()}
-          >
+          > */}
             <TouchableOpacity onPress={() => handleBack()}>
             <Text style={styles.returnButtonHeaderText}>←</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
+          {/* </TouchableOpacity> */}
           <Text style={styles.headerBarTitle}>{selectedRoom}</Text>
           <TouchableOpacity
             style={styles.settingsButtonHeader}
@@ -627,12 +627,12 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerBarTitle: {
-    top: '-5%',
+    // top: '10000000%',
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
-    flex: 1,
+    // flex: 1,
   },
   centerContent: {
     flex: 1,
@@ -908,9 +908,9 @@ const styles = StyleSheet.create({
   borderWidth: 1.5,
   borderColor: '#4A3B32',
   overflow: 'hidden',
-  marginTop: 10,
-  marginBottom: 80,    
-  marginTop: -100,
+  // marginTop: 10,
+  marginBottom: 150,    
+  marginTop: -10,
 },
   line: {
     width: '115%',
