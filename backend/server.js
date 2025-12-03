@@ -19,10 +19,7 @@ app.use((req, res, next) => {
 
 // ✅ Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB successfully!"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -47,7 +44,7 @@ app.get("/health", (req, res) =>
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // for testing — restrict later if needed
+    origin: "*", // allow mobile devices on LAN
     methods: ["GET", "POST"],
   },
 });
@@ -58,12 +55,10 @@ const Kitchen = require("./models/Kitchen");
 io.on("connection", (socket) => {
   console.log("🟢 New client connected:", socket.id);
 
-  // When a user joins a kitchen (room)
   socket.on("joinRoom", async ({ roomName, username }) => {
     socket.join(roomName);
     console.log(`👤 ${username} joined room ${roomName}`);
 
-    // Load previous messages
     try {
       const kitchen = await Kitchen.findOne({ name: roomName });
       if (kitchen && kitchen.messages.length > 0) {
@@ -73,22 +68,18 @@ io.on("connection", (socket) => {
       console.error("Error loading messages:", err);
     }
 
-    // Notify others
     io.to(roomName).emit("message", {
       sender: "System",
       text: `${username} joined the room.`,
     });
   });
 
-  // Handle chat messages
   socket.on("chatMessage", async ({ roomName, sender, text }) => {
     const message = { sender, text, timestamp: new Date() };
     console.log(`💬 ${sender} -> ${roomName}: ${text}`);
 
-    // Send to everyone in the room
     io.to(roomName).emit("message", message);
 
-    // Save to DB
     try {
       await Kitchen.findOneAndUpdate(
         { name: roomName },
@@ -99,7 +90,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // When a user disconnects
   socket.on("disconnect", () => {
     console.log("🔴 Client disconnected:", socket.id);
   });
@@ -113,4 +103,10 @@ app.use((err, req, res, next) => {
 
 // --- START SERVER --- //
 const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// IMPORTANT: Bind to 0.0.0.0 so your phone can connect
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running and accessible on:`);
+  console.log(`   ▶ http://0.0.0.0:${PORT}`);
+  console.log(`   ▶ http://YOUR_LAN_IP:${PORT}   <-- Use this on your phone`);
+});

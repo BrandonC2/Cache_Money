@@ -31,7 +31,7 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
     },
-    items: [{ type: mongoose.Schema.Types.ObjectId, ref: "Item"}, { type: mongoose.Schema.Types.ObjectId, ref: "Spice"}],
+    items: [{ type: mongoose.Schema.Types.ObjectId, ref: "Item"}, { type: mongoose.Schema.Types.ObjectId, ref: "Spice"}, { type: mongoose.Schema.Types.ObjectId, ref: "Product"}],
 });
 
 module.exports = mongoose.model('Product', productSchema);

@@ -34,7 +34,19 @@ export default function KitchenHomepage() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // Load username and visited rooms (per-user)
+  /** -----------------------------
+   *  TOKEN HEADER BUILDER
+   *  ----------------------------- */
+  const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    };
+  };
+
+  // Load username + visited rooms
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -42,8 +54,7 @@ export default function KitchenHomepage() {
         if (storedUsername) {
           setUsername(storedUsername);
           const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
-          if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
-          else setVisitedRooms([]);
+          setVisitedRooms(roomsStr ? JSON.parse(roomsStr) : []);
         }
       } catch (e) {
         Alert.alert('Error','Failed to load data: ' + e.message);
@@ -52,7 +63,7 @@ export default function KitchenHomepage() {
     loadData();
   }, []);
 
-  // Save visited room with password
+  // Save visited room
   const saveVisitedRoom = async (room, password) => {
     try {
       const currentUsername = username || (await AsyncStorage.getItem('username'));
@@ -76,11 +87,11 @@ export default function KitchenHomepage() {
     'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
-  // Create room
+  /** --------------------------------------
+   *  CREATE ROOM (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const createRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
@@ -95,57 +106,69 @@ export default function KitchenHomepage() {
     }
 
     try {
-      const res = await axios.post(`${API_BASE}/api/kitchens/create`, {
-        name: trimmedName,
-        password: trimmedPassword,
-        createdBy: username,
-      });
+      const authHeaders = await getAuthHeaders();
+
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/create`,
+        {
+          name: trimmedName,
+          password: trimmedPassword,
+          createdBy: username,
+        },
+        authHeaders
+      );
 
       Alert.alert('Success', res.data.message);
 
-      // Save room with password
       await saveVisitedRoom(trimmedName, trimmedPassword);
 
-      // Autofill inputs so join works immediately
       setKitchenName(trimmedName);
       setPassword(trimmedPassword);
 
       navigation.navigate('KitchenCollection', { roomName: trimmedName, username });
     } catch (err) {
-      // console.error('Create room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
 
+  /** --------------------------------------
+   *  JOIN ROOM (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const joinRoom = async () => {
-  if (!username) {
-    Alert.alert('Error', 'User not loaded. Please log in again.');
-    return;
-  }
-  if (!kitchenName || !password) {
-    Alert.alert('Error', 'Please enter a room name and password');
-    return;
-  }
+    if (!username) {
+      Alert.alert('Error', 'User not loaded. Please log in again.');
+      return;
+    }
+    if (!kitchenName || !password) {
+      Alert.alert('Error', 'Please enter a room name and password');
+      return;
+    }
 
-  try {
-    const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
-      name: kitchenName.trim(),  // trim to match backend
-      password: password.trim(), // trim to match backend
-      username: username.trim(),
-    });
+    try {
+      const authHeaders = await getAuthHeaders();
 
-    Alert.alert('Success', res.data.message);
-    await saveVisitedRoom(kitchenName.trim(), password.trim());
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/join`,
+        {
+          name: kitchenName.trim(),
+          password: password.trim(),
+          username: username.trim(),
+        },
+        authHeaders
+      );
 
-    navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
-  } catch (err) {
-    console.error('Join room error:', err.response?.data || err.message);
-    Alert.alert('Error', err.response?.data?.message || err.message);
-  }
-};
+      Alert.alert('Success', res.data.message);
+      await saveVisitedRoom(kitchenName.trim(), password.trim());
 
+      navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    }
+  };
 
-  // Quick join using visited rooms
+  /** --------------------------------------
+   *  QUICK JOIN (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const quickJoin = async (room) => {
     if (!room.password) {
       Alert.alert('Error', 'No password stored for this room.');
@@ -157,33 +180,37 @@ export default function KitchenHomepage() {
     }
 
     try {
-      const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
-        name: room.name.trim(),
-        password: room.password.trim(),
-        username: username.trim(),
-      });
+      const authHeaders = await getAuthHeaders();
+
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/join`,
+        {
+          name: room.name.trim(),
+          password: room.password.trim(),
+          username: username.trim(),
+        },
+        authHeaders
+      );
 
       Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
-      console.error('Quick join room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
 
-  // Logout
+  /** LOGOUT */
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('username');
       navigation.navigate('Login');
     } catch (error) {
-      // console.error('Logout error:', error);
       Alert.alert('Error','Logout error: ' + error.message);
     }
   };
 
-  // Edit room: open modal and load room details
+  /** OPEN EDIT MODAL */
   const openEditRoomModal = (index) => {
     setEditingRoomIndex(index);
     setEditRoomName(visitedRooms[index].name);
@@ -191,7 +218,7 @@ export default function KitchenHomepage() {
     setShowEditModal(true);
   };
 
-  // Save room edits
+  /** SAVE ROOM EDITS */
   const saveRoomEdits = async () => {
     if (!editRoomName.trim()) {
       Alert.alert('Error', 'Room name cannot be empty');
@@ -210,13 +237,13 @@ export default function KitchenHomepage() {
     Alert.alert('Success', 'Room updated');
   };
 
-  // Delete room
+  /** DELETE ROOM */
   const deleteRoom = (index) => {
     Alert.alert(
       'Delete Room',
       `Are you sure you want to delete "${visitedRooms[index].name}"?`,
       [
-        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           onPress: async () => {
@@ -233,7 +260,7 @@ export default function KitchenHomepage() {
     );
   };
 
-  return (
+return (
     <ImageBackground 
         style={styles.background}
         source={require("../assets/grid_paper.jpg")}
@@ -605,3 +632,4 @@ const styles = StyleSheet.create({
   
   
 });
+
