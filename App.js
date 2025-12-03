@@ -37,17 +37,17 @@ function NavigationBar() {
       screenOptions ={{
         
         tabBarStyle: {
-            height: 65,
+            height: 80,
         
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            backgroundColor: '#E5EBC8',
+            backgroundColor: '#E2D8AC',
             borderTopWidth: 1,
             borderTopColor: '#ddd',
             paddingBottom: 8,
         },
-        tabBarActiveTintColor: '#4D693A',
-        tabBarInactiveTintColor: '#999999',
+        tabBarActiveTintColor: '#785D49',
+        tabBarInactiveTintColor: '#785D49',
         tabBarLabelStyle: {
           fontSize: 11,
           marginBottom: 4,
@@ -61,7 +61,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Pantry_B_Icon.png')}
+              source ={require('./app/assets/pantry_new_icon.png')}
               style={{
                 width:25,
                 height:25,
@@ -75,11 +75,11 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Glass_Icon.png')}
+              source ={require('./app/assets/upcoming_new_icon.png')}
           
               style={{
-                width:25,
-                height:25,
+                width:30,
+                height:20,
               }}
             />
 
@@ -92,7 +92,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Camera_Icon.png')}
+              source ={require('./app/assets/camera_new_icon.png')}
              
               style={{
                 width:65,
@@ -109,7 +109,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Grocery_Icon.png')}
+              source ={require('./app/assets/grocery_new_icon.png')}
              
               style={{
                 width:20,
@@ -128,7 +128,7 @@ function NavigationBar() {
         tabBarIcon:({focused}) => (
           <View>
             <Image 
-              source ={require('./app/assets/Recipe_Icon.png')}
+              source ={require('./app/assets/recipe_new_icon.png')}
               
               style={{
                 width:25,
@@ -151,6 +151,7 @@ export default function App() {
   - Registration: User can Sign up for an account (CRUD implementation for storage still needed)
   - Login: User can Sign in to their account (CRUD implementation for storage still needed)
   */
+  
   return(
   <NavigationContainer>
 
@@ -173,7 +174,7 @@ export default function App() {
       <Stack.Screen name = "Settings" component ={SettingsScreen} options={{ headerShown: false }}/>
 
     </Stack.Navigator>
-
   </NavigationContainer>
+
   );
 }

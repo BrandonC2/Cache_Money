@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import { 
+  Image,
   ImageBackground, 
   StyleSheet, 
   TouchableOpacity, 
@@ -11,6 +12,7 @@ import {
   Alert,
   Modal
 } from "react-native";
+import { useFonts } from 'expo-font';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
@@ -32,7 +34,19 @@ export default function KitchenHomepage() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // Load username and visited rooms (per-user)
+  /** -----------------------------
+   *  TOKEN HEADER BUILDER
+   *  ----------------------------- */
+  const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    };
+  };
+
+  // Load username + visited rooms
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -40,8 +54,7 @@ export default function KitchenHomepage() {
         if (storedUsername) {
           setUsername(storedUsername);
           const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
-          if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
-          else setVisitedRooms([]);
+          setVisitedRooms(roomsStr ? JSON.parse(roomsStr) : []);
         }
       } catch (e) {
         Alert.alert('Error','Failed to load data: ' + e.message);
@@ -50,7 +63,7 @@ export default function KitchenHomepage() {
     loadData();
   }, []);
 
-  // Save visited room with password
+  // Save visited room
   const saveVisitedRoom = async (room, password) => {
     try {
       const currentUsername = username || (await AsyncStorage.getItem('username'));
@@ -68,7 +81,17 @@ export default function KitchenHomepage() {
     }
   };
 
-  // Create room
+  const [fontsLoaded] = useFonts({
+    'alexandria_bold': require('../assets/fonts/alexandria_bold.ttf'),
+    'alexandria_regular': require('../assets/fonts/alexandria_regular.ttf'),
+    'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
+  });
+
+  if (!fontsLoaded) return null;
+
+  /** --------------------------------------
+   *  CREATE ROOM (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const createRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
@@ -83,57 +106,69 @@ export default function KitchenHomepage() {
     }
 
     try {
-      const res = await axios.post(`${API_BASE}/api/kitchens/create`, {
-        name: trimmedName,
-        password: trimmedPassword,
-        createdBy: username,
-      });
+      const authHeaders = await getAuthHeaders();
+
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/create`,
+        {
+          name: trimmedName,
+          password: trimmedPassword,
+          createdBy: username,
+        },
+        authHeaders
+      );
 
       Alert.alert('Success', res.data.message);
 
-      // Save room with password
       await saveVisitedRoom(trimmedName, trimmedPassword);
 
-      // Autofill inputs so join works immediately
       setKitchenName(trimmedName);
       setPassword(trimmedPassword);
 
       navigation.navigate('KitchenCollection', { roomName: trimmedName, username });
     } catch (err) {
-      // console.error('Create room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
 
+  /** --------------------------------------
+   *  JOIN ROOM (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const joinRoom = async () => {
-  if (!username) {
-    Alert.alert('Error', 'User not loaded. Please log in again.');
-    return;
-  }
-  if (!kitchenName || !password) {
-    Alert.alert('Error', 'Please enter a room name and password');
-    return;
-  }
+    if (!username) {
+      Alert.alert('Error', 'User not loaded. Please log in again.');
+      return;
+    }
+    if (!kitchenName || !password) {
+      Alert.alert('Error', 'Please enter a room name and password');
+      return;
+    }
 
-  try {
-    const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
-      name: kitchenName.trim(),  // trim to match backend
-      password: password.trim(), // trim to match backend
-      username: username.trim(),
-    });
+    try {
+      const authHeaders = await getAuthHeaders();
 
-    Alert.alert('Success', res.data.message);
-    await saveVisitedRoom(kitchenName.trim(), password.trim());
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/join`,
+        {
+          name: kitchenName.trim(),
+          password: password.trim(),
+          username: username.trim(),
+        },
+        authHeaders
+      );
 
-    navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
-  } catch (err) {
-    console.error('Join room error:', err.response?.data || err.message);
-    Alert.alert('Error', err.response?.data?.message || err.message);
-  }
-};
+      Alert.alert('Success', res.data.message);
+      await saveVisitedRoom(kitchenName.trim(), password.trim());
 
+      navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
+    } catch (err) {
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    }
+  };
 
-  // Quick join using visited rooms
+  /** --------------------------------------
+   *  QUICK JOIN (WITH TOKEN HEADERS)
+   *  -------------------------------------- */
   const quickJoin = async (room) => {
     if (!room.password) {
       Alert.alert('Error', 'No password stored for this room.');
@@ -145,33 +180,37 @@ export default function KitchenHomepage() {
     }
 
     try {
-      const res = await axios.post(`${API_BASE}/api/kitchens/join`, {
-        name: room.name.trim(),
-        password: room.password.trim(),
-        username: username.trim(),
-      });
+      const authHeaders = await getAuthHeaders();
+
+      const res = await axios.post(
+        `${API_BASE}/api/kitchens/join`,
+        {
+          name: room.name.trim(),
+          password: room.password.trim(),
+          username: username.trim(),
+        },
+        authHeaders
+      );
 
       Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
-      console.error('Quick join room error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || err.message);
     }
   };
 
-  // Logout
+  /** LOGOUT */
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('username');
       navigation.navigate('Login');
     } catch (error) {
-      // console.error('Logout error:', error);
       Alert.alert('Error','Logout error: ' + error.message);
     }
   };
 
-  // Edit room: open modal and load room details
+  /** OPEN EDIT MODAL */
   const openEditRoomModal = (index) => {
     setEditingRoomIndex(index);
     setEditRoomName(visitedRooms[index].name);
@@ -179,7 +218,7 @@ export default function KitchenHomepage() {
     setShowEditModal(true);
   };
 
-  // Save room edits
+  /** SAVE ROOM EDITS */
   const saveRoomEdits = async () => {
     if (!editRoomName.trim()) {
       Alert.alert('Error', 'Room name cannot be empty');
@@ -198,13 +237,13 @@ export default function KitchenHomepage() {
     Alert.alert('Success', 'Room updated');
   };
 
-  // Delete room
+  /** DELETE ROOM */
   const deleteRoom = (index) => {
     Alert.alert(
       'Delete Room',
       `Are you sure you want to delete "${visitedRooms[index].name}"?`,
       [
-        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           onPress: async () => {
@@ -221,11 +260,14 @@ export default function KitchenHomepage() {
     );
   };
 
-  return (
+return (
     <ImageBackground 
         style={styles.background}
-        source={require("../assets/grid_paper.png")}
+        source={require("../assets/grid_paper.jpg")}
     >
+      <View style = {styles.logoArea}>
+        <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+      </View>
       {/* Settings button - Top right corner */}
       <TouchableOpacity 
         style={styles.settingsButtonTopRight} 
@@ -234,14 +276,12 @@ export default function KitchenHomepage() {
         <Ionicons name="settings" size={28} color="#4D693A" />
       </TouchableOpacity>
 
-      <Text style={styles.title}>
-        {username ? `Welcome, ${username}!` : 'Cooking Crazy 4 U'}
-      </Text>
+      
       <View style={styles.Box}>
       {/* Create/Join Room Inputs */}
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Room name"
+          placeholder="Room Name"
           value={kitchenName}
           onChangeText={setKitchenName}
           autoCapitalize="none"
@@ -257,13 +297,15 @@ export default function KitchenHomepage() {
           style={styles.input}
         />
       <View style={styles.line} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', margin: 3 }}>
+          {/* <View style={styles.buttonContainer}> */}
           <TouchableOpacity style={styles.button} onPress={createRoom}>
-            <Text style={styles.buttonText}>Create Room</Text>
+            <Text style={styles.buttonText}>Create</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={joinRoom}>
-            <Text style={styles.buttonText}>Join Room</Text>
+            <Text style={styles.buttonText}>Join</Text>
           </TouchableOpacity>
+          {/* </View> */}
         </View>
       </View>
       <View style={[styles.line, {left: 1, bottom: 0}]} />
@@ -287,9 +329,9 @@ export default function KitchenHomepage() {
                 >
                   <View style={styles.quickJoinContent}>
                     <Text style={styles.quickJoinText}>{room.name}</Text>
-                    <Text style={styles.quickJoinSubtext}>Tap to quick join</Text>
+                    {/* <Text style={styles.quickJoinSubtext}>Tap to quick join</Text> */}
                   </View>
-                  <Text style={styles.quickJoinArrow}>→</Text>
+                  {/* <Text style={styles.quickJoinArrow}>→</Text> */}
                 </TouchableOpacity>
               </View>
             ))}
@@ -345,6 +387,9 @@ export default function KitchenHomepage() {
           </View>
         </View>
       </Modal>
+      <Text style={styles.usernamePrint}>
+        {username ? `${username}` : 'Cooking Crazy 4 U'}
+      </Text>
     </ImageBackground>
   );
 }
@@ -365,25 +410,53 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   title: { fontSize: 30, fontWeight: '600', color: '#333', marginBottom: 20 },
-  inputContainer: { width: '100%',paddingHorizontal: 20, },
+  usernamePrint:  { fontFamily: "alexandria_regular", fontSize: 10, fontWeight: '600', color: '#333', marginBottom:0.1 },
+  inputContainer: { width: '100%', paddingHorizontal: 20, },
   input: {
+    fontFamily: "alexandria_regular",
     borderWidth: 1,
     borderColor: 'transparent',
     borderRadius: 0,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 10,
+    paddingVertical: 10,
+    // marginBottom: 10,
     backgroundColor: 'transparent'
   },
   button: {
-    flex: 1,
+    // flex: 1,
+    // backgroundColor: '#4D693A',
+    // padding: 12,
+    // borderRadius: 8,
+    // marginHorizontal: 5,
+    // alignItems: 'center',
+    // borderRadius: 20,
+    
+    // height: 32,
+    // width: 10,
+    // Size
+    width: 101,   
+    height: 32,  
     backgroundColor: '#4D693A',
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 5,
-    alignItems: 'center'
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+
   },
-  buttonText: { color: 'white', fontWeight: 'bold' },
+  // buttonContainer: {
+  //   // Layout
+  //   flexDirection: 'row',
+  //   justifyContent: 'center', // Centers the group of buttons
+  //   alignItems: 'center',
+  //   gap: 20, // The space between the two buttons
+    
+  //   // Size & Border
+  //   width: '100%',
+  //   paddingVertical: 5,
+  //   borderBottomWidth: 1,       // This creates the single line underneath
+  //   borderBottomColor: '#4A3B32',
+    
+  // },
+  buttonText: { color: 'white', fontFamily: "alexandria_bold"},
   recentlyVisitedContainer: {
     flex: 1,
     width: '100%',
@@ -391,8 +464,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   recentlyVisitedTitle: {
+    fontFamily: "alexandria_bold",
     fontSize: 18,
-    marginBottom: 12,
+    marginBottom: 10,
     fontWeight: '600',
     color: '#333',
   },
@@ -407,26 +481,27 @@ const styles = StyleSheet.create({
   },
   quickJoinButton: {
     padding: 14,
-    backgroundColor: '#fff',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
     borderRadius: 8,
     marginBottom: 10,
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
+    borderColor: '#4A3B32',
+  
   },
   quickJoinContent: {
     flex: 1,
   },
   quickJoinText: {
     color: '#333',
+    textAlign: 'center',
     fontWeight: '600',
     fontSize: 16,
+    alignItems: 'center',
+    fontFamily: "alexandria_regular",
   },
   quickJoinSubtext: {
     color: '#999',
@@ -440,16 +515,14 @@ const styles = StyleSheet.create({
   },
   Box: {
     flex: 1, 
-    width: '90%',
-    backgroundColor: 'transparent', 
-    borderWidth: 1, 
-    borderRadius: 15,
-    borderColor: "black",
-    paddingBottom: 5, 
-    marginBottom: 10,
+  width: '90%',
+  borderWidth: 1.5,
+  borderColor: '#4A3B32',
+  overflow: 'hidden', 
+    
   },
   line: {
-    width: 366,
+    width: '115%',
     backgroundColor: 'black',
     right: 19,
     marginVertical: 3,
@@ -545,4 +618,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
+  logo: {
+    width: 100,
+    height: 100,
+    position: 'absolute',
+    resizeMode: 'contain',
+  },
+  logoArea: {
+    flex: 0.15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  
 });
+
