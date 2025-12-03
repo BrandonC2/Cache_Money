@@ -5,6 +5,10 @@ const mongoose = require("mongoose");
 const http = require("http");
 const { Server } = require("socket.io");
 
+//To start server
+// cd backend
+// npm run dev
+
 // Express app setup
 const app = express();
 app.use(cors());
