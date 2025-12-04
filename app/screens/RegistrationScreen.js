@@ -7,6 +7,7 @@ import {
   Image,
   Text,
   TextInput,
+  Platform,
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE from '../config/api';
@@ -105,173 +106,111 @@ export default function RegistrationScreen({ navigation }) {
     setError(msg);
     }
   };
+
+  // START HERE!!!!!!
+  
   return (
-      <ImageBackground
-        style={styles.background}
-        // source={require("../assets/IMG_1.jpg")}
-      >
-        <View style={styles.logoContainer}>
-          <Image source={require("../assets/Just_Icon.png")} style={styles.logo} />
-          {/* <Text style={styles.title}>Cache Money Made</Text> */}
+    <View style = {styles.mainContainer}>
+      <View style = {styles.logoArea}>
+        <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+      </View>
+      <View style = {styles.informationSection}>
+        <View style = {styles.infoContainer}>
+
+          {/* Error Handling */}
+          {error ? <Text style={{fontFamily: 'alexandria_regular', color:'red', marginBottom: 10}}>{error}</Text> : null}
+
+          {/* Title Text */}
+          <Text style = {{fontSize: 30, fontFamily: 'alexandria_light', color: 'black', position: 'relative',}}>
+            Sign Up
+          </Text>
+          <Text style = {{fontSize: 16, fontFamily: 'alexandria_light', color: 'grey', position: 'relative',}}>
+            Enter your credentials to continue
+          </Text>
+
+          {/* Username Entry */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              placeholder="Username"
+              value = {username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
+            />
+          </View>
+
+          {/* Email Entry */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              placeholder="Email"
+              value = {email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}
+            />
+          </View>
+
+          {/* Password Entry */}
+          <View style={styles.inputContainer}>
+            <TextInput 
+              placeholder="Password"
+              value = {password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+              secureTextEntry={true}
+              style={[styles.input, {borderColor: error ? "red" : "#ccc",}]}
+              underlineColorAndroid='transparent'
+            />
+          </View>
+
+          <Text style={{paddingTop: 10, fontSize: 14, fontFamily: 'alexandria_light', color: 'grey', position: 'relative',}}>
+            By continuing you agree to our Terms of Service and Privacy Policy.
+          </Text>
+
+          {/* Sign Up Button */}
+            <TouchableOpacity style={styles.backButton} onPress={handleSignUp} disabled={loading}>
+              <Text style={{fontSize: 18, fontFamily: 'alexandria_light', color: 'white'}}>
+                {loading ? 'Signing Up...' : 'Sign Up'}
+              </Text>
+            </TouchableOpacity>
+          
+          {/* If a user already has an account */}
+          <View style={styles.signUp}>
+            <Text style = {{fontSize: 16, fontFamily: 'alexandria_light', color: 'black'}}>
+              Already have an account?{' '}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <Text style={{fontFamily: 'alexandria_light', fontSize: 16, color: "#4D693A"}}>
+                Sign In
+              </Text>
+            </TouchableOpacity>
+
+          </View>
         </View>
-
-        {/* Title text */}
-        <View style={styles.infoContainer}>
-                  <Text style ={{fontSize: 30, color: "black", right:'32%',}}>Sign Up</Text>
-                  <Text style ={{fontSize: 15, color: "black", right:'11.5%',}}>Get started by entering your information</Text>
-        
-         {/* User Name Block */}
-          <View style={styles.inputContainer}>
-              <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
-              </TextInput>
-          </View>
-        <View style={[styles.line]}></View>
-
-         {/* Emmail Block */}
-          <View style={styles.inputContainer}>
-              <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
-              </TextInput>
-          </View>
-          <View style={[styles.line]}></View>
-
-         {/* Password Block */}
-          <View style={styles.inputContainer}>
-            <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
-            </TextInput>
-          </View>
-        <View style={[styles.line]}></View>
-
-     
-
-        </View>
-        {error ? <Text style={{color:"red", fontFamily: "sans-serif", fontSize: 20, }}>{error}</Text> : null}
-
-       {/*Sign up Block */}
-        <View style={styles.infoContainer}>
-          <View style={styles.returnContainer}>
-              <TouchableOpacity style={[styles.backButton,{top:'50%'}]} onPress={handleSignUp} disabled={loading}>
-                <Text style ={{fontSize: 24, color: "white"}}>{loading ? 'Signing up...' : 'Sign-Up'}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* <View style={styles.returnContainer}>
-              <TouchableOpacity style={[styles.backButton,{position:'relative', top:50}]} onPress={() => navigation.navigate("About")}>
-                <Text style ={{fontSize: 24, color: "white"}}>Back</Text>
-              </TouchableOpacity>
-            </View> */}
-
-           {/* Login touchable link */}
-            <View style={styles.returnContainer}>
-              <Text style ={{fontSize: 18, color: "#00000",top:'35%'}}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style ={{fontSize:  18, color: "#4D693A",top:'71%'}}>Login</Text>
-              </TouchableOpacity>
-            </View>
-            
-          </View>
-
-      </ImageBackground>
-    );
-  }
-  
-//   const styles = StyleSheet.create({
-//     background: {
-//       flex: 1,
-//       alignItems: "center",
-//     },
-//     infoContainer: {
-//       flex: 1,
-//       alignItems: "center",
-//       marginBottom: 50,
-//     },
-//     title: {
-//       fontSize: 24,
-//       marginVertical: 20,
-//       fontWeight: "bold",
-//       color: "black",
-//       right: 20,
-//     },
-  
-//     logo: {
-//       width: 100,
-//       height: 100,
-//       right: 20
-//       //marginTop: 100,
-//     },
-//     icons: {
-//       width: 50,
-//       height: 30,
-//       right: 20
-//       //marginTop: 100,
-//     },
-//      logoContainer: {
-//       flex: 1,
-//       //marginHorizontal: 60,
-//       //position: "absolute",
-//       alignItems: "center",
-//       flexDirection: "row",
-//     },
-  
-//     returnContainer: {
-//       marginTop: 20,
-//       alignItems: "center",
-//       flexWrap: "wrap",
-//       //flex: 1,
-//       //marginHorizontal: 100,
-//     },
-  
-//     inputContainer: {
-//       //marginTop: 50,
-//       alignItems: "center",
-//       flexDirection: "row",
-//       justifyContent: 'center',
-//     },
-  
-//     backButton: {
-//       //opacity: 0,
-//       width: 200,
-//       height: 40,
-//       borderRadius: 15,
-//       borderWidth: 3,
-//       backgroundColor: "#989ce3ff",
-//       alignItems: "center",
-//       justifyContent: 'center',
-//       borderColor: "#fff",
-//       color: "#161515ff",
-//       fontFamily: "sans-serif",
-//       fontSize: 20,
-//     },
-//    input: {
-//       height: 60,
-//       width: 350,
-//       borderRadius: 15,
-//       borderWidth: 3,
-//       textShadowColor: "#121111ff",
-//       marginVertical: 8,
-//       //paddingHorizontal: 10,
-//       backgroundColor: "transparent",
-//       borderColor: "#fff",
-//       color: "#161515ff",
-//       fontFamily: "sans-serif",
-//       fontSize: 24,
-//     },
-// });
-
+      </View>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-
-  background: {
+  mainContainer: {
     flex: 1,
-    color: "white",
-    alignItems: "center",
+    backgroundColor: '#F2ECD5',
   },
-
+  logoArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  informationSection: {
+    flex: 2.2,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+  },
   infoContainer: {
-    
-    flex: 1,
-    alignItems: "center",
+    width: '85%'
   },
-
   title: {
     fontSize: 24,
     marginVertical: 20,
@@ -279,52 +218,34 @@ const styles = StyleSheet.create({
     color: "white",
     right: 20,
   },
-
   logo: {
-    width: 100,
-    height: 100,
-    width: 200,
-    height: 200,
-    right: 10,
-    // marginTop: 100,
-    
+    width: 140,
+    height: 140,
+    resizeMode: 'contain',
   },
-   logoContainer: {
-
-    marginTop: 10,
-   
-    //flex: 1,
-    //marginHorizontal: 60,
-    //position: "absolute",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
   returnContainer: {
-    marginTop: 50,
-    alignItems: "center",
-    flexWrap: "wrap",
-    //flex: 1,
-    //marginHorizontal: 100,
+    paddingTop: 15,
+    alignItems: 'flex-end',
+    width: '100%'
   },
-
+  signUp: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 25,
+    width: '100%'
+  },
   inputContainer: {
-    //marginTop: 50,
-    position: 'relative',
-    top: '20%',
-    alignItems: "center",
-    flexDirection: "row",
+    marginTop: 30,
+    width: '100%'
   },
-
   backButton: {
-      //opacity: 0,
       //Position (higher the value further from the margin)
-      position: 'relative',
-      top: 130,
+      marginTop: 20,
       //Button dimensions
-      width: 364,
+      width: '100%',
       height: 67,
-      borderRadius: 10,
+      borderRadius: 19,
       borderWidth: 3,
       //colors
       backgroundColor: "#4D693A",
@@ -333,44 +254,95 @@ const styles = StyleSheet.create({
       //text settings
       alignItems: "center",
       justifyContent: 'center',
-      fontFamily: "sans-serif",
+      fontFamily: "alexandria_light",
       fontSize: 20,
       //shadow settings
-      shadowColor: '#2e2d2dff',
-      shadowOffset: {width: 3, height:4},
-      shadowOpacity: 0.25,
-      shadowRadius: 3,
-      elevation: 3,
+      ...Platform.select({
+      ios: {
+        // shadow for ios users
+        shadowColor: 'black',
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
     },
-
   input: {
-      //Button dimensions
-      height: 60,
-      width: 350,
-      borderRadius: 15,
-      borderWidth: 0,
-      textShadowColor: "#121111ff",
-      marginVertical: 8,
-      //paddingHorizontal: 10,
-      //colors
       backgroundColor: "transparent",
-      borderColor: "#fff",
-      color: "#161515ff",
-      fontFamily: "sans-serif",
-      fontSize: 24,
+      fontFamily: "alexandria_light",
+      fontSize: 18,
+      borderBottomColor: '#E2D8AC',
+      borderBottomWidth: 1,
+      paddingVertical: 10,
+      width: '100%'
     },
-  line: {
-    position: 'relative',
-    //Dimensions
-    top: '14%',
-    width: 364,
-    height: 1.5,
-    //color
-    backgroundColor: '#E2E2E2',
-    // marginLeft: 5,
-    // margineRight: 10,
-    marginVertical: 8,
-  }
-  
-
 });
+
+      // <ImageBackground
+      //   style={styles.background}
+      //   // source={require("../assets/IMG_1.jpg")}
+      // >
+      //   <View style={styles.logoContainer}>
+      //     <Image source={require("../assets/Just_Icon.png")} style={styles.logo} />
+      //     {/* <Text style={styles.title}>Cache Money Made</Text> */}
+      //   </View>
+
+      //   {/* Title text */}
+      //   <View style={styles.infoContainer}>
+      //             <Text style ={{fontSize: 30, color: "black", right:'32%',}}>Sign Up</Text>
+      //             <Text style ={{fontSize: 15, color: "black", right:'11.5%',}}>Get started by entering your information</Text>
+        
+      //    {/* User Name Block */}
+      //     <View style={styles.inputContainer}>
+      //         <TextInput placeholder="Username" value={username} onChangeText={setUsername} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+      //         </TextInput>
+      //     </View>
+      //   <View style={[styles.line]}></View>
+
+      //    {/* Emmail Block */}
+      //     <View style={styles.inputContainer}>
+      //         <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+      //         </TextInput>
+      //     </View>
+      //     <View style={[styles.line]}></View>
+
+      //    {/* Password Block */}
+      //     <View style={styles.inputContainer}>
+      //       <TextInput placeholder="Password" value={password} onChangeText={setPassword} style={[styles.input, {borderColor: error ? "red" : "#ccc"}]}>
+      //       </TextInput>
+      //     </View>
+      //   <View style={[styles.line]}></View>
+
+     
+
+      //   </View>
+      //   {error ? <Text style={{color:"red", fontFamily: "sans-serif", fontSize: 20, }}>{error}</Text> : null}
+
+      //  {/*Sign up Block */}
+      //   <View style={styles.infoContainer}>
+      //     <View style={styles.returnContainer}>
+      //         <TouchableOpacity style={[styles.backButton,{top:'50%'}]} onPress={handleSignUp} disabled={loading}>
+      //           <Text style ={{fontSize: 24, color: "white"}}>{loading ? 'Signing up...' : 'Sign-Up'}</Text>
+      //         </TouchableOpacity>
+      //       </View>
+
+      //       {/* <View style={styles.returnContainer}>
+      //         <TouchableOpacity style={[styles.backButton,{position:'relative', top:50}]} onPress={() => navigation.navigate("About")}>
+      //           <Text style ={{fontSize: 24, color: "white"}}>Back</Text>
+      //         </TouchableOpacity>
+      //       </View> */}
+
+      //      {/* Login touchable link */}
+      //       <View style={styles.returnContainer}>
+      //         <Text style ={{fontSize: 18, color: "#00000",top:'35%'}}>Already have an account? </Text>
+      //         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+      //           <Text style ={{fontSize:  18, color: "#4D693A",top:'71%'}}>Login</Text>
+      //         </TouchableOpacity>
+      //       </View>
+            
+      //     </View>
+
+      // </ImageBackground>

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import {icon_search} from './IconLookupFunction';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -9,6 +11,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ImageBackground,
   GestureResponder,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -259,31 +262,39 @@ export default function KitchenCollection({ navigation, route }) {
 
   // Go back to list of rooms
   const handleBack = () => {
-    setSelectedRoom(null);
-    setRoomItems([]);
+    // setSelectedRoom(null);
+    // setRoomItems([]);
+    navigation.goBack();
   };
 
   // --- If user has selected a room, show its items ---
   if (selectedRoom) {
     return (
+
+      <ImageBackground 
+        style={styles.background}
+        source={require("../assets/grid_paper.jpg")}
+      >
       <View style={styles.container}>
         {/* Fixed header bar with Return button */}
-        <View style={styles.headerBar}>
-          <TouchableOpacity
+        {/* <View style={styles.headerBar}> */}
+          {/* <TouchableOpacity
             style={styles.returnButtonHeader}
             onPress={() => handleBack()}
-          >
+          > */}
+            <TouchableOpacity onPress={() => handleBack()}>
             <Text style={styles.returnButtonHeaderText}>←</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          {/* </TouchableOpacity> */}
           <Text style={styles.headerBarTitle}>{selectedRoom}</Text>
           <TouchableOpacity
             style={styles.settingsButtonHeader}
             onPress={openEditRoomModal}
           >
-            <Ionicons name="settings" size={24} color="#4D693A" />
+            {/* <Ionicons name="settings" size={24} color="#4D693A" /> */}
           </TouchableOpacity>
-        </View>
-
+        {/* </View> */}
+        <View style={styles.Box}>
         {/* Items list */}
         {loading ? (
           <View style={styles.centerContent}>
@@ -295,16 +306,32 @@ export default function KitchenCollection({ navigation, route }) {
           </View>
         ) : (
           <FlatList
+            key={'grid_layout'}
+            numColumns={3}
             data={roomItems}
             keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.gridContainer}
             renderItem={({ item, index }) => (
               <TouchableOpacity
-                style={styles.itemCard}
+                style={styles.gridItemContainer}
                 onPress={() => openEditItemModal(index)}
               >
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemInfo}>{item.foodGroup}</Text>
-                {item.expirationDate && (
+                {/* <View style={styles.iconContainer}>
+                  <Image 
+                    source={icon_search(item.name)} 
+                    style={styles.foodIcon} 
+                  />
+                </View> */}
+                <Image 
+                source={icon_search(item.name)} 
+                style={styles.gridIcon} 
+              />
+                {/* <Text style={styles.itemName}>{item.name}</Text> */}
+                <Text style={styles.gridItemName} numberOfLines={1}>
+                {item.name}
+              </Text>
+                {/* <Text style={styles.itemInfo}>{item.foodGroup}</Text> */}
+                {/* {item.expirationDate && (
                   <Text
                     style={[
                       styles.itemInfo,
@@ -318,16 +345,16 @@ export default function KitchenCollection({ navigation, route }) {
                   >
                     {new Date(item.expirationDate).toDateString()}
                   </Text>
-                )}
+                )} */}
                 {item.description && (
                   <Text style={styles.itemDesc}>{item.description}</Text>
                 )}
               </TouchableOpacity>
             )}
-            contentContainerStyle={styles.listContent}
+            // contentContainerStyle={styles.listContent}
           />
         )}
-
+        </View>
         {/* Add Button - Fixed at bottom */}
         <TouchableOpacity
           style={styles.addButton}
@@ -495,6 +522,8 @@ export default function KitchenCollection({ navigation, route }) {
           </View>
         </Modal>
       </View>
+      
+       </ImageBackground>
     );
   }
 
@@ -572,7 +601,7 @@ export default function KitchenCollection({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
+    // backgroundColor: "#f4f4f4",
   },
   headerBar: {
     flexDirection: "row",
@@ -589,6 +618,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   returnButtonHeaderText: {
+    top: '-50%',
     fontSize: 16,
     fontWeight: "600",
     color: "#007bff",
@@ -597,11 +627,12 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerBarTitle: {
+    // top: '10000000%',
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
-    flex: 1,
+    // flex: 1,
   },
   centerContent: {
     flex: 1,
@@ -654,6 +685,8 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 1 },
+    flexDirection: 'row', 
+    alignItems: 'center',
   },
   itemName: {
     fontSize: 18,
@@ -799,7 +832,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "white",
   },
-  // Option button styles for action menu
+  
   optionButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -824,4 +857,67 @@ const styles = StyleSheet.create({
     color: "#666",
     fontWeight: "600",
   },
+  foodIcon: {
+    width: 50,  
+    height: 50,
+    resizeMode: 'contain',
+  },
+  iconContainer: {
+    marginRight: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  gridItemName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
+    textAlign: 'center', 
+    width: '100%',
+  },
+  gridIcon: {
+    width: 90, 
+    height: 90, 
+    resizeMode: 'contain', 
+    marginBottom: 5, 
+  },
+  gridItemContainer: {
+    flex: 1,          
+    maxWidth: '33.33%', 
+    alignItems: 'center', 
+    marginBottom: 20, 
+  },
+  gridContainer: {
+    paddingHorizontal: 10,
+    paddingTop: 20,
+    paddingBottom: 100, 
+  },
+   background: { 
+    flex: 1, 
+    justifyContent: "flex-start", 
+    // alignItems: "center", 
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  Box: {
+  // flex: 1,             
+  width: '90%',        
+  alignSelf: 'center', 
+  borderWidth: 1.5,
+  borderColor: '#4A3B32',
+  overflow: 'hidden',
+  // marginTop: 10,
+  marginBottom: 150,    
+  marginTop: -10,
+},
+  line: {
+    width: '115%',
+    backgroundColor: 'black',
+    right: 19,
+    marginVertical: 3,
+    height: 1,
+  },
+
 });

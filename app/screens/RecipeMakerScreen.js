@@ -26,11 +26,25 @@ export default function RecipeMaker({navigation}) {
   }, [navigation]);
   
 return (
-    <ImageBackground style={styles.background}>
 
-      <Text style={styles.title}>Recipe</Text>
       
-      <Text style={styles.description}>Cooking Crazy 4 U</Text>
+       <ImageBackground 
+            style={styles.background}
+            source={require("../assets/grid_paper.jpg")}
+        >
+        <View style = {styles.logoArea}>
+          <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+      </View>
+      {/* <Text style={styles.title}>Recipe</Text> */}
+      
+      {/* <Text style={styles.description}>Cooking Crazy 4 U</Text> */}
+      <View style = {styles.notificationNote}>
+              <Image source = {require('../assets/stickynote_tape.png')}/>
+            </View>
+      <Text style = {styles.phraseText}>
+          Page is currently in the works!
+        </Text>
+      
 
     </ImageBackground>
     );
@@ -74,4 +88,29 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
     },
+    
+    phraseText: {
+    fontFamily: 'alexandria_bold',
+    fontSize: 30,
+    color: '#785D49',
+    textAlign: 'center',
+    top: -300,
+    // marginTop: 20,
+    // marginBottom: 10,
+  },
+    notificationNote: {
+    position: 'center',
+    top: -150,
+    left: 75,
+    width: 300,
+    height: 300,
+    resizeMode: 'contain',
+    transform: [{scaleX: -1}],
+  },
+  logoArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+    
 });
