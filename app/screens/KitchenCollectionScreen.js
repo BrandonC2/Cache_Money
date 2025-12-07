@@ -903,7 +903,8 @@ const styles = StyleSheet.create({
   },
   Box: {
   // flex: 1,             
-  width: '90%',        
+  width: '90%', 
+  height: '80%',       
   alignSelf: 'center', 
   borderWidth: 1.5,
   borderColor: '#4A3B32',
