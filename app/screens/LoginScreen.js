@@ -28,19 +28,22 @@ export default function LoginScreen({navigation}) {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem('authToken');
-        if (token) {
-          console.log('User already logged in, navigating to MainNavBar');
-          navigation.replace('MainNavBar'); // replace so user can't go "back" to login
-        }
-      } catch (error) {
-        console.error('Error checking login status:', error);
+  const checkLoginStatus = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const savedUsername = await AsyncStorage.getItem("username");
+
+      if (token && savedUsername) {
+        console.log("Auto login OK:", savedUsername);
+        navigation.replace("MainNavBar", {
+          username: savedUsername,
+        });
       }
-    };
-    
-    checkLoginStatus();
+    } catch (error) {
+      console.error("Error checking login status:", error);
+    }
+  };
+  checkLoginStatus();
   }, []);
 
   React.useEffect(() => {
