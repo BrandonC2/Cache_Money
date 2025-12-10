@@ -21,6 +21,7 @@ import 'react-native-reanimated';
 // I just them here to get the nav bar working
 import UpcomingScreen from './app/screens/UpcomingScreen';
 import RecipeMaker from './app/screens/RecipeMakerScreen';
+import RecipeCreatorScreen from './app/screens/RecipeCreatorScreen';
 import GroceryListScreen from './app/screens/GroceryListScreen';
 import CameraScreen from './app/screens/CameraScreen';
 import ReceiptReviewScreen from './app/screens/ReceiptReviewScreen';
@@ -166,7 +167,7 @@ export default function App() {
       <Stack.Screen name = "ManualAdd" component ={AddScreen} options={{ headerShown: false }}/>
       {/*   uncomment when about is fixed*/}
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
-
+      <Stack.Screen name = "CreateRecipe" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>

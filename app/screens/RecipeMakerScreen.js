@@ -1,254 +1,163 @@
-import React, { useState, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
-  ImageBackground,
   StyleSheet,
   TouchableOpacity,
   View,
   Image,
   Text,
   FlatList,
-  Modal,
-  ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import apiClient from "../lib/apiClient";
 
 export default function RecipeMaker({ navigation }) {
-  const [recipes, setRecipes] = useState(sampleRecipes);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [recipes, setRecipes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
+  // Load recipes from API on mount
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const response = await apiClient.get("/recipes");
 
-  const openRecipeModal = (recipe) => {
-    setSelectedRecipe(recipe);
-    setShowModal(true);
-  };
-
-  const scaleRecipe = (factor) => {
-    if (!selectedRecipe) return;
-
-    const scaled = {
-      ...selectedRecipe,
-      servings: selectedRecipe.servings * factor,
+        // If your API returns { success, data }, adjust as needed
+        setRecipes(response.data);
+      } catch (err) {
+        console.log("Recipe load error:", err);
+        setError("Could not load recipes.");
+      } finally {
+        setLoading(false);
+      }
     };
-    setSelectedRecipe(scaled);
-  };
+
+    fetchRecipes();
+  }, []);
+
+  // Header title
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Recipe Maker",
+      headerShown: false,
+    });
+  }, []);
+
+  const renderRecipe = ({ item }) => (
+    <TouchableOpacity
+      style={styles.recipeCard}
+      onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
+    >
+      {item.imageUrl ? (
+        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage} />
+      ) : (
+        <View style={styles.noImageBox}>
+          <Text style={styles.noImageText}>No Image</Text>
+        </View>
+      )}
+
+      <Text style={styles.recipeTitle}>{item.title}</Text>
+      <Text style={styles.recipeDesc} numberOfLines={2}>
+        {item.description}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
-    <ImageBackground
-      style={styles.background}
-      source={require("../assets/grid_paper.jpg")}
-    >
-      
-      {/* top basket logo */}
-      <View style={styles.logoArea}>
-        <Image
-          source={require("../assets/basket.png")}
-          style={styles.logo}
+    <View style={styles.container}>
+      {/* Loading */}
+      {loading && (
+        <ActivityIndicator
+          size="large"
+          style={{ marginTop: 40 }}
         />
-      </View>
+      )}
 
-      <Text style={styles.pageTitle}>Your Recipes</Text>
+      {/* Error */}
+      {error && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
 
-      {/* GRID LIST OF RECIPES */}
-      <FlatList
-        numColumns={3}
-        data={recipes}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.gridContainer}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => openRecipeModal(item)}
-          >
-            <Image source={item.image} style={styles.recipeIcon} />
-            <Text style={styles.recipeName} numberOfLines={1}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
-        )}
-      />
+      {/* Recipes List */}
+      {!loading && !error && (
+        <FlatList
+          data={recipes}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderRecipe}
+          contentContainerStyle={{ padding: 20 }}
+        />
+      )}
 
-      {/* RECIPE MODAL */}
-      <Modal visible={showModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-
-            <Text style={styles.modalTitle}>{selectedRecipe?.name}</Text>
-            <Text style={styles.modalSubtitle}>
-              Servings: {selectedRecipe?.servings}
-            </Text>
-
-            <ScrollView style={{ maxHeight: 300 }}>
-              <Text style={styles.sectionHeader}>Ingredients</Text>
-              {selectedRecipe?.ingredients.map((i, idx) => (
-                <Text key={idx} style={styles.sectionItem}>
-                  • {i.name}: {i.qty}
-                </Text>
-              ))}
-
-              <Text style={styles.sectionHeader}>Steps</Text>
-              {selectedRecipe?.steps.map((s, idx) => (
-                <Text key={idx} style={styles.sectionItem}>
-                  {idx + 1}. {s}
-                </Text>
-              ))}
-            </ScrollView>
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.scaleButton}
-                onPress={() => scaleRecipe(0.5)}
-              >
-                <Text style={styles.scaleText}>½ Servings</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.scaleButton}
-                onPress={() => scaleRecipe(2)}
-              >
-                <Text style={styles.scaleText}>×2 Servings</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowModal(false)}
-            >
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
-
-          </View>
-        </View>
-      </Modal>
-
-    </ImageBackground>
+      {/* Add Recipe Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate("CreateRecipe")}
+      >
+        <Text style={styles.addButtonText}>+ Add Recipe</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
-/* ------- SAMPLE DATA (you can replace with API fetch later) ------- */
-const sampleRecipes = [
-  {
-    id: "1",
-    name: "Chicken Stir Fry",
-    image: require("../assets/ye.png"),
-    servings: 2,
-    ingredients: [
-      { name: "Chicken Breast"},
-      { name: "Bell Pepper"},
-      //{ name: "Soy Sauce", qty: "2 tbsp" },
-    ],
-    steps: [
-      "Slice chicken and vegetables.",
-      "Heat pan and stir fry ingredients.",
-      "Add soy sauce and simmer.",
-    ],
-  },
-];
-
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    alignItems: "center",
-    paddingTop: 60,
-  },
-  logoArea: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logo: {
-    width: 100,
-    height: 100,
-  },
-  pageTitle: {
-    fontFamily: "alexandria_bold",
-    fontSize: 32,
-    color: "#785D49",
-    marginTop: 30,
+  container: { flex: 1, backgroundColor: "#fff" },
+
+  recipeCard: {
+    backgroundColor: "#f4f4f4",
     marginBottom: 20,
-  },
-  gridContainer: {
-    paddingHorizontal: 10,
-  },
-  gridItem: {
-    width: 300,
-    height: 100,
-    margin: 8,
-    backgroundColor: "white",
-    borderRadius: 10,
-    alignItems: "center",
-    padding: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  recipeIcon: {
-    width: 60,
-    height: 60,
-    marginBottom: 5,
-  },
-  recipeName: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#444",
-    textAlign: "center",
+    borderRadius: 12,
+    padding: 12,
   },
 
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  modalBox: {
-    backgroundColor: "white",
-    margin: 20,
-    padding: 20,
+  recipeImage: {
+    width: "100%",
+    height: 160,
     borderRadius: 12,
+    marginBottom: 10,
   },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 5,
-    textAlign: "center",
+
+  noImageBox: {
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    backgroundColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
   },
-  modalSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 15,
-    textAlign: "center",
+
+  noImageText: { color: "#777" },
+
+  recipeTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#222",
   },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-  sectionItem: {
-    fontSize: 15,
+
+  recipeDesc: {
     marginTop: 4,
+    color: "#666",
   },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 20,
-  },
-  scaleButton: {
-    backgroundColor: "#E6D7C6",
-    padding: 10,
-    borderRadius: 8,
-  },
-  scaleText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  closeButton: {
-    padding: 12,
-    backgroundColor: "#785D49",
-    borderRadius: 10,
-  },
-  closeText: {
-    color: "white",
+
+  errorText: {
+    marginTop: 40,
     textAlign: "center",
+    color: "red",
     fontSize: 16,
+  },
+
+  addButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    backgroundColor: "#000",
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 50,
+  },
+
+  addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

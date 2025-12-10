@@ -13,108 +13,141 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import apiClient from "../lib/apiClient";
 
-const foodTrait = ["Desert", "Vegan", "Lactose-Free", "Entree", "Appetitzer", "Gluten-Free, Sauce, "];
+const foodGroups = [
+  "Dessert",
+  "Vegan",
+  "Lactose-Free",
+  "Entree",
+  "Appetizer",
+  "Gluten-Free",
+  "Sauce",
+  "Snack",
+];
 
 export default function RecipeCreatorScreen({ navigation }) {
   const [recipeName, setRecipeName] = useState("");
   const [recipeDesc, setRecipeDesc] = useState("");
+  const [imageUri, setImageUri] = useState(null);
+
   const [ingredients, setIngredients] = useState([]);
   const [currentItem, setCurrentItem] = useState({
     name: "",
     description: "",
     foodGroup: "",
-    //expirationDate: new Date(),
+    expirationDate: new Date(),
   });
+
   const [error, setError] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const [showFoodGroupModal, setShowFoodGroupModal] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
 
-  /*// Date picker handler
+  // IMAGE UPLOAD HANDLER
+  const pickImage = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Permission Required", "Enable photos to upload images.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  // DATE PICKER
   const onChangeDate = (event, selectedDate) => {
     setShowPicker(false);
     if (selectedDate) {
       setCurrentItem({ ...currentItem, expirationDate: selectedDate });
     }
-  }*/
+  };
 
-  // Add or update ingredient
+  // ADD OR UPDATE INGREDIENT
   const addOrUpdateIngredient = () => {
     if (!currentItem.name || !currentItem.foodGroup) {
-      setError("Please fill in all required fields for the ingredient.");
+      setError("Please fill in all required ingredient fields.");
       return;
     }
 
     if (editingIndex !== null) {
-      // Update existing ingredient
-      const updatedIngredients = [...ingredients];
-      updatedIngredients[editingIndex] = currentItem;
-      setIngredients(updatedIngredients);
+      const updated = [...ingredients];
+      updated[editingIndex] = currentItem;
+      setIngredients(updated);
       setEditingIndex(null);
     } else {
-      // Add new ingredient
       setIngredients([...ingredients, currentItem]);
     }
 
-    // Reset current item
-    setCurrentItem({ name: "", description: "", foodGroup: "", expirationDate: new Date() });
+    setCurrentItem({
+      name: "",
+      description: "",
+      foodGroup: "",
+      expirationDate: new Date(),
+    });
+
     setError("");
   };
 
-  // Edit an ingredient
   const editIngredient = (index) => {
     setCurrentItem(ingredients[index]);
     setEditingIndex(index);
     setError("");
   };
 
-  // Delete an ingredient
-  const deleteIngredient = (index) => {
-    Alert.alert(
-      "Delete Ingredient",
-      "Are you sure you want to delete this ingredient?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            const updatedIngredients = ingredients.filter((_, i) => i !== index);
-            setIngredients(updatedIngredients);
-            // Reset edit mode if deleting currently edited item
-            if (editingIndex === index) setEditingIndex(null);
-          },
-        },
-      ]
-    );
+  const deleteIngredient = (i) => {
+    Alert.alert("Delete?", "Remove this ingredient?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () =>
+          setIngredients(ingredients.filter((_, index) => index !== i)),
+      },
+    ]);
   };
 
-  // Submit recipe
+  // SUBMIT RECIPE
   const submitRecipe = async () => {
-    if (!recipeName.trim()) {
-      setError("Please provide a recipe name.");
-      return;
-    }
-    if (ingredients.length === 0) {
-      setError("Please add at least one ingredient.");
-      return;
-    }
+    if (!recipeName.trim())
+      return setError("Please provide a recipe name.");
+
+    if (ingredients.length === 0)
+      return setError("Add at least one ingredient.");
+
     try {
       const username = await AsyncStorage.getItem("username");
-      const newRecipe = {
-        name: recipeName,
-        description: recipeDesc,
-        ingredients,
-        createdBy: username,
-      };
-      const res = await apiClient.post("/recipes", newRecipe);
+
+      const form = new FormData();
+      form.append("name", recipeName);
+      form.append("description", recipeDesc);
+      form.append("createdBy", username);
+      form.append("ingredients", JSON.stringify(ingredients));
+
+      if (imageUri) {
+        form.append("image", {
+          uri: imageUri,
+          name: "recipe.jpg",
+          type: "image/jpeg",
+        });
+      }
+
+      const res = await apiClient.post("/recipes", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       Alert.alert("Success", res.data.message || "Recipe created!");
-      
       navigation.goBack();
     } catch (err) {
-      console.error(err);
+      console.log(err);
       Alert.alert("Error", "Failed to create recipe.");
     }
   };
@@ -138,70 +171,89 @@ export default function RecipeCreatorScreen({ navigation }) {
           data={[{ key: "form" }]}
           renderItem={() => (
             <View style={styles.formContainer}>
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              {error !== "" && (
+                <Text style={styles.errorText}>{error}</Text>
+              )}
 
               {/* Recipe Name */}
               <Text style={styles.label}>Recipe Name *</Text>
               <TextInput
-                placeholder="e.g., Spaghetti w/ Meatballs"
+                placeholder="e.g., Spaghetti"
                 value={recipeName}
                 onChangeText={setRecipeName}
                 style={styles.input}
-                placeholderTextColor="#999"
               />
 
-              {/* Recipe Description */}
-              <Text style={styles.label}>Recipe Notes (Optional)</Text>
+              {/* Description */}
+              <Text style={styles.label}>Notes (Optional)</Text>
               <TextInput
-                placeholder="e.g., Family favorite/Very Important"
+                placeholder="e.g., Family favorite"
                 value={recipeDesc}
                 onChangeText={setRecipeDesc}
                 style={styles.input}
-                placeholderTextColor="#999"
               />
+
+              {/* IMAGE UPLOAD */}
+              <Text style={styles.label}>Recipe Image (Optional)</Text>
+
+              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+                <Text style={styles.imageButtonText}>
+                  {imageUri ? "Change Image" : "Upload Image"}
+                </Text>
+              </TouchableOpacity>
+
+              {imageUri && (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: "100%", height: 200, borderRadius: 10 }}
+                />
+              )}
 
               {/* Ingredient Section */}
               <Text style={[styles.label, { marginTop: 24 }]}>
                 {editingIndex !== null ? "Edit Ingredient" : "Add Ingredient"}
               </Text>
+
+              {/* Name */}
               <TextInput
                 placeholder="Ingredient Name *"
                 value={currentItem.name}
-                onChangeText={(text) =>
-                  setCurrentItem({ ...currentItem, name: text })
+                onChangeText={(t) =>
+                  setCurrentItem({ ...currentItem, name: t })
                 }
                 style={styles.input}
-                placeholderTextColor="#999"
               />
 
-              <Text style={styles.label}>Notes (Optional)</Text>
+              {/* Notes */}
+              <Text style={styles.label}>Notes</Text>
               <TextInput
-                placeholder="e.g., Organic, Bulk"
+                placeholder="Optional notes"
                 value={currentItem.description}
-                onChangeText={(text) =>
-                  setCurrentItem({ ...currentItem, description: text })
+                onChangeText={(t) =>
+                  setCurrentItem({ ...currentItem, description: t })
                 }
                 style={styles.input}
-                placeholderTextColor="#999"
               />
 
+              {/* Food Group */}
               <Text style={styles.label}>Food Group *</Text>
               <TouchableOpacity
                 style={styles.foodGroupButton}
                 onPress={() => setShowFoodGroupModal(true)}
               >
-                <Text style={styles.foodGroupButtonText}>
+                <Text>
                   {currentItem.foodGroup || "Select Food Group"}
                 </Text>
-                <Text style={styles.dropdownIcon}>▼</Text>
+                <Text>▼</Text>
               </TouchableOpacity>
 
+              {/* Expiration Date */}
               <Text style={styles.label}>Expiration Date</Text>
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowPicker(true)}
               >
-                <Text style={styles.dateButtonText}>
+                <Text>
                   📅 {currentItem.expirationDate.toDateString()}
                 </Text>
               </TouchableOpacity>
@@ -220,40 +272,50 @@ export default function RecipeCreatorScreen({ navigation }) {
                 onPress={addOrUpdateIngredient}
               >
                 <Text style={styles.addButtonText}>
-                  {editingIndex !== null ? "Update Ingredient" : "✓ Add Ingredient"}
+                  {editingIndex !== null
+                    ? "Update Ingredient"
+                    : "✓ Add Ingredient"}
                 </Text>
               </TouchableOpacity>
 
-              {/* Ingredients List */}
+              {/* Ingredient List */}
               {ingredients.length > 0 && (
                 <>
                   <Text style={[styles.label, { marginTop: 24 }]}>
                     Ingredients List
                   </Text>
+
                   <FlatList
                     data={ingredients}
-                    keyExtractor={(_, index) => index.toString()}
+                    keyExtractor={(_, i) => i.toString()}
                     renderItem={({ item, index }) => (
                       <View style={styles.ingredientItem}>
                         <Text style={{ fontWeight: "600" }}>
                           {index + 1}. {item.name}
                         </Text>
                         <Text>{item.foodGroup}</Text>
-                        {item.description ? <Text>{item.description}</Text> : null}
-                        <Text>{item.expirationDate.toDateString()}</Text>
+                        {item.description !== "" && (
+                          <Text>{item.description}</Text>
+                        )}
+                        <Text>
+                          {item.expirationDate.toDateString()}
+                        </Text>
 
-                        <View style={{ flexDirection: "row", marginTop: 8 }}>
+                        <View style={{ flexDirection: "row", marginTop: 6 }}>
                           <TouchableOpacity
                             style={styles.editButton}
                             onPress={() => editIngredient(index)}
                           >
                             <Text style={styles.editButtonText}>Edit</Text>
                           </TouchableOpacity>
+
                           <TouchableOpacity
                             style={styles.deleteButton}
                             onPress={() => deleteIngredient(index)}
                           >
-                            <Text style={styles.deleteButtonText}>Delete</Text>
+                            <Text style={styles.deleteButtonText}>
+                              Delete
+                            </Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -262,55 +324,41 @@ export default function RecipeCreatorScreen({ navigation }) {
                 </>
               )}
 
-              {/* Submit Recipe Button */}
+              {/* Submit */}
               <TouchableOpacity
-                style={[styles.addButton, { marginTop: 32, backgroundColor: "#4D693A" }]}
+                style={[styles.addButton, { backgroundColor: "#4D693A" }]}
                 onPress={submitRecipe}
               >
                 <Text style={styles.addButtonText}>✓ Create Recipe</Text>
               </TouchableOpacity>
-
-              <View style={{ height: 40 }} />
             </View>
           )}
-          keyExtractor={(item) => item.key}
-          scrollEnabled={true}
-          nestedScrollEnabled={true}
         />
 
         {/* Food Group Modal */}
         <Modal
           visible={showFoodGroupModal}
-          transparent={true}
+          transparent
           animationType="slide"
           onRequestClose={() => setShowFoodGroupModal(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Food Group</Text>
-              {foodGroups.map((group) => (
+              <Text style={styles.modalTitle}>Food Group</Text>
+
+              {foodGroups.map((g) => (
                 <TouchableOpacity
-                  key={group}
-                  style={[
-                    styles.modalOption,
-                    currentItem.foodGroup === group && styles.modalOptionSelected,
-                  ]}
+                  key={g}
+                  style={styles.modalOption}
                   onPress={() => {
-                    setCurrentItem({ ...currentItem, foodGroup: group });
-                    setError("");
+                    setCurrentItem({ ...currentItem, foodGroup: g });
                     setShowFoodGroupModal(false);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      currentItem.foodGroup === group && styles.modalOptionTextSelected,
-                    ]}
-                  >
-                    {group}
-                  </Text>
+                  <Text style={{ fontSize: 16 }}>{g}</Text>
                 </TouchableOpacity>
               ))}
+
               <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setShowFoodGroupModal(false)}
@@ -327,114 +375,111 @@ export default function RecipeCreatorScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  container: { flex: 1, backgroundColor: "rgba(255, 255, 255, 0.95)" },
+  container: { flex: 1, backgroundColor: "rgba(255,255,255,0.95)" },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    padding: 16,
     backgroundColor: "#f8f8f8",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
     marginTop: 40,
   },
-  returnButtonHeader: { padding: 8 },
-  returnButtonHeaderText: { fontSize: 16, fontWeight: "600", color: "#007bff" },
-  headerTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  formContainer: { paddingHorizontal: 20, paddingVertical: 20 },
-  label: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 8 },
+  returnButtonHeaderText: { fontSize: 16, color: "#007bff" },
+  headerTitle: { fontSize: 18, fontWeight: "bold" },
+
+  formContainer: { paddingHorizontal: 20 },
+  label: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
   input: {
     height: 50,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ddd",
+    borderRadius: 8,
     paddingHorizontal: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#333",
     marginBottom: 12,
   },
+
+  imageButton: {
+    height: 50,
+    backgroundColor: "#4D693A",
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  imageButtonText: { color: "white", fontWeight: "600" },
+
   foodGroupButton: {
     height: 50,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderRadius: 8,
     paddingHorizontal: 12,
-    flexDirection: "row",
     justifyContent: "space-between",
+    flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
   },
-  foodGroupButtonText: { fontSize: 16, color: "#333" },
-  dropdownIcon: { fontSize: 12, color: "#999" },
   dateButton: {
     height: 50,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderRadius: 8,
     justifyContent: "center",
     paddingHorizontal: 12,
     marginBottom: 12,
   },
-  dateButtonText: { fontSize: 16, color: "#333" },
-  errorText: { color: "#d81e1e", fontSize: 14, marginBottom: 12, fontWeight: "600" },
+
   addButton: {
-    backgroundColor: "#4D693A",
     height: 50,
+    backgroundColor: "#4D693A",
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 16,
   },
-  addButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  addButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
+
   ingredientItem: {
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
-    marginBottom: 8,
   },
   editButton: {
-    marginRight: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     backgroundColor: "#007bff",
+    padding: 6,
     borderRadius: 6,
+    marginRight: 8,
   },
-  editButtonText: { color: "white", fontWeight: "600" },
+  editButtonText: { color: "white" },
+
   deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     backgroundColor: "#d81e1e",
+    padding: 6,
     borderRadius: 6,
   },
-  deleteButtonText: { color: "white", fontWeight: "600" },
+  deleteButtonText: { color: "white" },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   modalContent: {
     backgroundColor: "white",
+    padding: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    maxHeight: "80%",
   },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 16, color: "#333" },
-  modalOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  modalOptionSelected: { backgroundColor: "#e8f0e8" },
-  modalOptionText: { fontSize: 16, color: "#666" },
-  modalOptionTextSelected: { color: "#4D693A", fontWeight: "600" },
-  modalCloseButton: {
-    marginTop: 16,
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
+  modalOption: {
     paddingVertical: 12,
-    backgroundColor: "#007bff",
-    borderRadius: 8,
-    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
-  modalCloseButtonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  modalCloseButton: {
+    backgroundColor: "#007bff",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 16,
+  },
+  modalCloseButtonText: { color: "white", fontSize: 16, textAlign: "center" },
 });

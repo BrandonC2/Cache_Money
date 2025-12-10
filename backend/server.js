@@ -31,6 +31,7 @@ mongoose
 const userRoutes = require("./routes/userRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const kitchenRoutes = require("./routes/kitchenRoutes");
+const recipeRoutes = require("./routes/recipeRoutes");
 const receiptRoutes = require("./routes/receiptRoutes");
 
 // ✅ Mount routes
@@ -38,6 +39,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/kitchens", kitchenRoutes);
 app.use("/api/receipts", receiptRoutes);
+app.use("/api/recipes", recipeRoutes);
+
+// WIP image upload
+app.use('/uploads', express.static('uploads'))
 
 // ✅ Health check
 app.get("/health", (req, res) =>
@@ -108,7 +113,6 @@ app.use((err, req, res, next) => {
 // --- START SERVER --- //
 const PORT = process.env.PORT || 5001;
 
-// IMPORTANT: Bind to 0.0.0.0 so your phone can connect
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running and accessible on:`);
   console.log(`   ▶ http://0.0.0.0:${PORT}`);
