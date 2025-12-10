@@ -12,11 +12,11 @@ import { Motion } from "@legendapp/motion";
 import { Check, Plus, Trash2 } from "lucide-react-native";
 
 // Adjust the path to where your asset actually lives
-const TEMPLATE = require("../assets/SP_grocerylist.png");
+const TEMPLATE = require("../assets/SP_grocerylist2.png");
 
 export default function GroceryList() {
   // ---- basic state
-  const [brand] = useState({ name: "Grocery List", no: 1358 });
+  const [brand] = useState({ name: "Grocery List", no: 1367 });
   const [taxRate, setTaxRate] = useState(0.05);
   const [taxInclusive, setTaxInclusive] = useState(true);
 
@@ -55,21 +55,6 @@ export default function GroceryList() {
   // ---- UI
   return (
     <View style={styles.screen}>
-      {/* Toolbar */}
-      <View style={styles.toolbar}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontSize: 22 }}></Text> 
-          <View>
-            <Text style={styles.toolbarTitle}>{brand.name}</Text>
-            <Text style={styles.toolbarSub}>No. {brand.no}</Text>
-          </View>
-        </View>
-
-        <Pressable style={styles.primaryBtn} onPress={addItem}>
-          <Plus size={16} color="#111" />
-          <Text style={styles.primaryBtnText}>Add</Text>
-        </Pressable>
-      </View>
 
       {/* Receipt container with the template as background */}
       <ScrollView
@@ -90,10 +75,10 @@ export default function GroceryList() {
                 style={[
                     StyleSheet.absoluteFillObject,
                     {
-                    width: "100%",
-                    height: "100%",
-                    alignSelf: "center",
-                    transform: [{ translateX: 0 }, { translateY: 0 }],
+                    width: "115%", //changing the size of the image
+                    height: "115%",
+                    alignSelf: "contain",
+                    transform: [{ translateX: -25 }, { translateY: -33 }], //moving the recipt image left and right
                     },
                 ]}
             />
@@ -105,7 +90,7 @@ export default function GroceryList() {
               <View
                 style={[
                   styles.overlayBlock,
-                  { top: "11%", left: "12%", right: "12%" },
+                  { top: "11%", left: "12%", right: "12%" },    //text box sizeing 
                 ]}
               >
                 <Text style={styles.headerTitle}>{brand.name}</Text>
@@ -264,11 +249,30 @@ export default function GroceryList() {
           </View>
         </Motion.View>
       </ScrollView>
+      <Pressable style={styles.fab} onPress={addItem}>
+        <Plus size={24} color="#fff" />
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fab: {
+    position: 'absolute',
+    bottom: 10,
+    right: 20,
+    backgroundColor: '#12243a',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 4 },
+  },
   screen: {
     flex: 1,
     backgroundColor: "#e5e7eb",
