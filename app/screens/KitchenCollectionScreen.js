@@ -17,6 +17,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
+import CustomBackButton from "../components/CustomBackButton";
 
 export default function KitchenCollection({ navigation, route }) {
   const [username, setUsername] = useState("");
@@ -277,23 +278,11 @@ export default function KitchenCollection({ navigation, route }) {
       >
       <View style={styles.container}>
         {/* Fixed header bar with Return button */}
-        {/* <View style={styles.headerBar}> */}
-          {/* <TouchableOpacity
-            style={styles.returnButtonHeader}
-            onPress={() => handleBack()}
-          > */}
-            <TouchableOpacity onPress={() => handleBack()}>
-            <Text style={styles.returnButtonHeaderText}>←</Text>
-            </TouchableOpacity>
-          {/* </TouchableOpacity> */}
+        <View style={styles.headerBarContainer}>
+          <CustomBackButton onPress={() => handleBack()} />
           <Text style={styles.headerBarTitle}>{selectedRoom}</Text>
-          <TouchableOpacity
-            style={styles.settingsButtonHeader}
-            onPress={openEditRoomModal}
-          >
-            {/* <Ionicons name="settings" size={24} color="#4D693A" /> */}
-          </TouchableOpacity>
-        {/* </View> */}
+          <View style={{ width: 60 }} />
+        </View>
         <View style={styles.Box}>
         {/* Items list */}
         {loading ? (
@@ -346,9 +335,6 @@ export default function KitchenCollection({ navigation, route }) {
                     {new Date(item.expirationDate).toDateString()}
                   </Text>
                 )} */}
-                {item.description && (
-                  <Text style={styles.itemDesc}>{item.description}</Text>
-                )}
               </TouchableOpacity>
             )}
             // contentContainerStyle={styles.listContent}
@@ -613,6 +599,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
     marginTop: 40,
+  },
+  headerBarContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+    marginTop: 8,
   },
   returnButtonHeader: {
     padding: 8,

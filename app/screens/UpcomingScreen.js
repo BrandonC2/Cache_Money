@@ -108,10 +108,16 @@ export default function UpcomingScreen({navigation}) {
             style = {styles.foodIcon}/>
         </View>
 
+        {/* Displays the name of the item*/}
+        <View style = {styles.nameContainer}>
+          <Text style = {styles.nameText}>{item.name}</Text>
+        </View>
+
         {/* Displays the date of the item */}
         <View style = {styles.dateContainer}>
           <Text style = {styles.dateText}>{dateFormatted}</Text>
         </View>
+      
       </View>
     )
   };
@@ -266,5 +272,16 @@ const styles = StyleSheet.create({
     marginTop: 50,
     color: '#888',
     fontSize: 16,
-  }
+  },
+  nameContainer: {
+  flex: 0, // or adjust based on your layout needs
+  justifyContent: 'center',
+  paddingLeft: 10, // optional spacing
+},
+
+nameText: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#333', // adjust color as needed
+},
 });
