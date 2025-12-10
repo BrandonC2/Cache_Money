@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Image,
@@ -6,6 +6,7 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './app/screens/LoginScreen';
 import RegistrationScreen from './app/screens/RegistrationScreen';
 import AboutScreen from './app/screens/AboutScreen';
@@ -152,12 +153,31 @@ export default function App() {
   - Registration: User can Sign up for an account (CRUD implementation for storage still needed)
   - Login: User can Sign in to their account (CRUD implementation for storage still needed)
   */
-  
-  return(
-  <NavigationContainer>
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigationRef = React.useRef();
 
-    {/* chnage to "About when fixed */}
-    <Stack.Navigator initialRouteName="About">
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
+  if (isLoading) {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />;
+  }
+
+  return(
+  <NavigationContainer ref={navigationRef}>
+    <Stack.Navigator initialRouteName={isAuthenticated ? "MainNavBar" : "About"}>
       <Stack.Screen name = "SplashScreen" component ={SplashScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>

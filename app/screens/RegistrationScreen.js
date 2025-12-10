@@ -74,22 +74,12 @@ export default function RegistrationScreen({ navigation }) {
         setLoading(false);
         return;
       }
-
-      const { token, user } = loginData;
-      if (!token) {
-        setError("Login failed after signup");
-        setLoading(false);
-        return;
+      const { token } = data;
+      if (token) {
+        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem('username', username);
+        navigation.navigate('MainNavBar');
       }
-
-      // ✅ Save token & username
-      await AsyncStorage.setItem("authToken", token);
-      const nameToSave = user?.username || username;
-      if (nameToSave) await AsyncStorage.setItem("username", nameToSave);
-
-      // Navigate to main app
-      navigation.replace("MainNavBar");
-
     } catch (err) {
       console.error("Signup/Login error:", err);
       setError(err.message || "Network error");
