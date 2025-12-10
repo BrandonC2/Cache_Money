@@ -16,6 +16,7 @@ import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
+import CustomBackButton from "../components/CustomBackButton";
 
 export default function AddScreen({ navigation }) {
   const [itemName, setItem] = useState("");
@@ -98,14 +99,9 @@ export default function AddScreen({ navigation }) {
       <View style={styles.container}>
         {/* Header with Return button */}
         <View style={styles.headerBar}>
-          <TouchableOpacity
-            style={styles.returnButtonHeader}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.returnButtonHeaderText}>← Return</Text>
-          </TouchableOpacity>
+          <CustomBackButton onPress={() => navigation.goBack()} />
           <Text style={styles.headerTitle}>Add Food Item</Text>
-          <View style={{ width: 80 }} />
+          <View style={{ width: 60 }} />
         </View>
 
         {/* Form Content */}
@@ -253,12 +249,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: "#f8f8f8",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    marginTop: 40,
+    backgroundColor: "transparent",
+    marginTop: 8,
   },
   returnButtonHeader: {
     padding: 8,
@@ -272,6 +266,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
+    flex: 1,
+    textAlign: "center",
   },
   formContainer: {
     paddingHorizontal: 20,

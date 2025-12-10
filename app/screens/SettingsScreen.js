@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
+import CustomBackButton from "../components/CustomBackButton";
 
 /**
  * SettingsScreen: User account management
@@ -36,7 +37,9 @@ export default function SettingsScreen({ navigation }) {
     navigation.setOptions({
       headerShown: true,
       title: "Settings",
-      headerBackTitle: "Back",
+      headerLeft: () => (
+        <CustomBackButton onPress={() => navigation.goBack()} />
+      ),
     });
   }, [navigation]);
 
@@ -436,7 +439,7 @@ export default function SettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F2ECD5",
   },
   loadingContainer: {
     flex: 1,
@@ -454,7 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   userCard: {
-    backgroundColor: "white",
+    backgroundColor: "#E8DCC8",
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -479,7 +482,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   settingItem: {
-    backgroundColor: "white",
+    backgroundColor: "#E8DCC8",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -543,7 +546,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   modal: {
-    backgroundColor: "white",
+    backgroundColor: "#E8DCC8",
     borderRadius: 16,
     padding: 24,
     width: "100%",
