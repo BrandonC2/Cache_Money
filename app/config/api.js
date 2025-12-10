@@ -1,9 +1,8 @@
 import { Platform } from "react-native";
 
 /**
- * Try to auto-detect the Metro bundler host.
+ * Extract the Metro bundler host from the app's bundle URL.
  * Works on iOS/Android physical devices + simulators.
- * Falls back to null if detection fails.
  */
 function detectHost() {
   try {
@@ -33,27 +32,43 @@ function detectHost() {
   }
 }
 
-let host = detectHost();
-
-let API_BASE;
-
-// Most reliable: if bundler URL reveals LAN host
-if (host) {
-  API_BASE = `http://${host}:5001`;
-  console.log("API_BASE set from detected host:", API_BASE);
-}
-// Android emulator fallback
-else if (Platform.OS === "android") {
-  API_BASE = "http://10.0.2.2:5001";
-  console.log("API_BASE set for Android emulator:", API_BASE);
-}
-// iPhone/iOS fallback — uses the machine's LAN IP
-else {
-  // Change ONLY this fallback line to your machine LAN IP
-  API_BASE = "http://192.168.1.91:5001";
-  console.log("API_BASE set to iOS fallback (manual LAN IP):", API_BASE);
+/**
+ * Get the machine's LAN IP by using the bundler host.
+ * The Metro bundler runs on the machine's LAN IP, so we can extract it.
+ * This avoids hardcoding an IP that may change.
+ */
+function getLanIp() {
+  const host = detectHost();
+  if (host && host !== "localhost" && host !== "127.0.0.1") {
+    console.log("getLanIp: Using detected bundler host:", host);
+    return host;
+  }
+  // Fallback: try localhost (only works for iOS simulator on same machine)
+  console.log("getLanIp: Falling back to localhost");
+  return "localhost";
 }
 
+/**
+ * Determine API_BASE dynamically based on platform and bundler host.
+ * Uses the Metro bundler's host as the LAN IP (most reliable).
+ */
+function getApiBase() {
+  const host = getLanIp();
+
+  // Android emulator has a special route to the host machine
+  if (Platform.OS === "android" && (host === "localhost" || host === "127.0.0.1")) {
+    const apiBase = "http://10.0.2.2:5001";
+    console.log("getApiBase: Using Android emulator route:", apiBase);
+    return apiBase;
+  }
+
+  // For all other cases, use the detected/fallback host
+  const apiBase = `http://${host}:5001`;
+  console.log("getApiBase: Using host:", host, "→ API_BASE:", apiBase);
+  return apiBase;
+}
+
+const API_BASE = getApiBase();
 console.log("Final API_BASE:", API_BASE);
 
 export default API_BASE;

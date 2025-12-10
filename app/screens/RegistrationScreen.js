@@ -65,7 +65,8 @@ export default function RegistrationScreen({ navigation }) {
       const { token } = data;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
-        navigation.navigate('KitchenHome');
+        await AsyncStorage.setItem('username', username);
+        navigation.navigate('MainNavBar');
       }
     } catch (err) {
       console.error('Network/signup error:', err);
