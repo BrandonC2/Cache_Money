@@ -13,7 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
-// import { icon_search } from './IconLookupFunction';
+import { icon_search } from "./IconLookupFunction";
 
 /* 
   Upcoming functions:
@@ -30,6 +30,7 @@ export default function UpcomingScreen({navigation}) {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  // Sets initial states for the variables
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,7 +47,8 @@ export default function UpcomingScreen({navigation}) {
     setLoading(true);
     try {
       // Retrieve the list of rooms the user is in
-      const visitedRoomsStr = await AsyncStorage.getItem("visitedRooms")
+      const currentUsername = await AsyncStorage.getItem('username');
+      const visitedRoomsStr = await AsyncStorage.getItem(`visitedRooms_${currentUsername}`);
       const visitedRooms = visitedRoomsStr ? JSON.parse(visitedRoomsStr) : [];
 
       let allItems = [];
@@ -57,7 +59,7 @@ export default function UpcomingScreen({navigation}) {
           const res = await apiClient.get(`/inventory?room=${encodeURIComponent(room.name)}`);
           allItems = [...allItems, ...res.data];
         } catch (e) {
-          console.log(`Skipping room ${room.name}:`, e.message);
+          console.log('Skipping room ${room.name}:', e.message);
         }
       }
       // Remove any items that don't have any dates associated with them
@@ -83,9 +85,9 @@ export default function UpcomingScreen({navigation}) {
     // converts the time into days
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays <= 1) return "FF5252"; // Gives the border the color red
-    if (diffDays <= 3) return "FFD700"; // gives the border yellow color
-    return "4D693A"; // border is green
+    if (diffDays <= 1) return "#FF5252"; // Gives the border the color red
+    if (diffDays <= 3) return "#FFD700"; // gives the border yellow color
+    return "#4D693A"; // border is green
   };
 
   const filteredItems = items.filter(item =>
@@ -100,15 +102,15 @@ export default function UpcomingScreen({navigation}) {
     return (
       <View style = {styles.itemRow}>
         {/* Holds the image and the colored border */}
-        <View styles = {[styles.imageContainer, {borderColor:borderColor}]}>
+        <View style = {[styles.imageContainer, {borderColor:borderColor}]}>
           <Image
             source = {icon_search(item.name)}
             style = {styles.foodIcon}/>
         </View>
 
         {/* Displays the date of the item */}
-        <View styles = {styles.dateContainer}>
-          <Text styles = {styles.dateText}>{dateFormatted}</Text>
+        <View style = {styles.dateContainer}>
+          <Text style = {styles.dateText}>{dateFormatted}</Text>
         </View>
       </View>
     )
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     height: 70,
     backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 2.5,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: "#000",
