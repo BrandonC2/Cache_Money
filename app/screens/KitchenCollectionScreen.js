@@ -79,7 +79,7 @@ export default function KitchenCollection({ navigation, route }) {
       setRoomItems(updatedItems);
       
       setShowItemEditForm(false);
-      Alert.alert("Success", "Item updated successfully");
+      // Alert.alert("Success", "Item updated successfully");
     } catch (err) {
       console.error("Error updating item:", err.response?.data || err.message);
       Alert.alert("Error", "Failed to update item");
@@ -105,7 +105,7 @@ export default function KitchenCollection({ navigation, route }) {
               await apiClient.delete(`/inventory/${item._id}`);
               const updatedItems = roomItems.filter((_, i) => i !== index);
               setRoomItems(updatedItems);
-              Alert.alert("Success", "Item deleted successfully");
+              // Alert.alert("Success", "Item deleted successfully");
             } catch (err) {
               console.error("Error deleting item:", err.response?.data || err.message);
               Alert.alert("Error", "Failed to delete item");
@@ -178,7 +178,7 @@ export default function KitchenCollection({ navigation, route }) {
         setSelectedRoom(editRoomName);
         setEditingRoomName(editRoomName);
         setShowRoomEditModal(false);
-        Alert.alert("Success", "Room updated successfully");
+        // Alert.alert("Success", "Room updated successfully");
       }
     } catch (err) {
       console.error("Error updating room:", err);

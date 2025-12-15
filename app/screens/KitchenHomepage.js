@@ -118,7 +118,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
 
       await saveVisitedRoom(trimmedName, trimmedPassword);
 
@@ -157,7 +157,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
       await saveVisitedRoom(kitchenName.trim(), password.trim());
 
       navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
@@ -192,7 +192,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || err.message);
@@ -234,7 +234,7 @@ export default function KitchenHomepage() {
     setVisitedRooms(updatedRooms);
     await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
     setShowEditModal(false);
-    Alert.alert('Success', 'Room updated');
+    // Alert.alert('Success', 'Room updated');
   };
 
   /** DELETE ROOM */
@@ -252,7 +252,7 @@ export default function KitchenHomepage() {
             const updatedRooms = visitedRooms.filter((_, i) => i !== index);
             setVisitedRooms(updatedRooms);
             await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
-            Alert.alert('Success', 'Room deleted');
+            // Alert.alert('Success', 'Room deleted');
           },
           style: 'destructive',
         },
