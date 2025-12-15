@@ -69,6 +69,9 @@ export default function RecipeMaker({ navigation }) {
       style={styles.background}
     >
     <View style={styles.container}>
+      <View style = {styles.logoArea}>
+              <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+           </View>
       {/* Loading */}
       {loading && (
         <ActivityIndicator
@@ -172,5 +175,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
+  },
+    logo: {
+    width: 100,
+    height: 100,
+    position: 'absolute',
+    resizeMode: 'contain',
+  },
+  logoArea: {
+    top:'4.5%',
+    flex: 0.15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    
   },
 });
