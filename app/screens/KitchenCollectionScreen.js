@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f1e9e2ff",
   },
   foodGroupButton: {
     borderWidth: 1,
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f1e9e2ff",
     marginTop: 6,
   },
   foodGroupButtonText: {
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#4D693A",
   },
   saveButton: {
     backgroundColor: "#4D693A",
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
   },
   optionButtonText: {
     fontSize: 16,
-    color: "#2196F3",
+    color: "#4D693A",
     marginLeft: 12,
     fontWeight: "600",
   },

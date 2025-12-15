@@ -179,7 +179,7 @@ export default function AddScreen({ navigation }) {
                   style={{ backgroundColor: 'black' }}
                 />
               )} */}
-              <Modal
+      <Modal
         visible={showPicker}
         transparent={true}
         animationType="fade"
@@ -205,7 +205,7 @@ export default function AddScreen({ navigation }) {
                 [expireDate.toISOString().split('T')[0]]: {
                   selected: true, 
                   selectedColor: '#4D693A',
-                  selectedTextColor: '#c2b9b2ff'
+                  selectedTextColor: 'white'
                 }
               }}
 
