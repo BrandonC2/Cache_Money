@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Calendar } from 'react-native-calendars';
 import {
   ImageBackground,
   StyleSheet,
@@ -168,14 +169,76 @@ export default function AddScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
-              {showPicker && (
+              {/* {showPicker && (
                 <DateTimePicker
                   value={expireDate}
                   mode="date"
                   display="default"
                   onChange={onChange}
+                  accentColor= "#4D693A"
+                  style={{ backgroundColor: 'black' }}
                 />
-              )}
+              )} */}
+              <Modal
+        visible={showPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Expiration Date</Text>
+            
+            <Calendar
+          
+              current={expireDate.toISOString().split('T')[0]}
+          
+              onDayPress={(day) => {
+               
+                const newDate = new Date(day.year, day.month - 1, day.day);
+                setExpire(newDate);
+                setShowPicker(false); 
+              }}
+              
+              
+              markedDates={{
+                [expireDate.toISOString().split('T')[0]]: {
+                  selected: true, 
+                  selectedColor: '#4D693A',
+                  selectedTextColor: '#c2b9b2ff'
+                }
+              }}
+
+            
+              theme={{
+                calendarBackground: 'transparent', 
+                
+              
+                backgroundColor: 'transparent',
+
+            
+                textSectionTitleColor: '#b6c1cd',
+                selectedDayBackgroundColor: '#4D693A', 
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#4D693A',
+                dayTextColor: '#2d4150',
+                arrowColor: '#4D693A',
+                monthTextColor: '#4D693A',             
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowPicker(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+              
+
+
 
               {/* Add Item Button */}
               <TouchableOpacity
@@ -355,13 +418,13 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0)",
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: "#fcfaf2ff",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 20,
     maxHeight: "80%",
@@ -391,7 +454,7 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: 16,
     paddingVertical: 12,
-    backgroundColor: "#007bff",
+    backgroundColor: "#4D693A",
     borderRadius: 8,
     alignItems: "center",
   },

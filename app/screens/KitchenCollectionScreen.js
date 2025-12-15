@@ -370,7 +370,7 @@ export default function KitchenCollection({ navigation, route }) {
                   openEditForm();
                 }}
               >
-                <Ionicons name="create" size={20} color="#2196F3" />
+                <Ionicons name="create" size={20} color="#4D693A" />
                 <Text style={styles.optionButtonText}>Edit Item</Text>
               </TouchableOpacity>
 
@@ -763,8 +763,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 12,
+    backgroundColor: "#fcfaf2ff",
+    borderRadius: 30,
     padding: 20,
     width: "85%",
     maxHeight: "80%",
