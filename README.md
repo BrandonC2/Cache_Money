@@ -1,5 +1,8 @@
 # Cache Money (local dev)
+App Overview: 
+Food inventory app. Keep track of food items, expiring food items, create a grocery list, and create/ store your recipes. 
 
+Set Up: 
 Backend (Node/Express) and Frontend (Expo/React Native) in one repo.
 
 Backend quick start
