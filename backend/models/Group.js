@@ -1,11 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-/*
-Relationship Guides:
-- A (Food) Group can own many items   0...*
-
-*/
+//Relationship Guides:
+//- A (Food) Group can own many items  
 const groupSchema = new mongoose.Schema({
     name: {
         type: String,

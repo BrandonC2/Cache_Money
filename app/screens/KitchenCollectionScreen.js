@@ -513,7 +513,7 @@ export default function KitchenCollection({ navigation, route }) {
     );
   }
 
-  // --- Otherwise, show list of recently visited rooms ---
+  //show list of recently visited rooms 
   return (
     <View style={styles.container}>
       {/* Fixed header bar */}

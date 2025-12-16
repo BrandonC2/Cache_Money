@@ -86,7 +86,7 @@ export default function AddScreen({ navigation }) {
     setDesc("");
     setExpire(new Date());
 
-  // Return to previous screen (safer than navigating by name)
+  // Return to previous screen 
   navigation.goBack();
   } catch (err) {
     console.error("Add item error:", err.response?.data || err.message);

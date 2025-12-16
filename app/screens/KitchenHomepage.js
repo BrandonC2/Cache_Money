@@ -34,9 +34,7 @@ export default function KitchenHomepage() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  /** -----------------------------
-   *  TOKEN HEADER BUILDER
-   *  ----------------------------- */
+  //TOKEN HEADER BUILDER
   const getAuthHeaders = async () => {
     const token = await AsyncStorage.getItem("authToken");
     return {
@@ -89,9 +87,8 @@ export default function KitchenHomepage() {
 
   if (!fontsLoaded) return null;
 
-  /** --------------------------------------
-   *  CREATE ROOM (WITH TOKEN HEADERS)
-   *  -------------------------------------- */
+  //CREATE ROOM (WITH TOKEN HEADERS)
+   
   const createRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
@@ -131,9 +128,8 @@ export default function KitchenHomepage() {
     }
   };
 
-  /** --------------------------------------
-   *  JOIN ROOM (WITH TOKEN HEADERS)
-   *  -------------------------------------- */
+  //JOIN ROOM (WITH TOKEN HEADERS)
+   
   const joinRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
