@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Calendar } from 'react-native-calendars';
 import {
   ImageBackground,
   StyleSheet,
@@ -85,7 +86,7 @@ export default function AddScreen({ navigation }) {
     setDesc("");
     setExpire(new Date());
 
-  // Return to previous screen (safer than navigating by name)
+  // Return to previous screen 
   navigation.goBack();
   } catch (err) {
     console.error("Add item error:", err.response?.data || err.message);
@@ -95,7 +96,10 @@ export default function AddScreen({ navigation }) {
 
 
   return (
-    <ImageBackground style={styles.background}>
+    <ImageBackground 
+            style={styles.background}
+            source={require("../assets/grid_paper.jpg")}
+          >
       <View style={styles.container}>
         {/* Header with Return button */}
         <View style={styles.headerBar}>
@@ -112,7 +116,7 @@ export default function AddScreen({ navigation }) {
               {/* Logo */}
               <View style={styles.logoContainer}>
                 <Image
-                  source={require("../assets/Just_Icon.png")}
+                  source={require("../assets/basket.png")}
                   style={styles.logo}
                 />
               </View>
@@ -165,14 +169,76 @@ export default function AddScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
-              {showPicker && (
+              {/* {showPicker && (
                 <DateTimePicker
                   value={expireDate}
                   mode="date"
                   display="default"
                   onChange={onChange}
+                  accentColor= "#4D693A"
+                  style={{ backgroundColor: 'black' }}
                 />
-              )}
+              )} */}
+      <Modal
+        visible={showPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Expiration Date</Text>
+            
+            <Calendar
+          
+              current={expireDate.toISOString().split('T')[0]}
+          
+              onDayPress={(day) => {
+               
+                const newDate = new Date(day.year, day.month - 1, day.day);
+                setExpire(newDate);
+                setShowPicker(false); 
+              }}
+              
+              
+              markedDates={{
+                [expireDate.toISOString().split('T')[0]]: {
+                  selected: true, 
+                  selectedColor: '#4D693A',
+                  selectedTextColor: 'white'
+                }
+              }}
+
+            
+              theme={{
+                calendarBackground: 'transparent', 
+                
+              
+                backgroundColor: 'transparent',
+
+            
+                textSectionTitleColor: '#b6c1cd',
+                selectedDayBackgroundColor: '#4D693A', 
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#4D693A',
+                dayTextColor: '#2d4150',
+                arrowColor: '#4D693A',
+                monthTextColor: '#4D693A',             
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowPicker(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+              
+
+
 
               {/* Add Item Button */}
               <TouchableOpacity
@@ -243,7 +309,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "transparent",
   },
   headerBar: {
     flexDirection: "row",
@@ -278,8 +344,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 70,
+    height: 70,
   },
   label: {
     fontSize: 16,
@@ -292,18 +358,18 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#c2b9b2ff",
     paddingHorizontal: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#e8d5c460",
     color: "#333",
   },
   foodGroupButton: {
     height: 50,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderColor: "#c2b9b2ff",
+    backgroundColor: "#e8d5c460",
     paddingHorizontal: 12,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -311,7 +377,7 @@ const styles = StyleSheet.create({
   },
   foodGroupButtonText: {
     fontSize: 16,
-    color: "#333",
+    color: "#999",
   },
   dropdownIcon: {
     fontSize: 12,
@@ -321,14 +387,14 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+    borderColor: "#c2b9b2ff",
+    backgroundColor: "#e8d5c460",
     justifyContent: "center",
     paddingHorizontal: 12,
   },
   dateButtonText: {
     fontSize: 16,
-    color: "#333",
+    color: "#999",
   },
   errorText: {
     color: "#d81e1e",
@@ -352,13 +418,13 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0)",
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: "#fcfaf2ff",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     paddingHorizontal: 20,
     paddingVertical: 20,
     maxHeight: "80%",
@@ -388,7 +454,7 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     marginTop: 16,
     paddingVertical: 12,
-    backgroundColor: "#007bff",
+    backgroundColor: "#4D693A",
     borderRadius: 8,
     alignItems: "center",
   },

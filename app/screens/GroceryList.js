@@ -15,12 +15,12 @@ import { Check, Plus, Trash2 } from "lucide-react-native";
 const TEMPLATE = require("../assets/SP_grocerylist2.png");
 
 export default function GroceryList() {
-  // ---- basic state
+  //basic state
   const [brand] = useState({ name: "Grocery List", no: 1367 });
   const [taxRate, setTaxRate] = useState(0.05);
   const [taxInclusive, setTaxInclusive] = useState(true);
 
-  // simple ID generator (no crypto)
+  // simple ID generator 
   const makeId = () =>
     Date.now().toString() + Math.random().toString(36).substring(2, 9);
 
@@ -39,7 +39,7 @@ export default function GroceryList() {
     return { subtotal, tax, grand };
   }, [items, taxRate, taxInclusive]);
 
-  // ---- actions
+  // actions
   const addItem = () =>
     setItems((prev) => [
       ...prev,
@@ -52,7 +52,7 @@ export default function GroceryList() {
   const updateItem = (id, patch) =>
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
-  // ---- UI
+  // User interface starts here
   return (
     <View style={styles.screen}>
 
@@ -310,11 +310,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   aspectBox: {
-    width: "90%",        // was 100%
-    aspectRatio: .58,   // matches your uploaded image better (approx 580px tall × 330px wide)
+    width: "90%",        
+    aspectRatio: .58,  
     alignSelf: "center",
     marginTop: 10,
-    marginBottom: 20, // adjust if your template is different
+    marginBottom: 20, 
   },
   overlayBlock: {
     position: "absolute",

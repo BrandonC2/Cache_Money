@@ -79,7 +79,7 @@ export default function KitchenCollection({ navigation, route }) {
       setRoomItems(updatedItems);
       
       setShowItemEditForm(false);
-      Alert.alert("Success", "Item updated successfully");
+      // Alert.alert("Success", "Item updated successfully");
     } catch (err) {
       console.error("Error updating item:", err.response?.data || err.message);
       Alert.alert("Error", "Failed to update item");
@@ -105,7 +105,7 @@ export default function KitchenCollection({ navigation, route }) {
               await apiClient.delete(`/inventory/${item._id}`);
               const updatedItems = roomItems.filter((_, i) => i !== index);
               setRoomItems(updatedItems);
-              Alert.alert("Success", "Item deleted successfully");
+              // Alert.alert("Success", "Item deleted successfully");
             } catch (err) {
               console.error("Error deleting item:", err.response?.data || err.message);
               Alert.alert("Error", "Failed to delete item");
@@ -178,7 +178,7 @@ export default function KitchenCollection({ navigation, route }) {
         setSelectedRoom(editRoomName);
         setEditingRoomName(editRoomName);
         setShowRoomEditModal(false);
-        Alert.alert("Success", "Room updated successfully");
+        // Alert.alert("Success", "Room updated successfully");
       }
     } catch (err) {
       console.error("Error updating room:", err);
@@ -370,7 +370,7 @@ export default function KitchenCollection({ navigation, route }) {
                   openEditForm();
                 }}
               >
-                <Ionicons name="create" size={20} color="#2196F3" />
+                <Ionicons name="create" size={20} color="#4D693A" />
                 <Text style={styles.optionButtonText}>Edit Item</Text>
               </TouchableOpacity>
 
@@ -513,7 +513,7 @@ export default function KitchenCollection({ navigation, route }) {
     );
   }
 
-  // --- Otherwise, show list of recently visited rooms ---
+  //show list of recently visited rooms 
   return (
     <View style={styles.container}>
       {/* Fixed header bar */}
@@ -758,13 +758,14 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 12,
+    backgroundColor: "#fcfaf2ff",
+    borderColor: "#94938eff",
+    borderRadius: 30,
     padding: 20,
     width: "85%",
     maxHeight: "80%",
@@ -790,7 +791,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f1e9e2ff",
   },
   foodGroupButton: {
     borderWidth: 1,
@@ -798,7 +799,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f1e9e2ff",
     marginTop: 6,
   },
   foodGroupButtonText: {
@@ -817,7 +818,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#4D693A",
   },
   saveButton: {
     backgroundColor: "#4D693A",
@@ -838,7 +839,7 @@ const styles = StyleSheet.create({
   },
   optionButtonText: {
     fontSize: 16,
-    color: "#2196F3",
+    color: "#4D693A",
     marginLeft: 12,
     fontWeight: "600",
   },

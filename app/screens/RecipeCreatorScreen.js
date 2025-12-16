@@ -13,8 +13,11 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import * as ImagePicker from "expo-image-picker";
 import apiClient from "../lib/apiClient";
+import CustomBackButton from "../components/CustomBackButton";
+import { Calendar } from 'react-native-calendars';
 
 const foodGroups = [
   "Dessert",
@@ -28,6 +31,7 @@ const foodGroups = [
 ];
 
 export default function RecipeCreatorScreen({ navigation }) {
+  const [expireDate, setExpire] = useState(new Date());
   const [recipeName, setRecipeName] = useState("");
   const [recipeDesc, setRecipeDesc] = useState("");
   const [imageUri, setImageUri] = useState(null);
@@ -153,16 +157,16 @@ export default function RecipeCreatorScreen({ navigation }) {
   };
 
   return (
-    <ImageBackground style={styles.background}>
+    <ImageBackground 
+            style={styles.background}
+            source={require("../assets/grid_paper.jpg")}
+          >
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.headerBar}>
-          <TouchableOpacity
-            style={styles.returnButtonHeader}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.returnButtonHeaderText}>← Return</Text>
-          </TouchableOpacity>
+            <CustomBackButton onPress={() => navigation.goBack()} />
+         
+        
           <Text style={styles.headerTitle}>Create Recipe</Text>
           <View style={{ width: 80 }} />
         </View>
@@ -258,14 +262,64 @@ export default function RecipeCreatorScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
 
-              {showPicker && (
-                <DateTimePicker
-                  value={currentItem.expirationDate}
-                  mode="date"
-                  display="default"
-                  onChange={onChangeDate}
-                />
-              )}
+            <Modal
+        visible={showPicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Expiration Date</Text>
+            
+            <Calendar
+          
+              current={expireDate.toISOString().split('T')[0]}
+          
+              onDayPress={(day) => {
+               
+                const newDate = new Date(day.year, day.month - 1, day.day);
+                setExpire(newDate);
+                setShowPicker(false); 
+              }}
+              
+              
+              markedDates={{
+                [expireDate.toISOString().split('T')[0]]: {
+                  selected: true, 
+                  selectedColor: '#4D693A',
+                  selectedTextColor: 'white'
+                }
+              }}
+
+            
+              theme={{
+                calendarBackground: 'transparent', 
+                
+              
+                backgroundColor: 'transparent',
+
+            
+                textSectionTitleColor: '#b6c1cd',
+                selectedDayBackgroundColor: '#4D693A', 
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#4D693A',
+                dayTextColor: '#2d4150',
+                arrowColor: '#4D693A',
+                monthTextColor: '#4D693A',             
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowPicker(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+              
 
               <TouchableOpacity
                 style={styles.addButton}
@@ -375,12 +429,12 @@ export default function RecipeCreatorScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  container: { flex: 1, backgroundColor: "rgba(255,255,255,0.95)" },
+  container: { flex: 1, backgroundColor: "transparent" },
   headerBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 16,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "transparent",
     marginTop: 40,
   },
   returnButtonHeaderText: { fontSize: 16, color: "#007bff" },
@@ -389,9 +443,10 @@ const styles = StyleSheet.create({
   formContainer: { paddingHorizontal: 20 },
   label: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
   input: {
+    backgroundColor: '#e8d5c460',
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#c2b9b2ff",
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 12,
@@ -408,9 +463,10 @@ const styles = StyleSheet.create({
   imageButtonText: { color: "white", fontWeight: "600" },
 
   foodGroupButton: {
+    backgroundColor: '#e8d5c460',
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#c2b9b2ff",
     borderRadius: 8,
     paddingHorizontal: 12,
     justifyContent: "space-between",
@@ -419,9 +475,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   dateButton: {
+    backgroundColor: '#e8d5c460',
     height: 50,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#c2b9b2ff",
     borderRadius: 8,
     justifyContent: "center",
     paddingHorizontal: 12,
@@ -429,6 +486,7 @@ const styles = StyleSheet.create({
   },
 
   addButton: {
+
     height: 50,
     backgroundColor: "#4D693A",
     borderRadius: 8,
@@ -439,6 +497,7 @@ const styles = StyleSheet.create({
   addButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
 
   ingredientItem: {
+    
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
@@ -461,13 +520,13 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0, 0, 0, 0)",
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#fcfaf2ff",
     padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
   modalOption: {
@@ -476,7 +535,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   modalCloseButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "#4D693A",
     padding: 12,
     borderRadius: 10,
     marginTop: 16,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
+  ImageBackground,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -9,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import apiClient from "../lib/apiClient";
-
+import { Calendar } from 'react-native-calendars';
 export default function RecipeMaker({ navigation }) {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +64,14 @@ export default function RecipeMaker({ navigation }) {
   );
 
   return (
+    <ImageBackground 
+      source={require("../assets/grid_paper.jpg")} 
+      style={styles.background}
+    >
     <View style={styles.container}>
+      <View style = {styles.logoArea}>
+              <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+           </View>
       {/* Loading */}
       {loading && (
         <ActivityIndicator
@@ -95,11 +103,19 @@ export default function RecipeMaker({ navigation }) {
         <Text style={styles.addButtonText}>+ Add Recipe</Text>
       </TouchableOpacity>
     </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  background: {
+    flex: 1, 
+    width: '100%',
+    height: '100%',
+  },
+  
+
+  container: { flex: 1, backgroundColor: "transparent" },
 
   recipeCard: {
     backgroundColor: "#f4f4f4",
@@ -149,7 +165,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 30,
     right: 30,
-    backgroundColor: "#000",
+    backgroundColor: "#4D693A",
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 50,
@@ -159,5 +175,18 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
+  },
+    logo: {
+    width: 100,
+    height: 100,
+    position: 'absolute',
+    resizeMode: 'contain',
+  },
+  logoArea: {
+    top:'4.5%',
+    flex: 0.15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    
   },
 });

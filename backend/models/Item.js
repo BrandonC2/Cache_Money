@@ -5,8 +5,8 @@ const itemSchema = new mongoose.Schema({
   description: { type: String },
   foodGroup: { type: String, required: true },
   expirationDate: { type: Date },
-  room: { type: String, required: true },      // ✅ Added
-  addedBy: { type: String, required: true },   // ✅ Added
+  room: { type: String, required: true },      
+  addedBy: { type: String, required: true },   
 }, { timestamps: true });
 
 module.exports = mongoose.model("Item", itemSchema);

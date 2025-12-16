@@ -34,9 +34,7 @@ export default function KitchenHomepage() {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  /** -----------------------------
-   *  TOKEN HEADER BUILDER
-   *  ----------------------------- */
+  //TOKEN HEADER BUILDER
   const getAuthHeaders = async () => {
     const token = await AsyncStorage.getItem("authToken");
     return {
@@ -89,9 +87,8 @@ export default function KitchenHomepage() {
 
   if (!fontsLoaded) return null;
 
-  /** --------------------------------------
-   *  CREATE ROOM (WITH TOKEN HEADERS)
-   *  -------------------------------------- */
+  //CREATE ROOM (WITH TOKEN HEADERS)
+   
   const createRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
@@ -118,7 +115,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
 
       await saveVisitedRoom(trimmedName, trimmedPassword);
 
@@ -131,9 +128,8 @@ export default function KitchenHomepage() {
     }
   };
 
-  /** --------------------------------------
-   *  JOIN ROOM (WITH TOKEN HEADERS)
-   *  -------------------------------------- */
+  //JOIN ROOM (WITH TOKEN HEADERS)
+   
   const joinRoom = async () => {
     if (!username) {
       Alert.alert('Error', 'User not loaded. Please log in again.');
@@ -157,7 +153,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
       await saveVisitedRoom(kitchenName.trim(), password.trim());
 
       navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
@@ -192,7 +188,7 @@ export default function KitchenHomepage() {
         authHeaders
       );
 
-      Alert.alert('Success', res.data.message);
+      // Alert.alert('Success', res.data.message);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) {
       Alert.alert('Error', err.response?.data?.message || err.message);
@@ -234,7 +230,7 @@ export default function KitchenHomepage() {
     setVisitedRooms(updatedRooms);
     await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
     setShowEditModal(false);
-    Alert.alert('Success', 'Room updated');
+    // Alert.alert('Success', 'Room updated');
   };
 
   /** DELETE ROOM */
@@ -252,7 +248,7 @@ export default function KitchenHomepage() {
             const updatedRooms = visitedRooms.filter((_, i) => i !== index);
             setVisitedRooms(updatedRooms);
             await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
-            Alert.alert('Success', 'Room deleted');
+            // Alert.alert('Success', 'Room deleted');
           },
           style: 'destructive',
         },
