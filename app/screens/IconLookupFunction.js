@@ -25,6 +25,8 @@ const iconDictionary = {
 
     'bellpeppers': require('../item_icons/Bell_Pepper.png'),
     'bellpepper': require('../item_icons/Bell_Pepper.png'),
+    'bell peppers': require('../item_icons/Bell_Pepper.png'),
+    'bell pepper': require('../item_icons/Bell_Pepper.png'),
 
     'broccoli': require('../item_icons/Broccoli.png'),
 
@@ -41,6 +43,8 @@ const iconDictionary = {
 
     'greenonion': require('../item_icons/Green_Onion.png'),
     'greenonions': require('../item_icons/Green_Onion.png'),
+    'green onions': require('../item_icons/Green_Onion.png'),
+    'green onion': require('../item_icons/Green_Onion.png'),
 
     'lemons': require('../item_icons/Lemon.png'),
     'lemon': require('../item_icons/Lemon.png'),
@@ -77,6 +81,33 @@ const iconDictionary = {
     'watermelons': require('../item_icons/Watermelon.png'),
     'watermelon': require('../item_icons/Watermelon.png'),
 
+    'beef': require('../item_icons/beef.png'),
+
+    'butter': require('../item_icons/butter.png'),
+
+    'cereal': require('../item_icons/cereal.png'),
+
+    'fish': require('../item_icons/fish.png'),
+    'fishes': require('../item_icons/fish.png'),
+    'salmon': require('../item_icons/fish.png'),
+    'tilapia': require('../item_icons/fish.png'),
+    'cod': require('../item_icons/fish.png'),
+    'rockfish': require('../item_icons/fish.png'),
+
+    'flour': require('../item_icons/flour.png'),
+
+    'oatmeal': require('../item_icons/oatmeal.png'),
+    'oat': require('../item_icons/oatmeal.png'),
+    'oats': require('../item_icons/oatmeal.png'),
+
+    'rice': require('../item_icons/rice.png'),
+
+    'shrimp': require('../item_icons/shrimp.png'),
+    'shrimps': require('../item_icons/shrimp.png'),
+
+    'chicken': require('../item_icons/turkey.png'),
+
+    'yogurt': require('../item_icons/yogurt.png'),
 
 };
 
