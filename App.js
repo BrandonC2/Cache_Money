@@ -37,7 +37,7 @@ function NavigationBar() {
 
     <Tab.Navigator
       screenOptions ={{
-        
+        headerShown: false,
         tabBarStyle: {
             height: 80,
         
@@ -135,6 +135,7 @@ function NavigationBar() {
               style={{
                 width:25,
                 height:25,
+               
               }}
             />
 
@@ -193,6 +194,7 @@ export default function App() {
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
       <Stack.Screen name = "ReceiptReview" component ={ReceiptReviewScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Settings" component ={SettingsScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "Grocery" component={GroceryList} options={{ headerShown: false }}/>
 
     </Stack.Navigator>
   </NavigationContainer>

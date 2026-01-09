@@ -7,12 +7,13 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  ImageBackground,
 } from "react-native";
 import { Motion } from "@legendapp/motion";
 import { Check, Plus, Trash2 } from "lucide-react-native";
 
 // Adjust the path to where your asset actually lives
-const TEMPLATE = require("../assets/SP_grocerylist2.png");
+const TEMPLATE = require("../assets/SP_grocerylist3.png");
 
 export default function GroceryList() {
   //basic state
@@ -54,6 +55,15 @@ export default function GroceryList() {
 
   // User interface starts here
   return (
+    <ImageBackground 
+            style={styles.background}
+            source={require("../assets/grid_paper.jpg")}
+          >
+    <View style={styles.container}>
+          <View style = {styles.logoArea}>
+                  <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+               </View>
+    </View>
     <View style={styles.screen}>
 
       {/* Receipt container with the template as background */}
@@ -64,7 +74,7 @@ export default function GroceryList() {
         <Motion.View
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          style={styles.receiptShadow}
+          
         >
           {/* Keep a fixed aspect ratio similar to the image (3:5) */}
           <View style={styles.aspectBox}>
@@ -253,20 +263,42 @@ export default function GroceryList() {
         <Plus size={24} color="#fff" />
       </Pressable>
     </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+   background: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+ 
+  },
+  logoArea: {
+    alignItems: "center",
+    marginTop: 40, 
+    marginBottom: -100,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    resizeMode: "contain",
+  },
+  screen: {
+    top: 70,
+    flex: 1,
+  },
   fab: {
-    position: 'absolute',
-    bottom: 10,
+    position: "absolute",
+    // top: -100,
+    bottom: 100,
     right: 20,
-    backgroundColor: '#12243a',
+    backgroundColor: "#4A3B32",
     width: 56,
     height: 56,
     borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 5,
     shadowColor: "#000",
     shadowOpacity: 0.3,
@@ -274,8 +306,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   screen: {
+    top: "10%",
     flex: 1,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "#e5e7eb00",
     padding: 16,
   },
   toolbar: {
@@ -284,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  toolbarTitle: { fontWeight: "700", color: "#1f2937" },
+  toolbarTitle: { fontWeight: "700", color: "#4A3B32" },
   toolbarSub: { fontSize: 12, color: "rgba(31,41,55,0.7)" },
   primaryBtn: {
     backgroundColor: "white",
@@ -362,12 +395,12 @@ const styles = StyleSheet.create({
   receiptShadow: {
   width: "100%",
   borderRadius: 20,
-  shadowColor: "#000",
+  shadowColor: "#00000000",
   shadowOpacity: 0.2,
   shadowRadius: 10,
   shadowOffset: { width: 0, height: 6 },
   elevation: 4,
-  backgroundColor: "#f9f9f9",
+  backgroundColor: "#f9f9f900",
   alignItems: "center",
   justifyContent: "center",
 },
