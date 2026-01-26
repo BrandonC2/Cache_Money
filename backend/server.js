@@ -1,91 +1,115 @@
+// =====================
+// Load environment vars
+// =====================
 require("dotenv").config();
+
+// =====================
+// Imports (Node ONLY)
+// =====================
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const http = require("http");
 const { Server } = require("socket.io");
 
-//To start server
-// cd backend
-// npm run dev
-
-// Express app setup
+// =====================
+// App + Server
+// =====================
 const app = express();
-app.use(cors());
+const server = http.createServer(app);
+
+// =====================
+// Middleware
+// =====================
+app.use(
+  cors({
+    origin: "*", // Expo / mobile safe
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
+
 app.use(express.json());
 
-// Request logger for debugging
+// Logger
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} --> ${req.method} ${req.originalUrl}`);
-  if (req.method !== "GET") console.log("Body:", req.body);
+  console.log(
+    `${new Date().toISOString()} → ${req.method} ${req.originalUrl}`
+  );
   next();
 });
 
-// ✅ Connect to MongoDB
+// =====================
+// MongoDB
+// =====================
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB successfully!"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
 
-// ✅ Import routes
-const userRoutes = require("./routes/userRoutes");
-const inventoryRoutes = require("./routes/inventoryRoutes");
-const kitchenRoutes = require("./routes/kitchenRoutes");
-const recipeRoutes = require("./routes/recipeRoutes");
-const receiptRoutes = require("./routes/receiptRoutes");
+// =====================
+// Routes
+// =====================
+app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/inventory", require("./routes/inventoryRoutes"));
+app.use("/api/kitchens", require("./routes/kitchenRoutes"));
+app.use("/api/recipes", require("./routes/recipeRoutes"));
+app.use("/api/receipts", require("./routes/receiptRoutes"));
 
-// ✅ Mount routes
-app.use("/api/users", userRoutes);
-app.use("/api/inventory", inventoryRoutes);
-app.use("/api/kitchens", kitchenRoutes);
-app.use("/api/receipts", receiptRoutes);
-app.use("/api/recipes", recipeRoutes);
+// Static uploads (optional)
+app.use("/uploads", express.static("uploads"));
 
-// WIP image upload
-app.use('/uploads', express.static('uploads'))
+// =====================
+// Health check (Render)
+// =====================
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
 
-// ✅ Health check
-app.get("/health", (req, res) =>
-  res.json({ ok: true, time: new Date().toISOString() })
-);
-
-// --- SOCKET.IO SETUP --- //
-const server = http.createServer(app);
+// =====================
+// Socket.IO
+// =====================
 const io = new Server(server, {
   cors: {
-    origin: "*", // allow mobile devices on LAN
+    origin: "*", // Expo-safe
     methods: ["GET", "POST"],
   },
 });
 
-// --- SOCKET EVENTS --- //
 const Kitchen = require("./models/Kitchen");
 
 io.on("connection", (socket) => {
-  console.log("🟢 New client connected:", socket.id);
+  console.log("🟢 Socket connected:", socket.id);
 
   socket.on("joinRoom", async ({ roomName, username }) => {
     socket.join(roomName);
-    console.log(`👤 ${username} joined room ${roomName}`);
+
+    console.log(`👤 ${username} joined ${roomName}`);
 
     try {
       const kitchen = await Kitchen.findOne({ name: roomName });
-      if (kitchen && kitchen.messages.length > 0) {
+      if (kitchen?.messages?.length) {
         socket.emit("loadMessages", kitchen.messages);
       }
     } catch (err) {
-      console.error("Error loading messages:", err);
+      console.error("Socket load error:", err.message);
     }
 
     io.to(roomName).emit("message", {
       sender: "System",
       text: `${username} joined the room.`,
+      timestamp: new Date(),
     });
   });
 
   socket.on("chatMessage", async ({ roomName, sender, text }) => {
     const message = { sender, text, timestamp: new Date() };
-    console.log(`💬 ${sender} -> ${roomName}: ${text}`);
 
     io.to(roomName).emit("message", message);
 
@@ -95,26 +119,28 @@ io.on("connection", (socket) => {
         { $push: { messages: message } }
       );
     } catch (err) {
-      console.error("Error saving message:", err);
+      console.error("Socket save error:", err.message);
     }
   });
 
   socket.on("disconnect", () => {
-    console.log("🔴 Client disconnected:", socket.id);
+    console.log("🔴 Socket disconnected:", socket.id);
   });
 });
 
-// --- ERROR HANDLING MIDDLEWARE --- //
+// =====================
+// Error handler
+// =====================
 app.use((err, req, res, next) => {
-  console.error("Express error:", err);
-  res.status(500).json({ error: err.message });
+  console.error("❌ Express error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
 
-// --- START SERVER --- //
-const PORT = process.env.PORT || 5001;
+// =====================
+// Start Server (Render-safe)
+// =====================
+const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running and accessible on:`);
-  console.log(`   ▶ http://0.0.0.0:${PORT}`);
-  console.log(`   ▶ http://YOUR_LAN_IP:${PORT}   <-- Use this on your phone`);
+server.listen(PORT, () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
