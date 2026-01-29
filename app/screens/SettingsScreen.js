@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect } from "react";
+import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
+import { ScreenStackHeaderLeftView } from "react-native-screens";
 
 /**
  * SettingsScreen: User account management
@@ -32,16 +33,22 @@ export default function SettingsScreen({ navigation }) {
     confirmPassword: "",
   });
   const [processing, setProcessing] = useState(false);
+  const [color, setColor] = useState('#F2ECD5');
+  const divRef = useRef(null);
 
   useLayoutEffect(() => {
+    if (divRef.current){
+      divRef.current.style.backgroundColor = color;
+    }
     navigation.setOptions({
       headerShown: true,
       title: "Settings",
+      headerTitleAlign: 'center',
       headerLeft: () => (
         <CustomBackButton onPress={() => navigation.goBack()} />
       ),
     });
-  }, [navigation]);
+  }, [navigation], [color]);
 
   useEffect(() => {
     loadUsername();
