@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const util = require("util");
 const InventoryItem = require("../models/InventoryItem");
-const auth = require("../middleware/auth");
+//const auth = require("../middleware/auth");
 const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
 
@@ -12,7 +12,7 @@ function escapeRegExp(string) {
 }
 
 // TEST ENDPOINT: GET /api/inventory/test/mongo-query
-router.get("/test/mongo-query", auth, async (req, res) => {
+router.get("/test/mongo-query", async (req, res) => {
   try {
     console.log(`\n🧪 TEST ENDPOINT: Checking MongoDB queries`);
     console.log(`   Current userId: ${req.userId}`);
@@ -56,7 +56,7 @@ router.get("/test/mongo-query", auth, async (req, res) => {
 });
 
 // DEBUG: GET /api/inventory/debug/all - Get ALL items for user (for debugging)
-router.get("/debug/all", auth, async (req, res) => {
+router.get("/debug/all", async (req, res) => {
   try {
     console.log(`\n🔍 DEBUG REQUEST: Fetching ALL items for userId: ${req.userId}`);
     
@@ -100,7 +100,7 @@ router.get("/debug/all", auth, async (req, res) => {
 });
 
 // GET /api/inventory - Get user's inventory items for a specific room
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const { room } = req.query;
     
@@ -173,7 +173,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // POST /api/inventory - Add new item
-router.post("/", auth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     console.log(`\n➕ POST /inventory REQUEST`);
     console.log(`   userId: ${req.userId}`);
@@ -243,7 +243,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // PUT /api/inventory/:id - Update item
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const item = await InventoryItem.findById(req.params.id);
 
@@ -272,7 +272,7 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 // DELETE /api/inventory/:id - Delete item
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const item = await InventoryItem.findById(req.params.id);
 
@@ -293,7 +293,7 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 // DELETE: DANGEROUS - Clear all items for current user (for testing only)
-router.delete("/clear/all", auth, async (req, res) => {
+router.delete("/clear/all", async (req, res) => {
   try {
     console.log(`\n⚠️ CLEARING ALL ITEMS for userId: ${req.userId}`);
     const result = await InventoryItem.deleteMany({ userId: req.userId });
@@ -306,7 +306,7 @@ router.delete("/clear/all", auth, async (req, res) => {
 });
 
 // GET /api/inventory/category/:category - Get items by category
-router.get("/category/:category", auth, async (req, res) => {
+router.get("/category/:category", async (req, res) => {
   try {
     const { category } = req.params;
 

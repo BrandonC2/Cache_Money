@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Receipt = require('../models/Receipt');
 const InventoryItem = require('../models/InventoryItem');
-const auth = require('../middleware/auth');
+//const auth = require('../middleware/auth');
 const fs = require('fs');
 const path = require('path');
 
@@ -126,7 +126,7 @@ const categorizeItems = (items) => {
 
 // POST /api/receipts/upload
 // Upload image and extract text (mock OCR for now)
-router.post('/upload', auth, async (req, res) => {
+router.post('/upload', async (req, res) => {
   try {
     const { imageUri, rawText } = req.body;
 
@@ -163,7 +163,7 @@ router.post('/upload', auth, async (req, res) => {
 
 // GET /api/receipts/:id
 // Get receipt details
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const receipt = await Receipt.findById(req.params.id);
 
@@ -184,7 +184,7 @@ router.get('/:id', auth, async (req, res) => {
 
 // PUT /api/receipts/:id
 // Update receipt items (user edits names, quantities, categories)
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { items } = req.body;
 
@@ -212,7 +212,7 @@ router.put('/:id', auth, async (req, res) => {
 
 // POST /api/receipts/:id/import
 // Import receipt items to user's inventory
-router.post('/:id/import', auth, async (req, res) => {
+router.post('/:id/import', async (req, res) => {
   try {
     const { room } = req.body;
     
@@ -261,7 +261,7 @@ router.post('/:id/import', auth, async (req, res) => {
 
 // DELETE /api/receipts/:id
 // Delete receipt
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const receipt = await Receipt.findById(req.params.id);
 

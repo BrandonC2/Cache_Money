@@ -51,7 +51,7 @@ router.post('/signup', async (req, res) => {
 
 // GET /api/users/profile (protected)
 // Get current user profile
-router.get('/profile', auth, async (req, res) => {
+router.get('/profile', async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -63,7 +63,7 @@ router.get('/profile', auth, async (req, res) => {
 
 // PUT /api/users/profile/username (protected)
 // Change username
-router.put('/profile/username', auth, async (req, res) => {
+router.put('/profile/username', async (req, res) => {
   try {
     const { newUsername } = req.body;
 
@@ -91,7 +91,7 @@ router.put('/profile/username', auth, async (req, res) => {
 
 // PUT /api/users/profile/password (protected)
 // Change password
-router.put('/profile/password', auth, async (req, res) => {
+router.put('/profile/password', async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -124,7 +124,7 @@ router.put('/profile/password', auth, async (req, res) => {
 
 // POST /api/users/profile/delete (protected)
 // Delete account (requires password confirmation)
-router.post('/profile/delete', auth, async (req, res) => {
+router.post('/profile/delete', async (req, res) => {
   try {
     const { password } = req.body;
 
@@ -152,7 +152,7 @@ router.post('/profile/delete', auth, async (req, res) => {
 
 // DELETE /api/users/:id (protected)
 // Only allow the authenticated user to delete their own account, or an admin.
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const targetUserId = req.params.id;
     const requesterId = req.userId;
