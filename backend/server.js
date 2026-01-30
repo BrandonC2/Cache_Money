@@ -54,7 +54,7 @@ mongoose
 // =====================
 app.use("/api/users", require("./routes/userRoutes"));
 //app.use("/api/inventory", require("./routes/inventoryRoutes"));
-//app.use("/api/kitchens", require("./routes/kitchenRoutes"));
+app.use("/api/kitchens", require("./routes/kitchenRoutes"));
 //app.use("/api/recipes", require("./routes/recipeRoutes"));
 //app.use("/api/receipts", require("./routes/receiptRoutes"));
 

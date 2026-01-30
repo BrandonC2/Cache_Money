@@ -14,10 +14,9 @@ const kitchenSchema = new mongoose.Schema({
   members: [{ type: String }], // store usernames that joined
 });
 
-kitchenSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+kitchenSchema.pre("save", async function () {
+  if (!this.isModified("password")) return ;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 kitchenSchema.methods.comparePassword = async function (password) {
