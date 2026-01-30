@@ -30,7 +30,7 @@ const foodGroups = [
   "Snack",
 ];
 
-export default function RecipeCreatorScreen({ navigation }) {
+export default function AddRecipeScreen({ navigation }) {
   const [expireDate, setExpire] = useState(new Date());
   const [recipeName, setRecipeName] = useState("");
   const [recipeDesc, setRecipeDesc] = useState("");

@@ -28,28 +28,19 @@ export default function LoginScreen({navigation}) {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   useEffect(() => {
-  const checkLoginStatus = async () => {
-    try {
-      const token = await AsyncStorage.getItem("authToken");
-      const savedUsername = await AsyncStorage.getItem("username");
+  console.log('API_BASE (Login/Registration):', API_BASE);
 
-      if (token && savedUsername) {
-        console.log("Auto login OK:", savedUsername);
-        navigation.replace("MainNavBar", {
-          username: savedUsername,
-        });
-      }
-    } catch (error) {
-      console.error("Error checking login status:", error);
+  const checkLoginStatus = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+    const savedUsername = await AsyncStorage.getItem("username");
+    if (token && savedUsername) {
+      navigation.replace("MainNavBar", { username: savedUsername });
     }
   };
-  checkLoginStatus();
-  }, []);
 
-  React.useEffect(() => {
-    console.log('API_BASE (Login):', API_BASE);
-  }, []);
-  
+  checkLoginStatus();
+}, []);
+
   const handleLogin = async () => {
     setError("");
     // basic client-side validation
@@ -88,7 +79,7 @@ export default function LoginScreen({navigation}) {
           console.log('Saved username:', nameToSave);
         }
         // Navigate to main tab navigation after successful login
-        navigation.replace('MainNavBar');
+        navigation.replace('MainNavBar', { username: returnedUsername || username });
         } else {
           setError('No token received from server');
         }

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import apiClient from "../lib/apiClient";
 import { Calendar } from 'react-native-calendars';
-export default function RecipeMaker({ navigation }) {
+export default function RecipeScreen({ navigation }) {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

@@ -74,11 +74,11 @@ export default function RegistrationScreen({ navigation }) {
         setLoading(false);
         return;
       }
-      const { token } = data;
+      const { token } = loginData;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('username', username);
-        navigation.navigate('MainNavBar');
+        navigation.replace('MainNavBar');
       }
     } catch (err) {
       console.error("Signup/Login error:", err);
@@ -157,7 +157,7 @@ export default function RegistrationScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#F2ECD5' },
-  logoArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  logoArea: { flex: 0.8, justifyContent: 'center', alignItems: 'center' },
   informationSection: { flex: 2.2, alignItems: 'center', justifyContent: 'flex-start', width: '100%' },
   infoContainer: { width: '85%' },
   logo: { width: 140, height: 140, resizeMode: 'contain' },

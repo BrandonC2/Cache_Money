@@ -4,24 +4,22 @@ const multer = require('multer');
 
 // Configure storage
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // folder to save images
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
-
 const upload = multer({ storage });
 
-router.post('/', upload.single('image'), (req, res) => {
+// Create recipe
+router.post('/', upload.single('image'), async (req, res) => {
   const { title, description } = req.body;
   const image = req.file ? req.file.filename : null;
 
-  // TODO: Save to DB here
+  if (!title) return res.status(400).json({ message: 'Title is required' });
+
+  // TODO: Save to DB if you have a Recipe model
   console.log({ title, description, image });
 
-  res.json({ message: 'Recipe created', data: { title, description, image } });
+  res.status(201).json({ message: 'Recipe created', data: { title, description, image } });
 });
 
 module.exports = router;
