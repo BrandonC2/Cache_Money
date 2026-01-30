@@ -22,12 +22,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6
+    },
+    profile:{ 
+      type: String, 
+      default: ""
+    },
+
+    isAdmin: {
+      type: Boolean,
+      default: false,
     }
-  ,
-  isAdmin: {
-    type: Boolean,
-    default: false,
-  }
 });
 
 // Hash password before saving

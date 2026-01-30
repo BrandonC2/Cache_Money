@@ -8,22 +8,26 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Image,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
-import { ScreenStackHeaderLeftView } from "react-native-screens";
 
 /**
  * SettingsScreen: User account management
  * - Change username
  * - Change password
+ * - Change profile picture
  * - Delete account
  * - Logout
  */
 export default function SettingsScreen({ navigation }) {
   const [username, setUsername] = useState("");
+  const [profile, setProfile] = useState(""); // Profile picture URL
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(null); // 'changeUsername', 'changePassword', 'deleteAccount', null
   const [formData, setFormData] = useState({
@@ -33,38 +37,79 @@ export default function SettingsScreen({ navigation }) {
     confirmPassword: "",
   });
   const [processing, setProcessing] = useState(false);
-  const [color, setColor] = useState('#F2ECD5');
-  const divRef = useRef(null);
 
+  // Header setup
   useLayoutEffect(() => {
-    if (divRef.current){
-      divRef.current.style.backgroundColor = color;
-    }
     navigation.setOptions({
       headerShown: true,
       title: "Settings",
-      headerTitleAlign: 'center',
-      headerLeft: () => (
-        <CustomBackButton onPress={() => navigation.goBack()} />
-      ),
+      headerTitleAlign: "center",
+      headerLeft: () => <CustomBackButton onPress={() => navigation.goBack()} />,
     });
-  }, [navigation], [color]);
+  }, [navigation]);
 
-  useEffect(() => {
-    loadUsername();
-  }, []);
-
-  const loadUsername = async () => {
+  // Load user profile (username + pfp)
+  const loadProfile = async () => {
+    setLoading(true);
     try {
-      const savedUsername = await AsyncStorage.getItem("username");
-      if (savedUsername) setUsername(savedUsername);
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await apiClient.get("/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = response.data;
+      setUsername(user.username);
+      setProfile(user.pfp || "");
     } catch (err) {
-      console.error("Error loading username:", err);
+      console.error("Failed to load user profile:", err);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  // Change profile picture
+  const handlePickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Permission required", "Permission to access gallery is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const imageUri = result.assets[0].uri;
+
+      try {
+        setProcessing(true);
+        const token = await AsyncStorage.getItem("authToken");
+        const res = await apiClient.put(
+          "/users/profile/pfp",
+          { pfpUrl: imageUri },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (res.data.ok) {
+          setProfile(imageUri); // update locally
+          Alert.alert("Success", "Profile picture updated");
+        }
+      } catch (err) {
+        Alert.alert("Error", err.response?.data?.message || "Failed to update profile picture");
+      } finally {
+        setProcessing(false);
+      }
+    }
+  };
+
+  // Change username
   const handleChangeUsername = async () => {
     if (!formData.newUsername.trim()) {
       Alert.alert("Error", "Please enter a new username");
@@ -91,17 +136,16 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  // Change password
   const handleChangePassword = async () => {
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
       Alert.alert("Error", "Please fill in all password fields");
       return;
     }
-
     if (formData.newPassword !== formData.confirmPassword) {
       Alert.alert("Error", "New passwords do not match");
       return;
     }
-
     if (formData.newPassword.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
@@ -131,62 +175,51 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  // Delete account
   const handleDeleteAccount = async () => {
     if (!formData.currentPassword) {
       Alert.alert("Error", "Please enter your password to confirm deletion");
       return;
     }
 
-    // Show confirmation dialog
     Alert.alert(
       "Delete Account",
       "This action cannot be undone. All your data will be permanently deleted.",
       [
-        {
-          text: "Cancel",
-          onPress: () => {},
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
+          style: "destructive",
           onPress: async () => {
             setProcessing(true);
             try {
               const response = await apiClient.post("/users/profile/delete", {
                 password: formData.currentPassword,
               });
-
               if (response.data.ok) {
-                // Clear storage and navigate to login
                 await AsyncStorage.removeItem("authToken");
                 await AsyncStorage.removeItem("username");
                 Alert.alert("Account Deleted", "Your account has been deleted");
                 navigation.replace("Login");
               }
             } catch (err) {
-              Alert.alert(
-                "Error",
-                err.response?.data?.message || "Failed to delete account"
-              );
+              Alert.alert("Error", err.response?.data?.message || "Failed to delete account");
             } finally {
               setProcessing(false);
             }
           },
-          style: "destructive",
         },
       ]
     );
   };
 
+  // Logout
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        onPress: () => {},
-        style: "cancel",
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
+        style: "destructive",
         onPress: async () => {
           try {
             await AsyncStorage.removeItem("authToken");
@@ -197,7 +230,6 @@ export default function SettingsScreen({ navigation }) {
             Alert.alert("Error", "Failed to logout");
           }
         },
-        style: "destructive",
       },
     ]);
   };
@@ -215,71 +247,49 @@ export default function SettingsScreen({ navigation }) {
       {/* User Info Section */}
       <View style={styles.section}>
         <View style={styles.userCard}>
-          <Ionicons name="person-circle" size={64} color="#4D693A" />
+          <TouchableOpacity onPress={handlePickImage} disabled={processing}>
+            {profile ? (
+              <Image source={{ uri: profile }} style={styles.profileImage} />
+            ) : (
+              <Ionicons name="person-circle" size={64} color="#4D693A" />
+            )}
+          </TouchableOpacity>
           <View style={styles.userInfo}>
             <Text style={styles.username}>{username}</Text>
             <Text style={styles.userLabel}>Current User</Text>
+            <Text style={{ color: "#4D693A", marginTop: 4 }}>Tap image to change</Text>
           </View>
         </View>
       </View>
 
-      {/* Settings Options */}
+      {/* Account Settings Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
 
-        {/* Change Username */}
-        <TouchableOpacity
-          style={styles.settingItem}
+        <SettingItem
+          icon="person"
+          label="Change Username"
+          description="Update your username"
           onPress={() => setModalVisible("changeUsername")}
-        >
-          <View style={styles.settingContent}>
-            <Ionicons name="person" size={24} color="#4D693A" />
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Change Username</Text>
-              <Text style={styles.settingDescription}>
-                Update your username
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
-        </TouchableOpacity>
+        />
 
-        {/* Change Password */}
-        <TouchableOpacity
-          style={styles.settingItem}
+        <SettingItem
+          icon="key"
+          label="Change Password"
+          description="Update your password"
           onPress={() => setModalVisible("changePassword")}
-        >
-          <View style={styles.settingContent}>
-            <Ionicons name="key" size={24} color="#4D693A" />
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Change Password</Text>
-              <Text style={styles.settingDescription}>
-                Update your password
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
-        </TouchableOpacity>
+        />
 
-        {/* Delete Account */}
-        <TouchableOpacity
-          style={styles.settingItem}
+        <SettingItem
+          icon="trash"
+          label="Delete Account"
+          description="Permanently delete your account"
+          iconColor="#ff6b6b"
           onPress={() => setModalVisible("deleteAccount")}
-        >
-          <View style={styles.settingContent}>
-            <Ionicons name="trash" size={24} color="#ff6b6b" />
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Delete Account</Text>
-              <Text style={styles.settingDescription}>
-                Permanently delete your account
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#ccc" />
-        </TouchableOpacity>
+        />
       </View>
 
-      {/* Logout Section */}
+      {/* Logout */}
       <View style={styles.section}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out" size={24} color="white" />
@@ -287,182 +297,154 @@ export default function SettingsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Change Username Modal */}
+      {/* Modals */}
       {modalVisible === "changeUsername" && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Change Username</Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="New username"
-              placeholderTextColor="#999"
-              value={formData.newUsername}
-              onChangeText={(text) =>
-                setFormData({ ...formData, newUsername: text })
-              }
-              editable={!processing}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(null)}
-                disabled={processing}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleChangeUsername}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Save</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <ChangeUsernameModal
+          formData={formData}
+          setFormData={setFormData}
+          processing={processing}
+          onClose={() => setModalVisible(null)}
+          onSubmit={handleChangeUsername}
+        />
       )}
 
-      {/* Change Password Modal */}
       {modalVisible === "changePassword" && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Change Password</Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Current password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={formData.currentPassword}
-              onChangeText={(text) =>
-                setFormData({ ...formData, currentPassword: text })
-              }
-              editable={!processing}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="New password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={formData.newPassword}
-              onChangeText={(text) =>
-                setFormData({ ...formData, newPassword: text })
-              }
-              editable={!processing}
-            />
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Confirm new password"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={formData.confirmPassword}
-              onChangeText={(text) =>
-                setFormData({ ...formData, confirmPassword: text })
-              }
-              editable={!processing}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(null)}
-                disabled={processing}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleChangePassword}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Save</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <ChangePasswordModal
+          formData={formData}
+          setFormData={setFormData}
+          processing={processing}
+          onClose={() => setModalVisible(null)}
+          onSubmit={handleChangePassword}
+        />
       )}
 
-      {/* Delete Account Modal */}
       {modalVisible === "deleteAccount" && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Delete Account</Text>
-            <Text style={styles.modalWarning}>
-              This action cannot be undone. All your data will be permanently
-              deleted.
-            </Text>
-
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your password to confirm"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={formData.currentPassword}
-              onChangeText={(text) =>
-                setFormData({ ...formData, currentPassword: text })
-              }
-              editable={!processing}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(null)}
-                disabled={processing}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: "#ff6b6b" }]}
-                onPress={handleDeleteAccount}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Delete Account</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <DeleteAccountModal
+          formData={formData}
+          setFormData={setFormData}
+          processing={processing}
+          onClose={() => setModalVisible(null)}
+          onSubmit={handleDeleteAccount}
+        />
       )}
     </ScrollView>
   );
 }
 
+// ------------------------
+// Reusable Setting Item Component
+// ------------------------
+const SettingItem = ({ icon, label, description, iconColor = "#4D693A", onPress }) => (
+  <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+    <View style={styles.settingContent}>
+      <Ionicons name={icon} size={24} color={iconColor} />
+      <View style={styles.settingText}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        <Text style={styles.settingDescription}>{description}</Text>
+      </View>
+    </View>
+    <Ionicons name="chevron-forward" size={24} color="#ccc" />
+  </TouchableOpacity>
+);
+
+// ------------------------
+// Modals
+// ------------------------
+const ChangeUsernameModal = ({ formData, setFormData, processing, onClose, onSubmit }) => (
+  <View style={styles.modalOverlay}>
+    <View style={styles.modal}>
+      <Text style={styles.modalTitle}>Change Username</Text>
+      <TextInput
+        style={styles.modalInput}
+        placeholder="New username"
+        placeholderTextColor="#999"
+        value={formData.newUsername}
+        onChangeText={(text) => setFormData({ ...formData, newUsername: text })}
+        editable={!processing}
+      />
+      <ModalButtons onClose={onClose} onSubmit={onSubmit} processing={processing} submitText="Save" />
+    </View>
+  </View>
+);
+
+const ChangePasswordModal = ({ formData, setFormData, processing, onClose, onSubmit }) => (
+  <View style={styles.modalOverlay}>
+    <View style={styles.modal}>
+      <Text style={styles.modalTitle}>Change Password</Text>
+      <TextInput
+        style={styles.modalInput}
+        placeholder="Current password"
+        placeholderTextColor="#999"
+        secureTextEntry
+        value={formData.currentPassword}
+        onChangeText={(text) => setFormData({ ...formData, currentPassword: text })}
+        editable={!processing}
+      />
+      <TextInput
+        style={styles.modalInput}
+        placeholder="New password"
+        placeholderTextColor="#999"
+        secureTextEntry
+        value={formData.newPassword}
+        onChangeText={(text) => setFormData({ ...formData, newPassword: text })}
+        editable={!processing}
+      />
+      <TextInput
+        style={styles.modalInput}
+        placeholder="Confirm new password"
+        placeholderTextColor="#999"
+        secureTextEntry
+        value={formData.confirmPassword}
+        onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+        editable={!processing}
+      />
+      <ModalButtons onClose={onClose} onSubmit={onSubmit} processing={processing} submitText="Save" />
+    </View>
+  </View>
+);
+
+const DeleteAccountModal = ({ formData, setFormData, processing, onClose, onSubmit }) => (
+  <View style={styles.modalOverlay}>
+    <View style={styles.modal}>
+      <Text style={styles.modalTitle}>Delete Account</Text>
+      <Text style={styles.modalWarning}>This action cannot be undone. All your data will be permanently deleted.</Text>
+      <TextInput
+        style={styles.modalInput}
+        placeholder="Enter your password to confirm"
+        placeholderTextColor="#999"
+        secureTextEntry
+        value={formData.currentPassword}
+        onChangeText={(text) => setFormData({ ...formData, currentPassword: text })}
+        editable={!processing}
+      />
+      <ModalButtons onClose={onClose} onSubmit={onSubmit} processing={processing} submitText="Delete" danger />
+    </View>
+  </View>
+);
+
+const ModalButtons = ({ onClose, onSubmit, processing, submitText, danger = false }) => (
+  <View style={styles.modalButtons}>
+    <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={processing}>
+      <Text style={styles.cancelButtonText}>Cancel</Text>
+    </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.submitButton, danger ? { backgroundColor: "#ff6b6b" } : {}]}
+      onPress={onSubmit}
+      disabled={processing}
+    >
+      {processing ? <ActivityIndicator size="small" color="white" /> : <Text style={styles.submitButtonText}>{submitText}</Text>}
+    </TouchableOpacity>
+  </View>
+);
+
+// ------------------------
+// Styles
+// ------------------------
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2ECD5",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  section: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
-  },
+  container: { flex: 1, backgroundColor: "#F2ECD5" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  section: { marginTop: 16, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", color: "#333", marginBottom: 12 },
   userCard: {
     backgroundColor: "#E8DCC8",
     borderRadius: 12,
@@ -475,19 +457,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  userInfo: {
-    marginLeft: 16,
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-  },
-  userLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
-  },
+  profileImage: { width: 64, height: 64, borderRadius: 32 },
+  userInfo: { marginLeft: 16 },
+  username: { fontSize: 20, fontWeight: "700", color: "#333" },
+  userLabel: { fontSize: 14, color: "#666", marginTop: 4 },
   settingItem: {
     backgroundColor: "#E8DCC8",
     borderRadius: 12,
@@ -502,25 +475,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  settingContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  settingText: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  settingDescription: {
-    fontSize: 13,
-    color: "#999",
-    marginTop: 4,
-  },
+  settingContent: { flex: 1, flexDirection: "row", alignItems: "center" },
+  settingText: { marginLeft: 16, flex: 1 },
+  settingLabel: { fontSize: 16, fontWeight: "600", color: "#333" },
+  settingDescription: { fontSize: 13, color: "#999", marginTop: 4 },
   logoutButton: {
     backgroundColor: "#ff6b6b",
     borderRadius: 12,
@@ -535,79 +493,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  logoutText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
-  modal: {
-    backgroundColor: "#E8DCC8",
-    borderRadius: 16,
-    padding: 24,
-    width: "100%",
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 16,
-  },
-  modalWarning: {
-    fontSize: 14,
-    color: "#ff6b6b",
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 14,
-    color: "#333",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    color: "#333",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  submitButton: {
-    flex: 1,
-    paddingVertical: 12,
-    backgroundColor: "#4D693A",
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  submitButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+  logoutText: { color: "white", fontSize: 16, fontWeight: "600", marginLeft: 8 },
+  modalOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 16 },
+  modal: { backgroundColor: "#E8DCC8", borderRadius: 16, padding: 24, width: "100%", maxWidth: 400 },
+  modalTitle: { fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 16 },
+  modalWarning: { fontSize: 14, color: "#ff6b6b", marginBottom: 16, lineHeight: 20 },
+  modalInput: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 14, color: "#333" },
+  modalButtons: { flexDirection: "row", gap: 12, marginTop: 20 },
+  cancelButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, alignItems: "center" },
+  cancelButtonText: { color: "#333", fontWeight: "600", fontSize: 14 },
+  submitButton: { flex: 1, paddingVertical: 12, backgroundColor: "#4D693A", borderRadius: 8, alignItems: "center" },
+  submitButtonText: { color: "white", fontWeight: "600", fontSize: 14 },
 });
