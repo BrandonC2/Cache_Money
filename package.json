@@ -24,7 +24,7 @@
     "cors": "^2.8.5",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
-    "expo": "~54.0.32",
+    "expo": "~54.0.33",
     "expo-camera": "~17.0.10",
     "expo-font": "~14.0.11",
     "expo-image-picker": "~17.0.10",

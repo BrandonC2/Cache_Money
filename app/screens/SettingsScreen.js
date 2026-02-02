@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,14 +16,6 @@ import * as ImagePicker from "expo-image-picker";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
 
-/**
- * SettingsScreen: User account management
- * - Change username
- * - Change password
- * - Change profile picture
- * - Delete account
- * - Logout
- */
 export default function SettingsScreen({ navigation }) {
   const [username, setUsername] = useState("");
   const [profile, setProfile] = useState(""); // Profile picture URL
@@ -53,18 +44,20 @@ export default function SettingsScreen({ navigation }) {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("authToken");
-      const response = await apiClient.get("/users/me", {
+      const res = await apiClient.get("/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const user = response.data;
+      const user = res.data;
       setUsername(user.username);
-      setProfile(user.pfp || 
-        "");
-
-
-        
+      // Construct full URL for profile picture
+      if (user.profile) {
+        setProfile(`${apiClient.defaults.baseURL}/uploads/profiles/${user.profile}`);
+      } else {
+        setProfile("");
+      }
     } catch (err) {
       console.error("Failed to load user profile:", err);
+      Alert.alert("Error", "Failed to load user profile.");
     } finally {
       setLoading(false);
     }
@@ -83,7 +76,7 @@ export default function SettingsScreen({ navigation }) {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -94,19 +87,33 @@ export default function SettingsScreen({ navigation }) {
 
       try {
         setProcessing(true);
+
+        const formData = new FormData();
+        formData.append("image", {
+          uri: imageUri,
+          name: `profile_${Date.now()}.jpg`,
+          type: "image/jpeg",
+        });
+
         const token = await AsyncStorage.getItem("authToken");
-        const res = await apiClient.put(
-          "/users/profile/pfp",
-          { pfpUrl: imageUri },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+
+        const res = await apiClient.put("/users/profile/picture", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
         if (res.data.ok) {
-          setProfile(imageUri); // update locally
+          setProfile(`${apiClient.defaults.baseURL}/uploads/profiles/${res.data.profile}`);
           Alert.alert("Success", "Profile picture updated");
         }
       } catch (err) {
-        Alert.alert("Error", err.response?.data?.message || "Failed to update profile picture");
+        console.error(err);
+        Alert.alert(
+          "Error",
+          err.response?.data?.message || "Failed to update profile picture"
+        );
       } finally {
         setProcessing(false);
       }
@@ -122,9 +129,12 @@ export default function SettingsScreen({ navigation }) {
 
     setProcessing(true);
     try {
-      const response = await apiClient.put("/users/profile/username", {
-        newUsername: formData.newUsername,
-      });
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await apiClient.put(
+        "/users/profile/username",
+        { newUsername: formData.newUsername },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (response.data.ok) {
         await AsyncStorage.setItem("username", formData.newUsername);
@@ -157,10 +167,15 @@ export default function SettingsScreen({ navigation }) {
 
     setProcessing(true);
     try {
-      const response = await apiClient.put("/users/profile/password", {
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-      });
+      const token = await AsyncStorage.getItem("authToken");
+      const response = await apiClient.put(
+        "/users/profile/password",
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (response.data.ok) {
         Alert.alert("Success", "Password changed successfully");
@@ -197,9 +212,12 @@ export default function SettingsScreen({ navigation }) {
           onPress: async () => {
             setProcessing(true);
             try {
-              const response = await apiClient.post("/users/profile/delete", {
-                password: formData.currentPassword,
-              });
+              const token = await AsyncStorage.getItem("authToken");
+              const response = await apiClient.post(
+                "/users/profile/delete",
+                { password: formData.currentPassword },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
               if (response.data.ok) {
                 await AsyncStorage.removeItem("authToken");
                 await AsyncStorage.removeItem("username");
@@ -207,7 +225,10 @@ export default function SettingsScreen({ navigation }) {
                 navigation.replace("Login");
               }
             } catch (err) {
-              Alert.alert("Error", err.response?.data?.message || "Failed to delete account");
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Failed to delete account"
+              );
             } finally {
               setProcessing(false);
             }
@@ -336,8 +357,7 @@ export default function SettingsScreen({ navigation }) {
 }
 
 // ------------------------
-// Reusable Setting Item Component
-// ------------------------
+// Reusable components (same as before)
 const SettingItem = ({ icon, label, description, iconColor = "#4D693A", onPress }) => (
   <TouchableOpacity style={styles.settingItem} onPress={onPress}>
     <View style={styles.settingContent}>
@@ -442,8 +462,7 @@ const ModalButtons = ({ onClose, onSubmit, processing, submitText, danger = fals
 );
 
 // ------------------------
-// Styles
-// ------------------------
+// Styles (same as your previous)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2ECD5" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },

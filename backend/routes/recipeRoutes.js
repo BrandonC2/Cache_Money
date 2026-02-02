@@ -56,6 +56,17 @@ router.post('/', upload.single('image'), async (req, res) => {
     console.error('Recipe creation error:', err);
     res.status(500).json({ message: 'Internal server error', error: err.message });
   }
+
+  router.get('/', async (req, res) => {
+  try {
+    const recipes = await Recipe.find().populate('userId', 'username'); // optional: include username
+    res.status(200).json(recipes);
+  } catch (err) {
+    console.error('Recipe load error:', err);
+    res.status(500).json({ message: 'Failed to load recipes' });
+  }
+});
+
 });
 
 module.exports = router;
