@@ -10,6 +10,7 @@ import {
   TextInput,
   Image,
 } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -72,53 +73,70 @@ export default function SettingsScreen({ navigation }) {
   // ------------------------
   // Pick & upload profile image
   // ------------------------
-  const handlePickImage = async () => {
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        return Alert.alert(
-          "Permission required",
-          "Please allow access to your photo library"
-        );
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ correct enum
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-
-      if (result.canceled) return;
-
-      const asset = result.assets[0];
-      const token = await AsyncStorage.getItem("authToken");
-
-      const formData = new FormData();
-      formData.append("image", {
-        uri: asset.uri,
-        name: `profile_${Date.now()}.jpg`,
-        type: "image/jpeg",
-      });
-
-      const res = await apiClient.post("/users/profile/picture", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Do NOT manually set Content-Type; Axios sets boundary automatically
-        },
-      });
-
-      console.log("Upload response:", res.data);
-
-      if (res.data.ok) {
-        setProfile(`${apiClient.defaults.baseURL}${res.data.url}?t=${Date.now()}`);
-        Alert.alert("Success", "Profile picture updated");
-      }
-    } catch (err) {
-      console.error("Profile upload error:", err);
-      Alert.alert("Error", "Failed to update profile picture");
+const handlePickImage = async () => {
+  try {
+    // 1️⃣ Request permission
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return Alert.alert(
+        "Permission required",
+        "Please allow access to your photo library"
+      );
     }
-  };
+
+    // 2️⃣ Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled) return;
+
+    let localUri = result.assets[0].uri;
+
+    // 3️⃣ iOS fix: convert ph:// URI to local file path
+    if (localUri.startsWith("ph://")) {
+      // get file info from Photos
+      const assetInfo = await FileSystem.getInfoAsync(localUri);
+      // create temporary file path
+      const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
+      await FileSystem.copyAsync({ from: localUri, to: tempUri });
+      localUri = tempUri;
+    }
+
+    // 4️⃣ Build form data
+    const token = await AsyncStorage.getItem("authToken");
+    const formData = new FormData();
+    formData.append("image", {
+      uri: localUri,
+      name: `profile_${Date.now()}.jpg`,
+      type: "image/jpeg",
+    });
+
+    // 5️⃣ Upload to backend
+    const res = await apiClient.post("/users/profile/picture", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+
+    console.log("Upload response:", res.data);
+
+    if (res.data.ok) {
+  // 1️⃣ Get the URL from backend
+  const imageUrl = res.data.url; // "/uploads/profile/profile_1770034221375.jpg"
+
+  // 2️⃣ Build full public URL
+  const publicUrl = `https://cache-out.onrender.com${imageUrl}?t=${Date.now()}`;
+    }
+  } catch (err) {
+    console.error("Profile upload error:", err);
+    Alert.alert("Error", "Failed to update profile picture");
+  }
+};
 
   // ------------------------
   // Change username
@@ -288,7 +306,7 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.userCard}>
           <TouchableOpacity onPress={handlePickImage} disabled={processing}>
             {profile ? (
-              <Image source={{ uri: profile }} style={styles.profileImage} />
+              <Image source={{ uri: profile }} style={styles.profileImage} resizeMode="cover"/>
             ) : (
               <Ionicons name="person-circle" size={64} color="#4D693A" />
             )}
