@@ -131,6 +131,7 @@ const handlePickImage = async () => {
 
   // 2️⃣ Build full public URL
   const publicUrl = `https://cache-out.onrender.com${imageUrl}?t=${Date.now()}`;
+    setProfile(publicUrl);
     }
   } catch (err) {
     console.error("Profile upload error:", err);
