@@ -69,11 +69,8 @@ export default function SettingsScreen({ navigation }) {
 
   // Change profile picture
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permission required", "Permission to access gallery is required!");
-      return;
-    }
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return Alert.alert("Permission required");
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType.Images,
@@ -83,21 +80,18 @@ export default function SettingsScreen({ navigation }) {
     });
 
     if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
-
       try {
         setProcessing(true);
-
-        const formData = new FormData();
-        formData.append("image", {
-          uri: imageUri,
+        const imageUri = result.assets[0].uri;
+        const data = new FormData();
+        data.append("image", {
+          uri: imageUri.startsWith("file://") ? imageUri : "file://" + imageUri,
           name: `profile_${Date.now()}.jpg`,
           type: "image/jpeg",
         });
 
         const token = await AsyncStorage.getItem("authToken");
-
-        const res = await apiClient.put("/users/profile/picture", formData, {
+        const res = await apiClient.put("/users/profile", data, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -105,20 +99,18 @@ export default function SettingsScreen({ navigation }) {
         });
 
         if (res.data.ok) {
-          setProfile(`${apiClient.defaults.baseURL}/uploads/profiles/${res.data.profile}`);
+          setProfile(res.data.fullImageUrl + "?t=" + Date.now());
           Alert.alert("Success", "Profile picture updated");
         }
       } catch (err) {
         console.error(err);
-        Alert.alert(
-          "Error",
-          err.response?.data?.message || "Failed to update profile picture"
-        );
+        Alert.alert("Error", "Failed to update profile picture");
       } finally {
         setProcessing(false);
       }
     }
   };
+
 
   // Change username
   const handleChangeUsername = async () => {

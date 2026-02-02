@@ -15,6 +15,7 @@ import SplashScreen from './app/screens/TransitionScreen';
 import KitchenCollection from './app/screens/KitchenCollectionScreen';
 import KitchenScreen from './app/screens/KitchenScreen';
 import AddScreen from './app/screens/ItemAddScreen';
+import RecipeDetailsScreen from './app/screens/RecipeDetailsScreen';
 import 'react-native-reanimated';
 
 
@@ -44,14 +45,14 @@ function NavigationBar() {
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             backgroundColor: '#E2D8AC',
-            borderTopWidth: 1,
+            borderTopWidth: 6,
             borderTopColor: '#ddd',
-            paddingBottom: 8,
+            paddingBottom: 5,
         },
         tabBarActiveTintColor: '#785D49',
         tabBarInactiveTintColor: '#785D49',
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 12,
           marginBottom: 4,
         },
       }}
@@ -189,6 +190,7 @@ export default function App() {
       {/*   uncomment when about is fixed*/}
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "CreateRecipe" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "RecipeDetails" component ={RecipeDetailsScreen} options={{ headerShown: false }}/>
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>

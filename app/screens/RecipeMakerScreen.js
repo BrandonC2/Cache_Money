@@ -1,185 +1,131 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  ImageBackground,
-  StyleSheet,
-  TouchableOpacity,
   View,
-  Image,
   Text,
   FlatList,
   ActivityIndicator,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Alert,
 } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiClient from "../lib/apiClient";
-import API_BASE from "../config/api";
 
-export default function RecipeMaker({ navigation }) {
+export default function RecipeMakerScreen() {
+  const navigation = useNavigation();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Load recipes from API on mount
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const response = await apiClient.get("/recipes");
+  // Load recipes from API
+  const loadRecipes = async () => {
+    setRefreshing(true);
+    try {
+      const res = await apiClient.get("/recipes");
+      // Construct full image URL for each recipe
+      const fullData = res.data.map((r) => ({
+        ...r,
+        fullImageUrl: r.image ? `${apiClient.defaults.baseURL}/uploads/${r.image}` : null,
+      }));
+      setRecipes(fullData);
+    } catch (err) {
+      console.error("Failed to load recipes:", err);
+      Alert.alert("Error", "Failed to load recipes.");
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  };
 
-        let data =
-          Array.isArray(response.data)
-            ? response.data
-            : response.data.data || response.data.recipes || [];
+  // Refresh when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadRecipes();
+    }, [])
+  );
 
-        // Map recipes to include full image URL
-        const mapped = data.map((r) => ({
-          ...r,
-          fullImageUrl: r.image ? `${API_BASE}/uploads/${r.image}` : null,
-        }));
-
-        setRecipes(mapped);
-      } catch (err) {
-        console.log("Recipe load error:", err);
-        setError("Could not load recipes.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecipes();
-  }, []);
-
-  // Header title
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: "Recipe Maker",
-      headerShown: false,
+  // Navigate to RecipeCreator with callback
+  const goToCreateRecipe = () => {
+    navigation.navigate("RecipeCreator", {
+      onNewRecipe: (newRecipe) => {
+        // Prepend the new recipe to the list
+        setRecipes((prev) => [newRecipe, ...prev]);
+      },
     });
-  }, []);
+  };
 
   const renderRecipe = ({ item }) => (
     <TouchableOpacity
       style={styles.recipeCard}
-      onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
+      onPress={() =>
+        navigation.navigate("RecipeDetails", { recipe: item })
+      }
     >
       {item.fullImageUrl ? (
         <Image source={{ uri: item.fullImageUrl }} style={styles.recipeImage} />
       ) : (
-        <View style={styles.noImageBox}>
-          <Text style={styles.noImageText}>No Image</Text>
+        <View style={[styles.recipeImage, { justifyContent: "center", alignItems: "center" }]}>
+          <Text>No Image</Text>
         </View>
       )}
-
-      <Text style={styles.recipeTitle}>{item.name}</Text>
-      <Text style={styles.recipeDesc} numberOfLines={2}>
-        {item.description}
-      </Text>
+      <View style={styles.recipeInfo}>
+        <Text style={styles.recipeName}>{item.name}</Text>
+        <Text style={styles.recipeUser}>By: {item.userId.username}</Text>
+        <Text style={styles.recipeIngredients}>
+          Ingredients: {item.ingredients.length}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
-  return (
-    <ImageBackground
-      source={require("../assets/grid_paper.jpg")}
-      style={styles.background}
-    >
-      <View style={styles.container}>
-        <View style={styles.logoArea}>
-          <Image source={require('../assets/basket.png')} style={styles.logo} />
-        </View>
-
-        {/* Loading */}
-        {loading && <ActivityIndicator size="large" style={{ marginTop: 40 }} />}
-
-        {/* Error */}
-        {error && <Text style={styles.errorText}>{error}</Text>}
-
-        {/* Recipes List */}
-        {!loading && !error && (
-          <FlatList
-            data={recipes}
-            keyExtractor={(item) => item._id || item.id} // use MongoDB _id
-            renderItem={renderRecipe}
-            contentContainerStyle={{ padding: 20 }}
-          />
-        )}
-
-        {/* Add Recipe Button */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate("CreateRecipe")}
-        >
-          <Text style={styles.addButtonText}>+ Add Recipe</Text>
-        </TouchableOpacity>
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4D693A" />
       </View>
-    </ImageBackground>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={recipes}
+        keyExtractor={(item) => item._id}
+        renderItem={renderRecipe}
+        refreshing={refreshing}
+        onRefresh={loadRecipes}
+        contentContainerStyle={{ padding: 16 }}
+        ListEmptyComponent={<Text>No recipes yet.</Text>}
+      />
+      <TouchableOpacity style={styles.createButton} onPress={goToCreateRecipe}>
+        <Text style={styles.createButtonText}>+ Create Recipe</Text>
+      </TouchableOpacity>
+
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  container: { flex: 1, backgroundColor: "transparent" },
+  container: { flex: 1, backgroundColor: "#F2ECD5" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   recipeCard: {
-    backgroundColor: "#f4f4f4",
-    marginBottom: 20,
+    backgroundColor: "#E8DCC8",
     borderRadius: 12,
-    padding: 12,
+    marginBottom: 16,
+    overflow: "hidden",
   },
-  recipeImage: {
-    width: "100%",
-    height: 160,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  noImageBox: {
-    width: "100%",
-    height: 160,
-    borderRadius: 12,
-    backgroundColor: "#ddd",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  noImageText: { color: "#777" },
-  recipeTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#222",
-  },
-  recipeDesc: {
-    marginTop: 4,
-    color: "#666",
-  },
-  errorText: {
-    marginTop: 40,
-    textAlign: "center",
-    color: "red",
-    fontSize: 16,
-  },
-  addButton: {
-    position: "absolute",
-    bottom: 30,
-    right: 30,
+  recipeImage: { width: "100%", height: 200 },
+  recipeInfo: { padding: 12 },
+  recipeName: { fontSize: 18, fontWeight: "700" },
+  recipeUser: { fontSize: 14, color: "#666", marginTop: 4 },
+  recipeIngredients: { fontSize: 14, color: "#333", marginTop: 4 },
+  createButton: {
     backgroundColor: "#4D693A",
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 50,
+    padding: 12,
+    margin: 16,
+    borderRadius: 12,
+    alignItems: "center",
   },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    position: 'absolute',
-    resizeMode: 'contain',
-  },
-  logoArea: {
-    top: '4.5%',
-    flex: 0.15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  createButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
 });

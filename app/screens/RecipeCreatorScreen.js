@@ -124,7 +124,7 @@ export default function RecipeCreatorScreen({ navigation, route }) {
       if (imageUri) {
         form.append("image", {
           uri: imageUri,
-          name: "recipe.jpg",
+          name: `recipe_${Date.now()}.jpg`,
           type: "image/jpeg",
         });
       }
