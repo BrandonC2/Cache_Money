@@ -18,19 +18,23 @@ export default function RecipeMaker({ navigation }) {
 
   // Load recipes from API on mount
   useEffect(() => {
-    const fetchRecipes = async () => {
-      try {
-        const response = await apiClient.get("/recipes");
+const fetchRecipes = async () => {
+    try {
+      const response = await apiClient.get("/recipes");
 
-        // If your API returns { success, data }, adjust as needed
-        setRecipes(response.data);
-      } catch (err) {
-        console.log("Recipe load error:", err);
-        setError("Could not load recipes.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const recipes =
+        Array.isArray(response.data)
+          ? response.data
+          : response.data.data || response.data.recipes || [];
+
+      setRecipes(recipes);
+    } catch (err) {
+      console.log("Recipe load error:", err);
+      setError("Could not load recipes.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     fetchRecipes();
   }, []);
@@ -56,7 +60,7 @@ export default function RecipeMaker({ navigation }) {
         </View>
       )}
 
-      <Text style={styles.recipeTitle}>{item.title}</Text>
+      <Text style={styles.recipeTitle}>{item.name}</Text>
       <Text style={styles.recipeDesc} numberOfLines={2}>
         {item.description}
       </Text>
@@ -89,7 +93,7 @@ export default function RecipeMaker({ navigation }) {
       {!loading && !error && (
         <FlatList
           data={recipes}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
           renderItem={renderRecipe}
           contentContainerStyle={{ padding: 20 }}
         />

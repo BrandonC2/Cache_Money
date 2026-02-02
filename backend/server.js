@@ -17,6 +17,7 @@ const { Server } = require("socket.io");
 // =====================
 const app = express();
 const server = http.createServer(app);
+app.use("/uploads", express.static("uploads"));
 
 // =====================
 // Middleware

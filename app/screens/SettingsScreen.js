@@ -58,7 +58,11 @@ export default function SettingsScreen({ navigation }) {
       });
       const user = response.data;
       setUsername(user.username);
-      setProfile(user.pfp || "");
+      setProfile(user.pfp || 
+        "");
+
+
+        
     } catch (err) {
       console.error("Failed to load user profile:", err);
     } finally {
