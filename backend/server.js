@@ -18,7 +18,15 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const fs = require("fs");
+
+const uploadDir = path.join(__dirname, "uploads/profile");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+// In server.js
+app.use("/uploads/profile", express.static(path.join(__dirname, "uploads/profile")));
+
 
 // =====================
 // Middleware
@@ -142,6 +150,8 @@ app.use((err, req, res, next) => {
 // Start Server (Render-safe)
 // =====================
 const PORT = process.env.PORT || 5000;
+
+
 
 server.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);

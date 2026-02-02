@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -40,33 +39,32 @@ export default function SettingsScreen({ navigation }) {
     });
   }, [navigation]);
 
+  // ------------------------
   // Load user profile (username + pfp)
-const loadProfile = async () => {
-  try {
-    setLoading(true);
+  // ------------------------
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem("authToken");
+      const res = await apiClient.get("/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const token = await AsyncStorage.getItem("authToken");
+      setUsername(res.data.username);
 
-    const res = await apiClient.get("/users/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    setUsername(res.data.username);
-
-    if (res.data.profile) {
-      setProfile(
-        `${apiClient.defaults.baseURL}/uploads/profile/${res.data.profile}`
-      );
-    } else {
-      setProfile("");
+      if (res.data.profile) {
+        setProfile(`${apiClient.defaults.baseURL}${res.data.profile}`);
+      } else {
+        setProfile("");
+      }
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+      Alert.alert("Error", "Failed to load profile");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to load profile:", err);
-    Alert.alert("Error", "Failed to load profile");
-  } finally {
-    setLoading(false); 
-  }
-};
+  };
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -74,63 +72,57 @@ const loadProfile = async () => {
   // ------------------------
   // Pick & upload profile image
   // ------------------------
-const handlePickImage = async () => {
-  try {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return Alert.alert("Permission required", "Please allow access to your photo library");
-    }
+  const handlePickImage = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return Alert.alert(
+          "Permission required",
+          "Please allow access to your photo library"
+        );
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ correct enum
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (result.canceled || !result.assets || !result.assets[0]) return;
+      if (result.canceled) return;
 
-    const imageUri = result.assets[0].uri;
-    setProcessing(true);
+      const asset = result.assets[0];
+      const token = await AsyncStorage.getItem("authToken");
 
-    const data = new FormData();
-    data.append("image", {
-      uri: imageUri.startsWith("file://") ? imageUri : "file://" + imageUri,
-      name: `profile_${Date.now()}.jpg`,
-      type: "image/jpeg",
-    });
+      const formData = new FormData();
+      formData.append("image", {
+        uri: asset.uri,
+        name: `profile_${Date.now()}.jpg`,
+        type: "image/jpeg",
+      });
 
-    const token = await AsyncStorage.getItem("authToken");
+      const res = await apiClient.post("/users/profile/picture", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Do NOT manually set Content-Type; Axios sets boundary automatically
+        },
+      });
 
-    const res = await apiClient.put("/users/profile/picture", data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: (f) => f,
-    });
+      console.log("Upload response:", res.data);
 
-    if (res.data.ok) {
-      // Reload image from MongoDB route
-      const userId = res.data.userId || await AsyncStorage.getItem("userId");
-      const newUri = `${apiClient.defaults.baseURL}/users/profile/picture/${userId}?t=${Date.now()}`;
-      setProfile(newUri);
-      Alert.alert("Success", "Profile picture updated!");
-    } else {
+      if (res.data.ok) {
+        setProfile(`${apiClient.defaults.baseURL}${res.data.url}?t=${Date.now()}`);
+        Alert.alert("Success", "Profile picture updated");
+      }
+    } catch (err) {
+      console.error("Profile upload error:", err);
       Alert.alert("Error", "Failed to update profile picture");
     }
+  };
 
-  } catch (err) {
-    console.error("Profile image upload error:", err);
-    Alert.alert("Error", err.response?.data?.message || "Failed to update profile picture");
-  } finally {
-    setProcessing(false);
-  }
-};
-
-
-
+  // ------------------------
   // Change username
+  // ------------------------
   const handleChangeUsername = async () => {
     if (!formData.newUsername.trim()) {
       Alert.alert("Error", "Please enter a new username");
@@ -160,7 +152,9 @@ const handlePickImage = async () => {
     }
   };
 
+  // ------------------------
   // Change password
+  // ------------------------
   const handleChangePassword = async () => {
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
       Alert.alert("Error", "Please fill in all password fields");
@@ -204,7 +198,9 @@ const handlePickImage = async () => {
     }
   };
 
+  // ------------------------
   // Delete account
+  // ------------------------
   const handleDeleteAccount = async () => {
     if (!formData.currentPassword) {
       Alert.alert("Error", "Please enter your password to confirm deletion");
@@ -248,7 +244,9 @@ const handlePickImage = async () => {
     );
   };
 
+  // ------------------------
   // Logout
+  // ------------------------
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
@@ -269,6 +267,9 @@ const handlePickImage = async () => {
     ]);
   };
 
+  // ------------------------
+  // Loading state
+  // ------------------------
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -277,9 +278,12 @@ const handlePickImage = async () => {
     );
   }
 
+  // ------------------------
+  // Render
+  // ------------------------
   return (
     <ScrollView style={styles.container}>
-      {/* User Info Section */}
+      {/* User Info */}
       <View style={styles.section}>
         <View style={styles.userCard}>
           <TouchableOpacity onPress={handlePickImage} disabled={processing}>
@@ -297,7 +301,7 @@ const handlePickImage = async () => {
         </View>
       </View>
 
-      {/* Account Settings Section */}
+      {/* Account Settings */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
 
@@ -367,7 +371,8 @@ const handlePickImage = async () => {
 }
 
 // ------------------------
-// Reusable components (same as before)
+// Reusable components
+// ------------------------
 const SettingItem = ({ icon, label, description, iconColor = "#4D693A", onPress }) => (
   <TouchableOpacity style={styles.settingItem} onPress={onPress}>
     <View style={styles.settingContent}>
@@ -472,7 +477,8 @@ const ModalButtons = ({ onClose, onSubmit, processing, submitText, danger = fals
 );
 
 // ------------------------
-// Styles (same as your previous)
+// Styles
+// ------------------------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2ECD5" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
@@ -529,12 +535,12 @@ const styles = StyleSheet.create({
   logoutText: { color: "white", fontSize: 16, fontWeight: "600", marginLeft: 8 },
   modalOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 16 },
   modal: { backgroundColor: "#E8DCC8", borderRadius: 16, padding: 24, width: "100%", maxWidth: 400 },
-  modalTitle: { fontSize: 20, fontWeight: "700", color: "#333", marginBottom: 16 },
-  modalWarning: { fontSize: 14, color: "#ff6b6b", marginBottom: 16, lineHeight: 20 },
-  modalInput: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 14, color: "#333" },
-  modalButtons: { flexDirection: "row", gap: 12, marginTop: 20 },
-  cancelButton: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, alignItems: "center" },
-  cancelButtonText: { color: "#333", fontWeight: "600", fontSize: 14 },
-  submitButton: { flex: 1, paddingVertical: 12, backgroundColor: "#4D693A", borderRadius: 8, alignItems: "center" },
-  submitButtonText: { color: "white", fontWeight: "600", fontSize: 14 },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: "#333", marginBottom: 16 },
+  modalWarning: { fontSize: 14, color: "#ff6b6b", marginBottom: 12 },
+  modalInput: { backgroundColor: "#fff", borderRadius: 8, padding: 12, marginBottom: 12, color: "#333" },
+  modalButtons: { flexDirection: "row", justifyContent: "flex-end", marginTop: 8 },
+  cancelButton: { paddingVertical: 10, paddingHorizontal: 16, marginRight: 8, backgroundColor: "#ccc", borderRadius: 8 },
+  cancelButtonText: { color: "#333", fontWeight: "600" },
+  submitButton: { paddingVertical: 10, paddingHorizontal: 16, backgroundColor: "#4D693A", borderRadius: 8 },
+  submitButtonText: { color: "white", fontWeight: "600" },
 });

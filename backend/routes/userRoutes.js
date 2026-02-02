@@ -1,31 +1,39 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-/* =========================
-   MULTER CONFIG (PFP UPLOAD)
-   ========================= */
+// -------------------------
+// Ensure upload folder exists
+// -------------------------
+const uploadDir = path.join(__dirname, "../uploads/profile");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("✅ Created uploads/profile folder");
+}
+
+// -------------------------
+// Multer setup
+// -------------------------
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/profile");
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, `profile_${Date.now()}${ext}`);
   },
 });
-
 const upload = multer({ storage });
 
-/* =========================
-   PUBLIC ROUTES
-   ========================= */
+// =========================
+// PUBLIC ROUTES
+// =========================
 
-// POST /api/users/signin
+// Sign in
 router.post("/signin", async (req, res) => {
   const { username, password } = req.body;
 
@@ -35,11 +43,9 @@ router.post("/signin", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.json({
       token,
@@ -55,7 +61,7 @@ router.post("/signin", async (req, res) => {
   }
 });
 
-// POST /api/users/signup
+// Sign up
 router.post("/signup", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -82,11 +88,9 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     res.status(201).json({
       token,
@@ -102,19 +106,17 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-/* =========================
-   PROTECTED ROUTES
-   ========================= */
+// =========================
+// PROTECTED ROUTES
+// =========================
+router.use(auth); // everything below requires token
 
-router.use(auth); // 🔐 everything below requires token
-
+// Get profile
 router.get("/profile", async (req, res) => {
   try {
     const user = await User.findById(req.userId).select("username profile");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({
       username: user.username,
@@ -125,30 +127,39 @@ router.get("/profile", async (req, res) => {
   }
 });
 
-router.put(
+// -------------------------
+// Profile picture upload
+// -------------------------
+router.post(
   "/profile/picture",
-  auth,
-  upload.single("image"),
+  upload.single("image"), // <- as middleware
   async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ ok: false, message: "No image uploaded" });
+    console.log("✅ Auth middleware userId:", req.userId);
+
+    if (!req.file)
+      return res.status(400).json({ ok: false, message: "No file uploaded" });
+
+    try {
+      const user = await User.findById(req.userId);
+      if (!user)
+        return res.status(404).json({ ok: false, message: "User not found" });
+
+      user.profile = req.file.filename;
+      await user.save();
+
+      res.json({
+        ok: true,
+        filename: req.file.filename,
+        url: `/uploads/profile/${req.file.filename}`,
+      });
+    } catch (err) {
+      console.error("Mongoose save error:", err);
+      res.status(500).json({ ok: false, message: err.message });
     }
+  }
+);
 
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ ok: false, message: "User not found" });
-    }
-
-    user.profile = req.file.filename;
-    await user.save();
-
-    res.json({
-      ok: true,
-      filename: req.file.filename,
-    });
-});
-
-// PUT /api/users/profile/username
+// Update username
 router.put("/profile/username", async (req, res) => {
   const { newUsername } = req.body;
 
@@ -160,9 +171,7 @@ router.put("/profile/username", async (req, res) => {
 
   try {
     const exists = await User.findOne({ username: newUsername });
-    if (exists) {
-      return res.status(409).json({ message: "Username already taken" });
-    }
+    if (exists) return res.status(409).json({ message: "Username already taken" });
 
     const user = await User.findByIdAndUpdate(
       req.userId,
@@ -176,7 +185,7 @@ router.put("/profile/username", async (req, res) => {
   }
 });
 
-// PUT /api/users/profile/password
+// Update password
 router.put("/profile/password", async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
@@ -197,11 +206,8 @@ router.put("/profile/password", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const valid = await user.comparePassword(currentPassword);
-    if (!valid) {
-      return res
-        .status(401)
-        .json({ message: "Current password is incorrect" });
-    }
+    if (!valid)
+      return res.status(401).json({ message: "Current password is incorrect" });
 
     user.password = newPassword;
     await user.save();
@@ -212,7 +218,7 @@ router.put("/profile/password", async (req, res) => {
   }
 });
 
-// POST /api/users/profile/delete
+// Delete account
 router.post("/profile/delete", async (req, res) => {
   const { password } = req.body;
 
@@ -227,9 +233,7 @@ router.post("/profile/delete", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const valid = await user.comparePassword(password);
-    if (!valid) {
-      return res.status(401).json({ message: "Password is incorrect" });
-    }
+    if (!valid) return res.status(401).json({ message: "Password is incorrect" });
 
     await User.findByIdAndDelete(req.userId);
 
