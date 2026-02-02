@@ -30,7 +30,8 @@ const recipeSchema = new mongoose.Schema({
       // Optional notes (e.g., "chopped", "fresh")
       notes: { type: String },
     }
-    ]
+    ],
+  image: { type: String, default: "" },
 });
 
 module.exports = mongoose.model('Recipe', recipeSchema);

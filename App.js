@@ -16,6 +16,7 @@ import KitchenCollection from './app/screens/KitchenCollectionScreen';
 import KitchenScreen from './app/screens/KitchenScreen';
 import AddScreen from './app/screens/ItemAddScreen';
 import RecipeDetailsScreen from './app/screens/RecipeDetailsScreen';
+import EditRecipeScreen from './app/screens/EditRecipeScreen';
 import 'react-native-reanimated';
 
 
@@ -191,6 +192,9 @@ export default function App() {
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "RecipeCreator" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "RecipeDetails" component ={RecipeDetailsScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "EditRecipe" component={EditRecipeScreen} />
+
+      
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>

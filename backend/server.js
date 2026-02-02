@@ -21,10 +21,21 @@ const path = require('path');
 const fs = require("fs");
 app.use(cors());
 
+const uploadsBase = path.join(__dirname, "uploads");
+
+const uploadDirs = {
+  profile: path.join(uploadsBase, "profile"),
+  recipes: path.join(uploadsBase, "recipes"),
+  items: path.join(uploadsBase, "items"),
+};
+Object.values(uploadDirs).forEach(dir => fs.mkdirSync(dir, { recursive: true }));
+
+
+/*
 const uploadDir = path.join(__dirname, "uploads/profile");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
-}
+}*/
 // In server.js
 app.use("/uploads/profile", express.static(path.join(__dirname, "uploads/profile")));
 
@@ -68,6 +79,12 @@ app.use("/api/inventory", require("./routes/inventoryRoutes"));
 app.use("/api/kitchens", require("./routes/kitchenRoutes"));
 app.use("/api/recipes", require("./routes/recipeRoutes"));
 app.use("/api/receipts", require("./routes/receiptRoutes"));
+
+// Image Uploaders
+app.use("/uploads/profile", express.static(uploadDirs.profile));
+app.use("/uploads/recipes", express.static(uploadDirs.recipes));
+app.use("/uploads/items", express.static(uploadDirs.items));
+
 
 // Static uploads (optional)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

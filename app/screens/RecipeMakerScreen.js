@@ -26,7 +26,7 @@ export default function RecipeMakerScreen() {
       // Construct full image URL for each recipe
       const fullData = res.data.map((r) => ({
         ...r,
-        fullImageUrl: r.image ? `${apiClient.defaults.baseURL}/uploads/${r.image}` : null,
+        fullImageUrl: r.image ? `${apiClient.defaults.baseURL}/uploads/recipes/${r.image}`: null,
       }));
       setRecipes(fullData);
     } catch (err) {

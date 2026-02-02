@@ -6,6 +6,9 @@ const InventoryItem = require("../models/InventoryItem");
 const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
 
+const createUpload = require("../utils/upload");
+const uploadItem = createUpload(uploadDirs.items, "item");
+
 // Helper to escape user input for regex
 function escapeRegExp(string) {
   return String(string).replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");

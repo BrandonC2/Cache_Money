@@ -5,29 +5,13 @@ const path = require("path");
 const fs = require("fs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
-
+const createUpload = require("../utils/upload");
 const router = express.Router();
-
-// -------------------------
-// Ensure upload folder exists
-// -------------------------
-const uploadDir = path.join(__dirname, "../uploads/profile");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-  console.log("✅ Created uploads/profile folder");
-}
-
 // -------------------------
 // Multer setup
 // -------------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    cb(null, `profile_${Date.now()}${ext}`);
-  },
-});
-const upload = multer({ storage });
+
+const uploadProfile = createUpload(uploadDirs.profile, "profile");
 
 // =========================
 // PUBLIC ROUTES
@@ -132,30 +116,23 @@ router.get("/profile", async (req, res) => {
 // -------------------------
 router.post(
   "/profile/picture",
-  upload.single("image"), // <- as middleware
+  auth,
+  uploadProfile.single("image"),
   async (req, res) => {
-    console.log("✅ Auth middleware userId:", req.userId);
-
-    if (!req.file)
-      return res.status(400).json({ ok: false, message: "No file uploaded" });
-
-    try {
-      const user = await User.findById(req.userId);
-      if (!user)
-        return res.status(404).json({ ok: false, message: "User not found" });
-
-      user.profile = req.file.filename;
-      await user.save();
-
-      res.json({
-        ok: true,
-        filename: req.file.filename,
-        url: `/uploads/profile/${req.file.filename}`,
-      });
-    } catch (err) {
-      console.error("Mongoose save error:", err);
-      res.status(500).json({ ok: false, message: err.message });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
     }
+
+    const imageUrl = `/uploads/profile/${req.file.filename}`;
+
+    await User.findByIdAndUpdate(req.userId, {
+      profile: imageUrl,
+    });
+
+    res.json({
+      ok: true,
+      url: imageUrl,
+    });
   }
 );
 

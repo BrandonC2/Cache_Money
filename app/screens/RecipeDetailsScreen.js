@@ -1,10 +1,31 @@
-// screens/RecipeDetailsScreen.js
-import React from "react";
-import { View, Text, Image, StyleSheet, ScrollView } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useState, useCallback } from "react";
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import apiClient from "../lib/apiClient"; // adjust the path if needed
 
-export default function RecipeDetailsScreen({ route }) {
-  const { recipe } = route.params;
+export default function RecipeDetailsScreen({ route, navigation }) {
+  const [recipe, setRecipe] = useState(route.params.recipe);
 
+  useFocusEffect(
+    useCallback(() => {
+      // Reload recipe from backend when screen is focused
+      const fetchRecipe = async () => {
+        try {
+          console.log("Fetching recipe ID:", recipe._id);
+          const res = await apiClient.get(`/recipes/${recipe._id}`);
+          setRecipe({
+            ...res.data,
+            fullImageUrl: res.data.image
+              ? `${apiClient.defaults.baseURL}/uploads/recipes/${res.data.image}`
+              : null,
+          });
+        } catch (err) {
+          console.error("Failed to refresh recipe:", err);
+        }
+      };
+      fetchRecipe();
+    }, [recipe._id])
+  );
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{recipe.name}</Text>
@@ -24,6 +45,12 @@ export default function RecipeDetailsScreen({ route }) {
           {ing.expirationDate && <Text>Expires: {new Date(ing.expirationDate).toDateString()}</Text>}
         </View>
       ))}
+      <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() => navigation.navigate("EditRecipe", { recipe })}
+      >
+        <Text style={styles.editText}>Edit</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -35,4 +62,5 @@ const styles = StyleSheet.create({
   description: { fontSize: 16, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
   ingredientItem: { marginBottom: 12, padding: 10, backgroundColor: "#E8DCC8", borderRadius: 8 },
+  
 });
