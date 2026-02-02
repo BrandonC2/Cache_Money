@@ -41,27 +41,32 @@ export default function SettingsScreen({ navigation }) {
   }, [navigation]);
 
   // Load user profile (username + pfp)
-  const loadProfile = async () => {
-      setLoading(true);
-      try {
-        const token = await AsyncStorage.getItem("authToken");
-        const res = await apiClient.get("/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const user = res.data;
-        setUsername(user.username);
+const loadProfile = async () => {
+  try {
+    setLoading(true);
 
-        if (user._id) {
-          setProfile(`${apiClient.defaults.baseURL}/users/profile/picture/${user._id}?t=${Date.now()}`);
-        }
-      } catch (err) {
-        console.error("Failed to load profile:", err);
-        Alert.alert("Error", "Failed to load user profile");
-      } finally {
-        setLoading(false);
-      }
-    };
+    const token = await AsyncStorage.getItem("authToken");
 
+    const res = await apiClient.get("/users/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setUsername(res.data.username);
+
+    if (res.data.profile) {
+      setProfile(
+        `${apiClient.defaults.baseURL}/uploads/profile/${res.data.profile}`
+      );
+    } else {
+      setProfile("");
+    }
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+    Alert.alert("Error", "Failed to load profile");
+  } finally {
+    setLoading(false); 
+  }
+};
   useEffect(() => {
     loadProfile();
   }, []);

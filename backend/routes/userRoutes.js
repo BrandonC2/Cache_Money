@@ -10,7 +10,15 @@ const router = express.Router();
 /* =========================
    MULTER CONFIG (PFP UPLOAD)
    ========================= */
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/profile");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
 const upload = multer({ storage });
 
 /* =========================
@@ -100,36 +108,44 @@ router.post("/signup", async (req, res) => {
 
 router.use(auth); // 🔐 everything below requires token
 
-router.put('/profile/picture', auth, upload.single('image'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+router.get("/profile", async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("username profile");
 
-    try {
-        const user = await User.findById(req.userId);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        user.profile = {
-            data: req.file.buffer,
-            contentType: req.file.mimetype,
-        };
-        await user.save();
-
-        res.json({ ok: true, message: 'Profile updated' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.json({
+      username: user.username,
+      profile: user.profile || "",
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Get profile picture
-router.get('/profile/picture/:id', async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user || !user.profile?.data) return res.status(404).json({ message: 'No profile image' });
-
-        res.set('Content-Type', user.profile.contentType);
-        res.send(user.profile.data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+router.put(
+  "/profile/picture",
+  auth,
+  upload.single("image"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: "No image uploaded" });
     }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ ok: false, message: "User not found" });
+    }
+
+    user.profile = req.file.filename;
+    await user.save();
+
+    res.json({
+      ok: true,
+      filename: req.file.filename,
+    });
 });
 
 // PUT /api/users/profile/username

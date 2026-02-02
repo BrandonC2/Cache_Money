@@ -61,7 +61,7 @@ app.use("/api/recipes", require("./routes/recipeRoutes"));
 app.use("/api/receipts", require("./routes/receiptRoutes"));
 
 // Static uploads (optional)
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =====================
 // Health check (Render)
