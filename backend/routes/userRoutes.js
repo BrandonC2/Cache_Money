@@ -10,13 +10,7 @@ const router = express.Router();
 /* =========================
    MULTER CONFIG (PFP UPLOAD)
    ========================= */
-const storage = multer.diskStorage({
-  destination: path.join("../uploads/profile"),
-  filename: (_, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 /* =========================
@@ -106,38 +100,37 @@ router.post("/signup", async (req, res) => {
 
 router.use(auth); // 🔐 everything below requires token
 
-// GET /api/users/profile
-router.get("/profile", async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+router.put('/profile/picture', auth, upload.single('image'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        user.profile = {
+            data: req.file.buffer,
+            contentType: req.file.mimetype,
+        };
+        await user.save();
+
+        res.json({ ok: true, message: 'Profile updated' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// PUT /api/users/profile/picture
-router.put(
-  "/profile/picture",
-  upload.single("image"),
-  async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No image uploaded" });
+// Get profile picture
+router.get('/profile/picture/:id', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user || !user.profile?.data) return res.status(404).json({ message: 'No profile image' });
+
+        res.set('Content-Type', user.profile.contentType);
+        res.send(user.profile.data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      { profile: req.file.filename },
-      { new: true }
-    ).select("-password");
-
-    res.json({
-      ok: true,
-      profile: user.profile,
-    });
-  }
-);
+});
 
 // PUT /api/users/profile/username
 router.put("/profile/username", async (req, res) => {

@@ -24,8 +24,8 @@ const userSchema = new mongoose.Schema({
         minlength: 6
     },
     profile:{ 
-      type: String, 
-      default: ""
+      data: Buffer, 
+      contentType: String,
     },
 
     isAdmin: {

@@ -42,27 +42,25 @@ export default function SettingsScreen({ navigation }) {
 
   // Load user profile (username + pfp)
   const loadProfile = async () => {
-    setLoading(true);
-    try {
-      const token = await AsyncStorage.getItem("authToken");
-      const res = await apiClient.get("/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const user = res.data;
-      setUsername(user.username);
-      // Construct full URL for profile picture
-      if (user.profile) {
-        setProfile(`${apiClient.defaults.baseURL}/uploads/profile/${user.profile}`);
-      } else {
-        setProfile("");
+      setLoading(true);
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        const res = await apiClient.get("/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const user = res.data;
+        setUsername(user.username);
+
+        if (user._id) {
+          setProfile(`${apiClient.defaults.baseURL}/users/profile/picture/${user._id}?t=${Date.now()}`);
+        }
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+        Alert.alert("Error", "Failed to load user profile");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to load user profile:", err);
-      Alert.alert("Error", "Failed to load user profile.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   useEffect(() => {
     loadProfile();
@@ -73,76 +71,32 @@ export default function SettingsScreen({ navigation }) {
   // ------------------------
 const handlePickImage = async () => {
   try {
-    // 1️⃣ Request media library permission
-    let permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    // If denied, fallback to camera
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      const useCamera = await new Promise((resolve) => {
-        Alert.alert(
-          "Permission required",
-          "Photo library access denied. Do you want to take a new photo instead?",
-          [
-            { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-            { text: "Use Camera", onPress: () => resolve(true) },
-          ]
-        );
-      });
-
-      if (!useCamera) return;
-
-      permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        return Alert.alert(
-          "Permission denied",
-          "Cannot use camera without permission."
-        );
-      }
-
-      // Launch camera
-      const cameraResult = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-
-      if (cameraResult.cancelled) return;
-
-      var imageUri = cameraResult.uri;
-    } else {
-      // Launch image library
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-
-      if (result.cancelled) return;
-
-      // Handle old and new versions of Expo ImagePicker
-      if (result.uri) {
-        imageUri = result.uri;
-      } else if (result.assets && result.assets[0] && result.assets[0].uri) {
-        imageUri = result.assets[0].uri;
-      } else {
-        return Alert.alert("Error", "Could not get the selected image");
-      }
+      return Alert.alert("Permission required", "Please allow access to your photo library");
     }
 
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled || !result.assets || !result.assets[0]) return;
+
+    const imageUri = result.assets[0].uri;
     setProcessing(true);
 
-    // 2️⃣ Prepare FormData
     const data = new FormData();
     data.append("image", {
-      uri: Platform.OS === "android" ? imageUri : imageUri.replace("file://", ""),
+      uri: imageUri.startsWith("file://") ? imageUri : "file://" + imageUri,
       name: `profile_${Date.now()}.jpg`,
       type: "image/jpeg",
     });
 
     const token = await AsyncStorage.getItem("authToken");
 
-    // 3️⃣ Upload to backend
     const res = await apiClient.put("/users/profile/picture", data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -152,23 +106,22 @@ const handlePickImage = async () => {
     });
 
     if (res.data.ok) {
-      const updatedUri = `${apiClient.defaults.baseURL}/uploads/profile/${res.data.profile}?t=${Date.now()}`;
-      setProfile(updatedUri);
+      // Reload image from MongoDB route
+      const userId = res.data.userId || await AsyncStorage.getItem("userId");
+      const newUri = `${apiClient.defaults.baseURL}/users/profile/picture/${userId}?t=${Date.now()}`;
+      setProfile(newUri);
       Alert.alert("Success", "Profile picture updated!");
     } else {
       Alert.alert("Error", "Failed to update profile picture");
     }
+
   } catch (err) {
     console.error("Profile image upload error:", err);
-    Alert.alert(
-      "Error",
-      err.response?.data?.message || "Failed to update profile picture"
-    );
+    Alert.alert("Error", err.response?.data?.message || "Failed to update profile picture");
   } finally {
     setProcessing(false);
   }
 };
-
 
 
 
