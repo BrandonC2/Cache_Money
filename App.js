@@ -189,7 +189,7 @@ export default function App() {
       <Stack.Screen name = "ManualAdd" component ={AddScreen} options={{ headerShown: false }}/>
       {/*   uncomment when about is fixed*/}
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
-      <Stack.Screen name = "CreateRecipe" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "RecipeCreator" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "RecipeDetails" component ={RecipeDetailsScreen} options={{ headerShown: false }}/>
       {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>

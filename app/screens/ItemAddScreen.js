@@ -38,60 +38,50 @@ export default function AddScreen({ navigation }) {
 
   // Add item function
   const addItem = async () => {
-  if (!itemName || !foodGroup) {
-    setError("Please fill in all required fields.");
-    return;
-  }
-
-  try {
-    const username = await AsyncStorage.getItem("username");
-    // Prefer per-user lastRoom key, fallback to global lastRoom for compatibility
-    let roomName = null;
-    if (username) {
-      roomName = await AsyncStorage.getItem(`lastRoom_${username}`);
-    }
-    if (!roomName) {
-      roomName = await AsyncStorage.getItem("lastRoom");
-    }
-
-    console.log(`📦 ItemAddScreen.addItem()`);
-    console.log(`   username: ${username}`);
-    console.log(`   roomName from AsyncStorage: "${roomName}"`);
-
-    if (!username || !roomName) {
-      Alert.alert("Error", "Missing username or room context.");
+    if (!itemName || !foodGroup) {
+      setError("Please fill in all required fields.");
       return;
     }
 
-    const newItem = {
-      name: itemName,
-      description,
-      foodGroup,
-      expirationDate: expireDate,
-      room: roomName,     // ✅ include room
-      addedBy: username,  // ✅ include user
-    };
+    try {
+      const username = await AsyncStorage.getItem("username");
 
-    console.log(`   POST body: ${JSON.stringify(newItem)}`);
+      console.log(`📦 AddScreen.addItem()`);
+      console.log(`   username: ${username}`);
+      console.log(`   roomName from route.params: "${roomName}"`);
 
-  // Use centralized apiClient which attaches the auth token and already
-  // has the '/api' prefix. POST to '/inventory' which maps to backend
-  // router POST '/'
-  const res = await apiClient.post(`/inventory`, newItem);
-  Alert.alert("Success", res.data.message || "Item added successfully!");
+      if (!username || !roomName) {
+        Alert.alert("Error", "Missing username or room context.");
+        return;
+      }
 
-    // Reset form fields
-    setItem("");
-    setFg("");
-    setDesc("");
-    setExpire(new Date());
+      const newItem = {
+        name: itemName,
+        description,
+        foodGroup,
+        expirationDate: expireDate,
+        room: roomName,     // ✅ ensure correct room
+        addedBy: username,  // ✅ include user
+      };
 
-  // Return to previous screen 
-  navigation.goBack();
-  } catch (err) {
-    console.error("Add item error:", err.response?.data || err.message);
-    Alert.alert("Error", err.response?.data?.message || "Failed to add item.");
-  }
+      console.log(`   POST body: ${JSON.stringify(newItem)}`);
+
+      const res = await apiClient.post(`/inventory`, newItem);
+      Alert.alert("Success", res.data.message || "Item added successfully!");
+
+      // Reset form fields
+      setItem("");
+      setFg("");
+      setDesc("");
+      setExpire(new Date());
+
+      // Return to previous screen
+      navigation.goBack();
+
+    } catch (err) {
+      console.error("Add item error:", err.response?.data || err.message);
+      Alert.alert("Error", err.response?.data?.message || "Failed to add item.");
+    }
 };
 
 
@@ -168,17 +158,6 @@ export default function AddScreen({ navigation }) {
                   📅 {expireDate.toDateString()}
                 </Text>
               </TouchableOpacity>
-
-              {/* {showPicker && (
-                <DateTimePicker
-                  value={expireDate}
-                  mode="date"
-                  display="default"
-                  onChange={onChange}
-                  accentColor= "#4D693A"
-                  style={{ backgroundColor: 'black' }}
-                />
-              )} */}
       <Modal
         visible={showPicker}
         transparent={true}

@@ -11,7 +11,7 @@ const router = express.Router();
    MULTER CONFIG (PFP UPLOAD)
    ========================= */
 const storage = multer.diskStorage({
-  destination: "uploads/profiles",
+  destination: path.join("../uploads/profile"),
   filename: (_, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   },

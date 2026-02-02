@@ -30,7 +30,7 @@ export default function RecipeDetailsScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#F2ECD5" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 12, marginTop: 20 },
   image: { width: "100%", height: 200, borderRadius: 10, marginBottom: 12 },
   description: { fontSize: 16, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
