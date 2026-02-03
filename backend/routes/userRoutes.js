@@ -6,6 +6,7 @@ const fs = require("fs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const createUpload = require("../utils/upload");
+const uploadDirs = require("../utils/uploadDirs"); // import folder paths
 const router = express.Router();
 // -------------------------
 // Multer setup

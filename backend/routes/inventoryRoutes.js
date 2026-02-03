@@ -5,6 +5,8 @@ const InventoryItem = require("../models/InventoryItem");
 //const auth = require("../middleware/auth");
 const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
+const uploadDirs = require("../utils/uploadDirs"); // import folder paths
+
 
 const createUpload = require("../utils/upload");
 const uploadItem = createUpload(uploadDirs.items, "item");

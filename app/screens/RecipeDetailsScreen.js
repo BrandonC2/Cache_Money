@@ -1,28 +1,33 @@
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, {useState, useCallback } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import apiClient from "../lib/apiClient"; // adjust the path if needed
 
 export default function RecipeDetailsScreen({ route, navigation }) {
   const [recipe, setRecipe] = useState(route.params.recipe);
 
-  useFocusEffect(
+   useFocusEffect(
     useCallback(() => {
-      // Reload recipe from backend when screen is focused
+      let isActive = true; // prevent setting state if screen unmounted
+
       const fetchRecipe = async () => {
         try {
           console.log("Fetching recipe ID:", recipe._id);
           const res = await apiClient.get(`/recipes/${recipe._id}`);
-          setRecipe({
-            ...res.data,
-            fullImageUrl: res.data.image
-              ? `${apiClient.defaults.baseURL}/uploads/recipes/${res.data.image}`
-              : null,
-          });
+
+          if (isActive) {
+            setRecipe({
+              ...res.data,
+              fullImageUrl: res.data.image
+                ? `${apiClient.defaults.baseURL}/uploads/recipes/${res.data.image}`
+                : null,
+            });
+          }
         } catch (err) {
           console.error("Failed to refresh recipe:", err);
         }
       };
+
       fetchRecipe();
     }, [recipe._id])
   );

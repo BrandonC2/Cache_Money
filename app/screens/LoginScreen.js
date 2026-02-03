@@ -29,19 +29,21 @@ export default function LoginScreen({navigation}) {
   const [loading, setLoading] = useState(false)
   useEffect(() => {
   const checkLoginStatus = async () => {
-    try {
-      const token = await AsyncStorage.getItem("authToken");
-      const savedUsername = await AsyncStorage.getItem("username");
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    const savedUsername = await AsyncStorage.getItem("username");
+    const savedProfile = await AsyncStorage.getItem("profile"); // <-- new
 
-      if (token && savedUsername) {
-        console.log("Auto login OK:", savedUsername);
-        navigation.replace("MainNavBar", {
-          username: savedUsername,
-        });
-      }
-    } catch (error) {
-      console.error("Error checking login status:", error);
+    if (token && savedUsername) {
+      console.log("Auto login OK:", savedUsername, savedProfile);
+      navigation.replace("MainNavBar", {
+        username: savedUsername,
+        profile: savedProfile || null, // pass cached profile if available
+      });
     }
+  } catch (error) {
+    console.error("Error checking login status:", error);
+  }
   };
   checkLoginStatus();
   }, []);
@@ -79,17 +81,26 @@ export default function LoginScreen({navigation}) {
         setLoading(false);
         return;
       }
-      const { token, username: returnedUsername, user } = data;
+      const { token, user } = data;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
+
         const nameToSave = user?.username || username;
-        if (nameToSave) {
-          await AsyncStorage.setItem('username', nameToSave);
-          console.log('Saved username:', nameToSave);
+        if (nameToSave) await AsyncStorage.setItem('username', nameToSave);
+
+        // --- Save profile URL ---
+        if (user?.profile) {
+          const publicUrl = `${API_BASE}${user.profile}?t=${Date.now()}`;
+          await AsyncStorage.setItem('profile', publicUrl);
         }
-        // Navigate to main tab navigation after successful login
-        navigation.replace('MainNavBar');
-        } else {
+
+        // Navigate to main screen
+        navigation.replace('MainNavBar', {
+          username: nameToSave,
+          profile: user?.profile ? `${API_BASE}${user.profile}` : null,
+        });
+      }
+        else {
           setError('No token received from server');
         }
     } catch (err) {
