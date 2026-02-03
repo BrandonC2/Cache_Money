@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -13,13 +13,13 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import { Calendar } from 'react-native-calendars';
 
 import apiClient from "../lib/apiClient";
-import API_BASE from "../config/api";
 import CustomBackButton from "../components/CustomBackButton";
 
-const foodGroups = [
+const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
+
+const RecipefoodGroups = [
   "Dessert",
   "Vegan",
   "Lactose-Free",
@@ -30,23 +30,54 @@ const foodGroups = [
   "Snack",
 ];
 
-export default function RecipeCreatorScreen({ navigation, route }) {
+const units = [
+  "Cup(s)",
+  "Teaspoon(s)",
+  "Tablespoon(s)",
+  "Gram(s)",
+  "Quart(s)",
+  "Ounce(s)",
+  "Pound(s)",
+  "Gallon(s)",
+];
+
+export default function RecipeCreatorScreen({ navigation }) {
   const [recipeName, setRecipeName] = useState("");
   const [recipeDesc, setRecipeDesc] = useState("");
+  const [recipeGroup, setRecipeGroup] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [ingredients, setIngredients] = useState([]);
+  
+  // State for the item being currently typed
   const [currentItem, setCurrentItem] = useState({
     name: "",
     description: "",
     foodGroup: "",
-    expirationDate: new Date(),
+    quantity: "",
+    unit: "",
   });
+
   const [error, setError] = useState("");
-  const [showPicker, setShowPicker] = useState(false);
+  const [showRecipeGroupModal, setShowRecipeGroupModal] = useState(false);
   const [showFoodGroupModal, setShowFoodGroupModal] = useState(false);
+  const [showUnitModal, setShowUnitModal] = useState(false); // FIXED: Added this state
   const [editingIndex, setEditingIndex] = useState(null);
 
-  // IMAGE UPLOAD
+
+  useEffect(() => {
+  const checkUser = async () => {
+    const id = await AsyncStorage.getItem("userId");
+    console.log("Current UserID in Storage:", id);
+    if (!id) {
+      setError("Warning: No User ID found. Please log in again.");
+    }
+  };
+  checkUser();
+}, []);
+
+  // ===========================
+  // IMAGE PICKER
+  // ===========================
   const pickImage = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -62,16 +93,12 @@ export default function RecipeCreatorScreen({ navigation, route }) {
     if (!result.canceled) setImageUri(result.assets[0].uri);
   };
 
-  // DATE PICKER
-  const onChangeDate = (event, selectedDate) => {
-    setShowPicker(false);
-    if (selectedDate) setCurrentItem({ ...currentItem, expirationDate: selectedDate });
-  };
-
-  // ADD OR UPDATE INGREDIENT
+  // ===========================
+  // ADD / UPDATE INGREDIENT
+  // ===========================
   const addOrUpdateIngredient = () => {
-    if (!currentItem.name || !currentItem.foodGroup) {
-      setError("Please fill in all required ingredient fields.");
+    if (!currentItem.name || !currentItem.foodGroup || !currentItem.quantity) {
+      setError("Name, Food Group, and Quantity are required.");
       return;
     }
 
@@ -84,12 +111,8 @@ export default function RecipeCreatorScreen({ navigation, route }) {
       setIngredients([...ingredients, currentItem]);
     }
 
-    setCurrentItem({
-      name: "",
-      description: "",
-      foodGroup: "",
-      expirationDate: new Date(),
-    });
+    // Reset current item fields
+    setCurrentItem({ name: "", description: "", foodGroup: "", quantity: "", unit: "" });
     setError("");
   };
 
@@ -108,58 +131,63 @@ export default function RecipeCreatorScreen({ navigation, route }) {
     ]);
   };
 
+  // ===========================
   // SUBMIT RECIPE
+  // ===========================
   const submitRecipe = async () => {
-    if (!recipeName.trim()) return setError("Please provide a recipe name.");
-    if (ingredients.length === 0) return setError("Add at least one ingredient.");
+  if (!recipeName || ingredients.length === 0) {
+    Alert.alert("Error", "Please provide a name and at least one ingredient.");
+    return;
+  }
 
-    try {
-      const username = await AsyncStorage.getItem("username");
-      const form = new FormData();
-      form.append("name", recipeName);
-      form.append("description", recipeDesc);
-      form.append("createdBy", username);
-      form.append("ingredients", JSON.stringify(ingredients));
+  try {
+    const userId = await AsyncStorage.getItem("userId");
+    
+    // We match the backend expectations and the Atlas document structure here
+    const form = new FormData();
+    form.append("name", recipeName);
+    form.append("description", recipeDesc || "");
+    
+    // Use 'foodGroup' to match your existing Atlas documents
+    form.append("foodGroup", recipeGroup || "Other"); 
+    
+    // Use 'createdBy' so the backend validation passes
+    form.append("createdBy", userId); 
 
-      if (imageUri) {
-        form.append("image", {
-          uri: imageUri,
-          name: `recipe_${Date.now()}.jpg`,
-          type: "image/jpeg",
-        });
-      }
+    // Formatting ingredients to match the Object structure in your logs
+    const formattedIngredients = ingredients.map(ing => ({
+      name: ing.name,
+      quantity: Number(ing.quantity),
+      unit: ing.unit,
+      notes: ing.notes || ""
+    }));
+    
+    form.append("ingredients", JSON.stringify(formattedIngredients));
 
-      const res = await apiClient.post("/recipes", form, {
-        headers: { "Content-Type": "multipart/form-data" },
+    if (imageUri) {
+      form.append("image", {
+        uri: imageUri,
+        name: `recipe_${Date.now()}.jpg`,
+        type: "image/jpeg",
       });
-
-      // Construct full image URL immediately
-      const recipeData = res.data.data;
-      const fullRecipe = {
-        ...recipeData,
-        fullImageUrl: recipeData.image ? `${API_BASE}/uploads/${recipeData.image}` : null,
-      };
-
-      // Optionally pass back to RecipeMaker screen
-      if (route.params?.onNewRecipe) {
-        route.params.onNewRecipe(fullRecipe);
-      }
-
-      Alert.alert("Success", res.data.message || "Recipe created!");
-      navigation.goBack();
-    } catch (err) {
-      console.log("Recipe submit error:", err);
-      Alert.alert("Error", "Failed to create recipe.");
     }
-  };
+
+    await apiClient.post("/recipes", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    Alert.alert("Success", "Recipe created!");
+    navigation.goBack();
+
+  } catch (err) {
+    console.error("Submission error:", err.response?.data || err.message);
+    Alert.alert("Error", "Failed to save recipe.");
+  }
+};
 
   return (
-    <ImageBackground 
-      style={styles.background}
-      source={require("../assets/grid_paper.jpg")}
-    >
+    <ImageBackground style={styles.background} source={require("../assets/grid_paper.jpg")}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.headerBar}>
           <CustomBackButton onPress={() => navigation.goBack()} />
           <Text style={styles.headerTitle}>Create Recipe</Text>
@@ -173,121 +201,147 @@ export default function RecipeCreatorScreen({ navigation, route }) {
               {error !== "" && <Text style={styles.errorText}>{error}</Text>}
 
               <Text style={styles.label}>Recipe Name *</Text>
-              <TextInput
-                placeholder="e.g., Spaghetti"
-                value={recipeName}
-                onChangeText={setRecipeName}
-                style={styles.input}
-              />
-
-              <Text style={styles.label}>Notes (Optional)</Text>
-              <TextInput
-                placeholder="e.g., Family favorite"
-                value={recipeDesc}
-                onChangeText={setRecipeDesc}
-                style={styles.input}
-              />
-
-              <Text style={styles.label}>Recipe Image (Optional)</Text>
-              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                <Text style={styles.imageButtonText}>
-                  {imageUri ? "Change Image" : "Upload Image"}
-                </Text>
+              <TextInput value={recipeName} onChangeText={setRecipeName} style={styles.input} placeholder="Spaghetti" />
+              <Text style={styles.label}>Recipe Category *</Text>
+              <TouchableOpacity 
+                style={styles.selectorButton} 
+                onPress={() => setShowRecipeGroupModal(true)}
+              >
+                <Text>{recipeGroup || "Select Category (e.g. Vegan, Dessert)"}</Text>
               </TouchableOpacity>
+              <Text style={styles.label}>Recipe Notes</Text>
+              <TextInput value={recipeDesc} onChangeText={setRecipeDesc} style={styles.input} placeholder="Family recipe" />
 
-              {imageUri && <Image source={{ uri: imageUri }} style={{ width: "100%", height: 200, borderRadius: 10 }} />}
+              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+                <Text style={styles.imageButtonText}>{imageUri ? "Change Image" : "Upload Image"}</Text>
+              </TouchableOpacity>
+              {imageUri && <Image source={{ uri: imageUri }} style={styles.previewImage} />}
 
-              <Text style={[styles.label, { marginTop: 24 }]}>
-                {editingIndex !== null ? "Edit Ingredient" : "Add Ingredient"}
-              </Text>
+              <View style={styles.divider} />
 
-              <TextInput
-                placeholder="Ingredient Name *"
-                value={currentItem.name}
-                onChangeText={(t) => setCurrentItem({ ...currentItem, name: t })}
-                style={styles.input}
+              <Text style={styles.label}>{editingIndex !== null ? "Edit Ingredient" : "Add Ingredient"}</Text>
+              <TextInput 
+                placeholder="Ingredient Name *" 
+                value={currentItem.name} 
+                onChangeText={(t) => setCurrentItem({ ...currentItem, name: t })} 
+                style={styles.input} 
               />
 
-              <Text style={styles.label}>Notes</Text>
-              <TextInput
-                placeholder="Optional notes"
-                value={currentItem.description}
-                onChangeText={(t) => setCurrentItem({ ...currentItem, description: t })}
-                style={styles.input}
-              />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ width: '48%' }}>
+                  <Text style={styles.label}>Qty *</Text>
+                  <TextInput 
+                    placeholder="2" 
+                    value={currentItem.quantity} 
+                    keyboardType="numeric" 
+                    onChangeText={(t) => setCurrentItem({ ...currentItem, quantity: t.replace(/[^0-9.]/g, '') })} 
+                    style={styles.input} 
+                  />
+                </View>
+                <View style={{ width: '48%' }}>
+                  <Text style={styles.label}>Unit</Text>
+                  <TouchableOpacity style={styles.selectorButton} onPress={() => setShowUnitModal(true)}>
+                    <Text numberOfLines={1}>{currentItem.unit || "Select"}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
               <Text style={styles.label}>Food Group *</Text>
-              <TouchableOpacity style={styles.foodGroupButton} onPress={() => setShowFoodGroupModal(true)}>
-                <Text>{currentItem.foodGroup || "Select Food Group"}</Text>
-                <Text>▼</Text>
+              <TouchableOpacity style={styles.selectorButton} onPress={() => setShowFoodGroupModal(true)}>
+                <Text>{currentItem.foodGroup || "Select Group"}</Text>
               </TouchableOpacity>
 
-              <Text style={styles.label}>Expiration Date</Text>
-              <TouchableOpacity style={styles.dateButton} onPress={() => setShowPicker(true)}>
-                <Text>📅 {currentItem.expirationDate.toDateString()}</Text>
+              <TouchableOpacity style={styles.addButton} onPress={addOrUpdateIngredient}>
+                <Text style={styles.addButtonText}>{editingIndex !== null ? "Update" : "+ Add to List"}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.addButton, { marginTop: 16 }]} onPress={addOrUpdateIngredient}>
-                <Text style={styles.addButtonText}>
-                  {editingIndex !== null ? "Update Ingredient" : "✓ Add Ingredient"}
-                </Text>
-              </TouchableOpacity>
+              {/* INGREDIENTS LIST DISPLAY */}
+              {ingredients.map((item, index) => (
+                <View key={index} style={styles.ingredientItem}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: "bold" }}>
+                      {item.quantity} {item.unit} {item.name}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>
+                      {item.foodGroup} {item.description ? `• ${item.description}` : ""}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={() => editIngredient(index)} style={styles.miniButton}>
+                      <Text style={{color: 'blue'}}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteIngredient(index)} style={styles.miniButton}>
+                      <Text style={{color: 'red'}}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
 
-              {/* Ingredient List */}
-              {ingredients.length > 0 && (
-                <>
-                  <Text style={[styles.label, { marginTop: 24 }]}>Ingredients List</Text>
-                  <FlatList
-                    data={ingredients}
-                    keyExtractor={(_, i) => i.toString()}
-                    renderItem={({ item, index }) => (
-                      <View style={styles.ingredientItem}>
-                        <Text style={{ fontWeight: "600" }}>{index + 1}. {item.name}</Text>
-                        <Text>{item.foodGroup}</Text>
-                        {item.description !== "" && <Text>{item.description}</Text>}
-                        <Text>{item.expirationDate.toDateString()}</Text>
-
-                        <View style={{ flexDirection: "row", marginTop: 6 }}>
-                          <TouchableOpacity style={styles.editButton} onPress={() => editIngredient(index)}>
-                            <Text style={styles.editButtonText}>Edit</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity style={styles.deleteButton} onPress={() => deleteIngredient(index)}>
-                            <Text style={styles.deleteButtonText}>Delete</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-                  />
-                </>
-              )}
-
-              <TouchableOpacity style={[styles.addButton, { backgroundColor: "#4D693A" }]} onPress={submitRecipe}>
-                <Text style={styles.addButtonText}>✓ Create Recipe</Text>
+              <TouchableOpacity style={styles.submitButton} onPress={submitRecipe}>
+                <Text style={styles.submitButtonText}>CREATE RECIPE</Text>
               </TouchableOpacity>
             </View>
           )}
         />
 
-        {/* Food Group Modal */}
-        <Modal visible={showFoodGroupModal} transparent animationType="slide" onRequestClose={() => setShowFoodGroupModal(false)}>
+        {/* Unit Modal */}
+        <Modal visible={showUnitModal} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Food Group</Text>
-
-              {foodGroups.map((g) => (
-                <TouchableOpacity key={g} style={styles.modalOption} onPress={() => { setCurrentItem({ ...currentItem, foodGroup: g }); setShowFoodGroupModal(false); }}>
-                  <Text style={{ fontSize: 16 }}>{g}</Text>
+              <Text style={styles.modalTitle}>Select Unit</Text>
+              {units.map((u) => (
+                <TouchableOpacity key={u} style={styles.modalOption} onPress={() => { setCurrentItem({ ...currentItem, unit: u }); setShowUnitModal(false); }}>
+                  <Text>{u}</Text>
                 </TouchableOpacity>
               ))}
-
-              <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowFoodGroupModal(false)}>
-                <Text style={styles.modalCloseButtonText}>Close</Text>
+              <TouchableOpacity onPress={() => setShowUnitModal(false)} style={styles.closeBtn}><Text style={{color:'white'}}>Cancel</Text></TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        {/* Recipe Food Group Modal */}
+        <Modal visible={showRecipeGroupModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Recipe Category</Text>
+              <FlatList
+                data={RecipefoodGroups}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={styles.modalOption} 
+                    onPress={() => {
+                      setRecipeGroup(item);
+                      setShowRecipeGroupModal(false);
+                    }}
+                  >
+                    <Text style={{ fontSize: 16 }}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity 
+                onPress={() => setShowRecipeGroupModal(false)} 
+                style={styles.closeBtn}
+              >
+                <Text style={{color:'white'}}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
 
+        {/* Food Group Modal */}
+        <Modal visible={showFoodGroupModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Food Group</Text>
+              {foodGroups.map((g) => (
+                <TouchableOpacity key={g} style={styles.modalOption} onPress={() => { setCurrentItem({ ...currentItem, foodGroup: g }); setShowFoodGroupModal(false); }}>
+                  <Text>{g}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={() => setShowFoodGroupModal(false)} style={styles.closeBtn}><Text style={{color:'white'}}>Cancel</Text></TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ImageBackground>
   );
@@ -295,28 +349,27 @@ export default function RecipeCreatorScreen({ navigation, route }) {
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  container: { flex: 1, backgroundColor: "transparent" },
-  headerBar: { flexDirection: "row", justifyContent: "space-between", padding: 16, marginTop: 40 },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
-  formContainer: { paddingHorizontal: 20 },
-  label: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
-  input: { backgroundColor: '#e8d5c460', height: 50, borderWidth: 1, borderColor: "#c2b9b2ff", borderRadius: 8, paddingHorizontal: 12, marginBottom: 12 },
-  imageButton: { height: 50, backgroundColor: "#4D693A", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 12 },
+  container: { flex: 1 },
+  headerBar: { flexDirection: "row", justifyContent: "space-between", padding: 16, marginTop: 40, alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: "bold" },
+  formContainer: { paddingHorizontal: 20, paddingBottom: 40 },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: 4, color: '#333' },
+  input: { backgroundColor: '#fff', height: 45, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, marginBottom: 15 },
+  selectorButton: { backgroundColor: '#fff', height: 45, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center', marginBottom: 15 },
+  imageButton: { height: 40, backgroundColor: "#666", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 10 },
   imageButtonText: { color: "white", fontWeight: "600" },
-  foodGroupButton: { backgroundColor: '#e8d5c460', height: 50, borderWidth: 1, borderColor: "#c2b9b2ff", borderRadius: 8, paddingHorizontal: 12, justifyContent: "space-between", flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  dateButton: { backgroundColor: '#e8d5c460', height: 50, borderWidth: 1, borderColor: "#c2b9b2ff", borderRadius: 8, justifyContent: "center", paddingHorizontal: 12, marginBottom: 12 },
-  addButton: { height: 50, backgroundColor: "#4D693A", borderRadius: 8, justifyContent: "center", alignItems: "center", marginTop: 16 },
-  addButtonText: { color: "white", fontWeight: "600", fontSize: 16 },
-  ingredientItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: "#ddd" },
-  editButton: { backgroundColor: "#007bff", padding: 6, borderRadius: 6, marginRight: 8 },
-  editButtonText: { color: "white" },
-  deleteButton: { backgroundColor: "#d81e1e", padding: 6, borderRadius: 6 },
-  deleteButtonText: { color: "white" },
-  errorText: { color: "red", marginBottom: 12 },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" },
-  modalContent: { backgroundColor: "#fcfaf2ff", padding: 20, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 12 },
-  modalOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  modalCloseButton: { backgroundColor: "#4D693A", padding: 12, borderRadius: 10, marginTop: 16 },
-  modalCloseButtonText: { color: "white", fontSize: 16, textAlign: "center" },
+  previewImage: { width: "100%", height: 150, borderRadius: 10, marginBottom: 15 },
+  divider: { height: 1, backgroundColor: '#ccc', marginVertical: 20 },
+  addButton: { height: 45, backgroundColor: "#4D693A", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 20 },
+  addButtonText: { color: "white", fontWeight: "bold" },
+  submitButton: { height: 55, backgroundColor: "#2e4221", borderRadius: 8, justifyContent: "center", alignItems: "center", marginTop: 30 },
+  submitButtonText: { color: "white", fontWeight: "bold", fontSize: 16 },
+  ingredientItem: { padding: 12, backgroundColor: '#fff', borderRadius: 8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#eee' },
+  miniButton: { marginLeft: 15 },
+  errorText: { color: "red", fontWeight: 'bold', marginBottom: 10 },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
+  modalContent: { backgroundColor: "white", padding: 25, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
+  modalOption: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  closeBtn: { marginTop: 20, backgroundColor: '#333', padding: 15, borderRadius: 8, alignItems: 'center' }
 });

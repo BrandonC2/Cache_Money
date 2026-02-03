@@ -76,6 +76,14 @@ export default function LoginScreen({navigation}) {
         await AsyncStorage.setItem("authToken", token);
         await AsyncStorage.setItem("username", user?.username || username);
 
+        const actualId = user?.id || user?._id || user?.data?.id; 
+        if (actualId) {
+          await AsyncStorage.setItem("userId", String(actualId));
+          console.log("UserID saved:", actualId); // Debugging line
+        } else {
+          console.error("Login successful but no ID found in user object");
+        }
+
         if (user?.profile) {
           await AsyncStorage.setItem("profilePath", user.profile); // <-- consistent key
         }

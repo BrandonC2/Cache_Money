@@ -2,11 +2,7 @@ const mongoose = require('mongoose');
 
 const recipeSchema = new mongoose.Schema({
 
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
+  userId: { type: String, ref: 'User' },
 
   name: { type: String, required: true },
   description: { type: String },
@@ -16,6 +12,8 @@ const recipeSchema = new mongoose.Schema({
     {
       // Name of the ingredient (optional if linked to inventory)
       name: { type: String },
+
+      foodGroup: { type: String, default: 'Other' },
 
       // Quantity and unit
       quantity: { type: Number, required: true },
@@ -34,4 +32,4 @@ const recipeSchema = new mongoose.Schema({
   image: { type: String, default: "" },
 });
 
-module.exports = mongoose.model('Recipe', recipeSchema);
+module.exports = mongoose.model('Recipe', recipeSchema, 'recipes');
