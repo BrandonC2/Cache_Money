@@ -17,10 +17,13 @@ import * as ImagePicker from "expo-image-picker";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
 
+const API_BASE_ROOT = "https://cache-out.onrender.com";
+
 export default function SettingsScreen({ navigation }) {
   const [username, setUsername] = useState("");
-  const [profile, setProfile] = useState(""); // Profile picture URL
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [modalVisible, setModalVisible] = useState(null); // 'changeUsername', 'changePassword', 'deleteAccount', null
   const [formData, setFormData] = useState({
     newUsername: "",
@@ -28,9 +31,10 @@ export default function SettingsScreen({ navigation }) {
     newPassword: "",
     confirmPassword: "",
   });
-  const [processing, setProcessing] = useState(false);
 
-  // Header setup
+  // ----------------------
+  // Header
+  // ----------------------
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
@@ -40,105 +44,109 @@ export default function SettingsScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // ------------------------
-  // Load user profile (username + pfp)
-  // ------------------------
+  // ----------------------
+  // Load profile from backend or AsyncStorage
+  // ----------------------
   const loadProfile = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem("authToken");
+
+      // Load cached profile first
+      const cachedPath = await AsyncStorage.getItem("profilePath");
+      if (cachedPath) {
+        setProfile(`${API_BASE_ROOT}${cachedPath}?t=${Date.now()}`);
+      }
+
+      // Fetch latest from backend
       const res = await apiClient.get("/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsername(res.data.username);
+      setUsername(res.data.username || "");
 
       if (res.data.profile) {
-        setProfile(`${apiClient.defaults.baseURL}${res.data.profile}`);
+        const savedPath = res.data.profile;
+        await AsyncStorage.setItem("profilePath", savedPath);
+        setProfile(`${API_BASE_ROOT}${savedPath}?t=${Date.now()}`);
       } else {
-        setProfile("");
+        setProfile(null);
+        await AsyncStorage.removeItem("profilePath");
       }
     } catch (err) {
       console.error("Failed to load profile:", err);
-      Alert.alert("Error", "Failed to load profile");
+      Alert.alert("Error", "Failed to load profile from server");
     } finally {
       setLoading(false);
     }
   };
 
+  // Refresh profile when screen is focused
   useEffect(() => {
-    loadProfile();
-  }, []);
+    const unsubscribe = navigation.addListener("focus", loadProfile);
+    return unsubscribe;
+  }, [navigation]);
 
-  // ------------------------
+  // ----------------------
   // Pick & upload profile image
-  // ------------------------
-const handlePickImage = async () => {
-  try {
-    // 1️⃣ Request permission
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return Alert.alert(
-        "Permission required",
-        "Please allow access to your photo library"
-      );
+  // ----------------------
+  const handlePickImage = async () => {
+    try {
+      setProcessing(true);
+
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        return Alert.alert(
+          "Permission required",
+          "Please allow access to your photo library"
+        );
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (result.canceled) return;
+
+      let localUri = result.assets[0].uri;
+
+      // iOS ph:// URI fix
+      if (localUri.startsWith("ph://")) {
+        const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
+        await FileSystem.copyAsync({ from: localUri, to: tempUri });
+        localUri = tempUri;
+      }
+
+      const token = await AsyncStorage.getItem("authToken");
+      const formData = new FormData();
+      formData.append("image", {
+        uri: localUri,
+        name: `profile_${Date.now()}.jpg`,
+        type: "image/jpeg",
+      });
+
+      const uploadRes = await apiClient.post("/users/profile/picture", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!uploadRes.data.ok) throw new Error("Upload failed");
+
+      // Reload profile
+      await loadProfile();
+      Alert.alert("Success", "Profile picture updated!");
+    } catch (err) {
+      console.error("Profile upload error:", err);
+      Alert.alert("Error", "Failed to update profile picture");
+    } finally {
+      setProcessing(false);
     }
-
-    // 2️⃣ Launch image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (result.canceled) return;
-
-    let localUri = result.assets[0].uri;
-
-    // 3️⃣ iOS fix: convert ph:// URI to local file path
-    if (localUri.startsWith("ph://")) {
-      // get file info from Photos
-      const assetInfo = await FileSystem.getInfoAsync(localUri);
-      // create temporary file path
-      const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
-      await FileSystem.copyAsync({ from: localUri, to: tempUri });
-      localUri = tempUri;
-    }
-
-    // 4️⃣ Build form data
-    const token = await AsyncStorage.getItem("authToken");
-    const formData = new FormData();
-    formData.append("image", {
-      uri: localUri,
-      name: `profile_${Date.now()}.jpg`,
-      type: "image/jpeg",
-    });
-
-    // 5️⃣ Upload to backend
-    const res = await apiClient.post("/users/profile/picture", formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-
-    console.log("Upload response:", res.data);
-
-    if (res.data.ok) {
-  // 1️⃣ Get the URL from backend
-  const imageUrl = res.data.url; // "/uploads/profile/profile_1770034221375.jpg"
-
-  // 2️⃣ Build full public URL
-  const publicUrl = `https://cache-out.onrender.com${imageUrl}?t=${Date.now()}`;
-    setProfile(publicUrl);
-    }
-  } catch (err) {
-    console.error("Profile upload error:", err);
-    Alert.alert("Error", "Failed to update profile picture");
-  }
-};
-
+  };
   // ------------------------
   // Change username
   // ------------------------

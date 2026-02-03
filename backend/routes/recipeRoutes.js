@@ -5,7 +5,9 @@ const createUpload = require("../utils/upload");
 const uploadDirs = require("../utils/uploadDirs"); // import folder paths
 
 const uploadRecipe = createUpload(uploadDirs.recipes, "recipe");
-
+router.get("/", (req, res) => {
+  res.json([]);
+});
 // ===================
 // Create Recipe
 // ===================
@@ -71,6 +73,30 @@ router.put("/:id", uploadRecipe.single("image"), async (req, res) => {
 });
 
 // ===================
+// Get All Recipes
+// ===================
+router.get("/", async (req, res) => {
+  try {
+    const recipes = await Recipe.find()
+      .populate("userId", "username")
+      .sort({ createdAt: -1 });
+
+    const formatted = recipes.map((recipe) => ({
+      ...recipe.toObject(),
+      fullImageUrl: recipe.image
+        ? `/uploads/recipes/${recipe.image}`
+        : null,
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("Recipes fetch error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// ===================
 // Get Single Recipe
 // ===================
 router.get("/:id", async (req, res) => {
@@ -87,5 +113,6 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 module.exports = router;

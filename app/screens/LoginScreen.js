@@ -27,89 +27,73 @@ export default function LoginScreen({navigation}) {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  // Auto-login
   useEffect(() => {
-  const checkLoginStatus = async () => {
-  try {
-    const token = await AsyncStorage.getItem("authToken");
-    const savedUsername = await AsyncStorage.getItem("username");
-    const savedProfile = await AsyncStorage.getItem("profile"); // <-- new
+    const checkLoginStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        const savedUsername = await AsyncStorage.getItem("username");
+        const savedProfile = await AsyncStorage.getItem("profilePath");
 
-    if (token && savedUsername) {
-      console.log("Auto login OK:", savedUsername, savedProfile);
-      navigation.replace("MainNavBar", {
-        username: savedUsername,
-        profile: savedProfile || null, // pass cached profile if available
-      });
-    }
-  } catch (error) {
-    console.error("Error checking login status:", error);
-  }
-  };
-  checkLoginStatus();
+        if (token && savedUsername) {
+          navigation.replace("MainNavBar", {
+            username: savedUsername,
+            profile: savedProfile ? `${API_BASE}${savedProfile}?t=${Date.now()}` : null,
+          });
+        }
+      } catch (err) {
+        console.error("Auto-login error:", err);
+      }
+    };
+    checkLoginStatus();
   }, []);
 
-  React.useEffect(() => {
-    console.log('API_BASE (Login):', API_BASE);
-  }, []);
-  
   const handleLogin = async () => {
     setError("");
-    // basic client-side validation
-    if (!username || !password) {
-      setError('Please provide username and password');
-      return;
-    }
+    if (!username || !password) return setError("Provide username and password");
 
     setLoading(true);
     try {
-      // Use API_BASE from config
       const res = await fetch(`${API_BASE}/api/users/signin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, password }),
-
-
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       });
-        // safe JSON parse: backend might return empty body or non-JSON on error
-        const text = await res.text();
-        let data = {};
-        try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { raw: text }; }
+
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+
       if (!res.ok) {
-          const serverMsg = data.message || data.error || data.raw || 'Login failed';
-          console.error('Login failed:', res.status, serverMsg);
-          setError(serverMsg);
+        setError(data.message || "Login failed");
         setLoading(false);
         return;
       }
+
       const { token, user } = data;
+
       if (token) {
-        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem("authToken", token);
+        await AsyncStorage.setItem("username", user?.username || username);
 
-        const nameToSave = user?.username || username;
-        if (nameToSave) await AsyncStorage.setItem('username', nameToSave);
-
-        // --- Save profile URL ---
         if (user?.profile) {
-          const publicUrl = `${API_BASE}${user.profile}?t=${Date.now()}`;
-          await AsyncStorage.setItem('profile', publicUrl);
+          await AsyncStorage.setItem("profilePath", user.profile); // <-- consistent key
         }
 
-        // Navigate to main screen
-        navigation.replace('MainNavBar', {
-          username: nameToSave,
-          profile: user?.profile ? `${API_BASE}${user.profile}` : null,
+        navigation.replace("MainNavBar", {
+          username: user?.username || username,
+          profile: user?.profile ? `${API_BASE}${user.profile}?t=${Date.now()}` : null,
         });
+      } else {
+        setError("No token received");
       }
-        else {
-          setError('No token received from server');
-        }
     } catch (err) {
-        console.error('Network/login error:', err);
-        setError(err.message || 'Network error');
+      console.error("Login error:", err);
+      setError("Network error");
     } finally {
       setLoading(false);
     }
-  }
+  };
   return (
     <View style = {styles.mainContainer}>
       <View style = {styles.logoArea}>

@@ -35,20 +35,20 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function NavigationBar() {
-  return(
-
+  return (
     <Tab.Navigator
-      screenOptions ={{
+      screenOptions={{
         headerShown: false,
+        lazy: false,           // preload all tabs to keep state
+        unmountOnBlur: false,  // do not unmount tabs when switching
         tabBarStyle: {
-            height: 80,
-        
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            backgroundColor: '#E2D8AC',
-            borderTopWidth: 6,
-            borderTopColor: '#ddd',
-            paddingBottom: 5,
+          height: 80,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          backgroundColor: '#E2D8AC',
+          borderTopWidth: 6,
+          borderTopColor: '#ddd',
+          paddingBottom: 5,
         },
         tabBarActiveTintColor: '#785D49',
         tabBarInactiveTintColor: '#785D49',
@@ -57,98 +57,85 @@ function NavigationBar() {
           marginBottom: 4,
         },
       }}
-      >
-      <Tab.Screen name ='Pantry' component = {KitchenHomepage} options={{
-        
-        
-      
-        tabBarIcon:({focused}) => (
-          <View>
-            <Image 
-              source ={require('./app/assets/pantry_new_icon.png')}
-              style={{
-                width:25,
-                height:25,
-              }}
-            />
-
-          </View>
-        ),
-      }}/>
-      <Tab.Screen name = 'Upcoming' component = {UpcomingScreen} options={{
-        tabBarIcon:({focused}) => (
-          <View>
-            <Image 
-              source ={require('./app/assets/upcoming_new_icon.png')}
-          
-              style={{
-                width:30,
-                height:20,
-              }}
-            />
-
-          </View>
-        ),
-      }}
-      
+    >
+      <Tab.Screen
+        name="Pantry"
+        component={KitchenHomepage}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/pantry_new_icon.png')}
+                style={{ width: 25, height: 25 }}
+              />
+            </View>
+          ),
+        }}
       />
-      <Tab.Screen name = 'Camera' component = {CameraScreen} options={{
-        tabBarIcon:({focused}) => (
-          <View>
-            <Image 
-              source ={require('./app/assets/camera_new_icon.png')}
-             
-              style={{
-                width:65,
-                height:35,
-              }}
-            />
 
-          </View>
-        ),
-      }} 
-      
+      <Tab.Screen
+        name="Upcoming"
+        component={UpcomingScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/upcoming_new_icon.png')}
+                style={{ width: 30, height: 20 }}
+              />
+            </View>
+          ),
+        }}
       />
-      <Tab.Screen name = 'Grocery' component = {GroceryList}options={{
-        tabBarIcon:({focused}) => (
-          <View>
-            <Image 
-              source ={require('./app/assets/grocery_new_icon.png')}
-             
-              style={{
-                width:20,
-                height:25,
-                
-              }}
-            />
 
-          </View>
-        ),
-      }}
-      
+      <Tab.Screen
+        name="Camera"
+        component={CameraScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/camera_new_icon.png')}
+                style={{ width: 65, height: 35 }}
+              />
+            </View>
+          ),
+        }}
       />
-      <Tab.Screen name = 'Recipe' component = {RecipeMaker} options={{
-       
-        tabBarIcon:({focused}) => (
-          <View>
-            <Image 
-              source ={require('./app/assets/recipe_new_icon.png')}
-              
-              style={{
-                width:25,
-                height:25,
-               
-              }}
-            />
 
-          </View>
-        ),
-      }}
-      
+      <Tab.Screen
+        name="Grocery"
+        component={GroceryList}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/grocery_new_icon.png')}
+                style={{ width: 20, height: 25 }}
+              />
+            </View>
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Recipe"
+        component={RecipeMaker}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/recipe_new_icon.png')}
+                style={{ width: 25, height: 25 }}
+              />
+            </View>
+          ),
+        }}
       />
     </Tab.Navigator>
-  )
+  );
 }
+
 
 export default function App() {
   /*

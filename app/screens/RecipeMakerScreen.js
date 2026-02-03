@@ -12,6 +12,8 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiClient from "../lib/apiClient";
 
+const API_BASE_ROOT = "https://cache-out.onrender.com";
+
 export default function RecipeMakerScreen() {
   const navigation = useNavigation();
   const [recipes, setRecipes] = useState([]);
@@ -25,9 +27,11 @@ export default function RecipeMakerScreen() {
       const res = await apiClient.get("/recipes");
       // Construct full image URL for each recipe
       const fullData = res.data.map((r) => ({
-        ...r,
-        fullImageUrl: r.image ? `${apiClient.defaults.baseURL}/uploads/recipes/${r.image}`: null,
-      }));
+      ...r,
+      fullImageUrl: r.fullImageUrl
+        ? `${apiClient.defaults.baseURL}${r.fullImageUrl}`
+        : null,
+    }));
       setRecipes(fullData);
     } catch (err) {
       console.error("Failed to load recipes:", err);
@@ -71,7 +75,9 @@ export default function RecipeMakerScreen() {
       )}
       <View style={styles.recipeInfo}>
         <Text style={styles.recipeName}>{item.name}</Text>
-        <Text style={styles.recipeUser}>By: {item.userId.username}</Text>
+        <Text style={styles.recipeUser}>
+          By: {item.userId?.username || "Unknown"}
+        </Text>
         <Text style={styles.recipeIngredients}>
           Ingredients: {item.ingredients.length}
         </Text>
