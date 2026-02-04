@@ -19,7 +19,17 @@ const app = express();
 const server = http.createServer(app);
 const path = require('path');
 const fs = require("fs");
-app.use(cors());
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
+app.use(express.json());
+
+// Logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} → ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 const uploadsBase = path.join(__dirname, "uploads");
 
@@ -29,26 +39,6 @@ const uploadDirs = {
   items: path.join(uploadsBase, "items"),
 };
 Object.values(uploadDirs).forEach(dir => fs.mkdirSync(dir, { recursive: true }));
-
-
-/*
-const uploadDir = path.join(__dirname, "uploads/profile");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}*/
-// In server.js
-app.use("/uploads/profile", express.static(path.join(__dirname, "uploads/profile")));
-
-
-// =====================
-// Middleware
-// =====================
-app.use(
-  cors({
-    origin: "*", // Expo / mobile safe
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
 
 app.use(express.json());
 

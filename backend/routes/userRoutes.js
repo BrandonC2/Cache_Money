@@ -119,7 +119,7 @@ router.get("/profile", async (req, res) => {
 router.post(
   "/profile/picture",
   auth, // Ensure the user is logged in
-  uploadCloud.single("profile"), 
+  uploadCloud.single("image"), 
   async (req, res) => {
     try {
       if (!req.file) {
