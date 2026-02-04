@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState, useLayoutEffect } from "react";
+import React, { useState, useCallback, useLayoutEffect } from "react";
 import { 
   Image,
   ImageBackground, 
@@ -14,12 +14,15 @@ import {
 } from "react-native";
 import { useFonts } from 'expo-font';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import API_BASE from '../config/api';
-
+import apiClient from '../lib/apiClient';
 export default function KitchenHomepage() {
-  const navigation = useNavigation();
+const navigation = useNavigation();
+  
+  // 1. ALL STATES AT THE TOP
+  const [profilePic, setProfilePic] = useState(null);
   const [username, setUsername] = useState('');
   const [kitchenName, setKitchenName] = useState('');
   const [password, setPassword] = useState('');
@@ -28,56 +31,38 @@ export default function KitchenHomepage() {
   const [editRoomName, setEditRoomName] = useState('');
   const [editRoomPassword, setEditRoomPassword] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // Hide header
+  
+  // 2. ALL HOOKS BEFORE ANY "RETURN"
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  //TOKEN HEADER BUILDER
-  const getAuthHeaders = async () => {
-    const token = await AsyncStorage.getItem("authToken");
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    };
-  };
+  // Combined Focus Hook: Refreshes everything whenever screen is shown
+  useFocusEffect(
+    useCallback(() => {
+      const loadAllData = async () => {
+        try {
+          const storedUsername = await AsyncStorage.getItem('username');
+          const localPic = await AsyncStorage.getItem('profilePicture'); 
+          
+          if (storedUsername) {
+            setUsername(storedUsername);
+            if (localPic) setProfilePic(localPic); 
 
-  // Load username + visited rooms
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const storedUsername = await AsyncStorage.getItem('username');
-        if (storedUsername) {
-          setUsername(storedUsername);
-          const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
-          setVisitedRooms(roomsStr ? JSON.parse(roomsStr) : []);
+            // Sync with backend
+            const res = await apiClient.get(`/users/me/${storedUsername}`);
+            if (res.data?.profilePicture) {
+              setProfilePic(res.data.profilePicture);
+              await AsyncStorage.setItem('profilePicture', res.data.profilePicture);
+            }
+          }
+        } catch (e) {
+          console.log("Sync error:", e.message);
         }
-      } catch (e) {
-        Alert.alert('Error','Failed to load data: ' + e.message);
-      }
-    };
-    loadData();
-  }, []);
-
-  // Save visited room
-  const saveVisitedRoom = async (room, password) => {
-    try {
-      const currentUsername = username || (await AsyncStorage.getItem('username'));
-      const key = `visitedRooms_${currentUsername}`;
-      const roomsStr = await AsyncStorage.getItem(key);
-      let rooms = roomsStr ? JSON.parse(roomsStr) : [];
-      const existing = rooms.find(r => r.name === room);
-      if (!existing) {
-        rooms.push({ name: room, password });
-        await AsyncStorage.setItem(key, JSON.stringify(rooms));
-        setVisitedRooms(rooms);
-      }
-    } catch (e) {
-      Alert.alert('Error','Failed to save visited room: ' + e.message);
-    }
-  };
+      };
+      loadAllData();
+    }, [])
+  );
 
   const [fontsLoaded] = useFonts({
     'alexandria_bold': require('../assets/fonts/alexandria_bold.ttf'),
@@ -85,175 +70,72 @@ export default function KitchenHomepage() {
     'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
   });
 
+  // 3. THE CONDITIONAL RETURN (Nothing below this can be a hook!)
   if (!fontsLoaded) return null;
 
-  //CREATE ROOM (WITH TOKEN HEADERS)
-   
+  // --- Functions ---
+  const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem("authToken");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  const saveVisitedRoom = async (room, pass) => {
+    const key = `visitedRooms_${username}`;
+    const roomsStr = await AsyncStorage.getItem(key);
+    let rooms = roomsStr ? JSON.parse(roomsStr) : [];
+    if (!rooms.find(r => r.name === room)) {
+      rooms.push({ name: room, password: pass });
+      await AsyncStorage.setItem(key, JSON.stringify(rooms));
+      setVisitedRooms(rooms);
+    }
+  };
+
   const createRoom = async () => {
-    if (!username) {
-      Alert.alert('Error', 'User not loaded. Please log in again.');
-      return;
-    }
-    const trimmedName = kitchenName.trim();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedName || !trimmedPassword) {
-      Alert.alert('Error', 'Please enter a room name and password');
-      return;
-    }
-
+    if (!username || !kitchenName || !password) return Alert.alert('Error', 'Missing info');
     try {
-      const authHeaders = await getAuthHeaders();
-
-      const res = await axios.post(
-        `${API_BASE}/api/kitchens/create`,
-        {
-          name: trimmedName,
-          password: trimmedPassword,
-          createdBy: username,
-        },
-        authHeaders
-      );
-
-      // Alert.alert('Success', res.data.message);
-
-      await saveVisitedRoom(trimmedName, trimmedPassword);
-
-      setKitchenName(trimmedName);
-      setPassword(trimmedPassword);
-
-      navigation.navigate('KitchenCollection', { roomName: trimmedName, username });
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || err.message);
-    }
-  };
-
-  //JOIN ROOM (WITH TOKEN HEADERS)
-   
-  const joinRoom = async () => {
-    if (!username) {
-      Alert.alert('Error', 'User not loaded. Please log in again.');
-      return;
-    }
-    if (!kitchenName || !password) {
-      Alert.alert('Error', 'Please enter a room name and password');
-      return;
-    }
-
-    try {
-      const authHeaders = await getAuthHeaders();
-
-      const res = await axios.post(
-        `${API_BASE}/api/kitchens/join`,
-        {
-          name: kitchenName.trim(),
-          password: password.trim(),
-          username: username.trim(),
-        },
-        authHeaders
-      );
-
-      // Alert.alert('Success', res.data.message);
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_BASE}/api/kitchens/create`, {
+        name: kitchenName.trim(),
+        password: password.trim(),
+        createdBy: username,
+      }, headers);
       await saveVisitedRoom(kitchenName.trim(), password.trim());
-
       navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || err.message);
-    }
+    } catch (err) { Alert.alert('Error', err.message); }
   };
 
-  /** --------------------------------------
-   *  QUICK JOIN (WITH TOKEN HEADERS)
-   *  -------------------------------------- */
+  const joinRoom = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_BASE}/api/kitchens/join`, {
+        name: kitchenName.trim(),
+        password: password.trim(),
+        username: username.trim(),
+      }, headers);
+      await saveVisitedRoom(kitchenName.trim(), password.trim());
+      navigation.navigate('KitchenCollection', { roomName: kitchenName.trim(), username });
+    } catch (err) { Alert.alert('Error', err.message); }
+  };
+
   const quickJoin = async (room) => {
-    if (!room.password) {
-      Alert.alert('Error', 'No password stored for this room.');
-      return;
-    }
-    if (!username) {
-      Alert.alert('Error', 'User not loaded. Please log in again.');
-      return;
-    }
-
     try {
-      const authHeaders = await getAuthHeaders();
-
-      const res = await axios.post(
-        `${API_BASE}/api/kitchens/join`,
-        {
-          name: room.name.trim(),
-          password: room.password.trim(),
-          username: username.trim(),
-        },
-        authHeaders
-      );
-
-      // Alert.alert('Success', res.data.message);
+      const headers = await getAuthHeaders();
+      await axios.post(`${API_BASE}/api/kitchens/join`, {
+        name: room.name.trim(),
+        password: room.password.trim(),
+        username: username.trim(),
+      }, headers);
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.message || err.message);
-    }
+    } catch (err) { Alert.alert('Error', err.message); }
   };
 
-  /** LOGOUT */
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('username');
-      navigation.navigate('Login');
-    } catch (error) {
-      Alert.alert('Error','Logout error: ' + error.message);
-    }
-  };
-
-  /** OPEN EDIT MODAL */
-  const openEditRoomModal = (index) => {
-    setEditingRoomIndex(index);
-    setEditRoomName(visitedRooms[index].name);
-    setEditRoomPassword(visitedRooms[index].password);
-    setShowEditModal(true);
-  };
-
-  /** SAVE ROOM EDITS */
   const saveRoomEdits = async () => {
-    if (!editRoomName.trim()) {
-      Alert.alert('Error', 'Room name cannot be empty');
-      return;
-    }
-    const currentUsername = username || (await AsyncStorage.getItem('username'));
-    const key = `visitedRooms_${currentUsername}`;
-    const updatedRooms = [...visitedRooms];
-    updatedRooms[editingRoomIndex] = {
-      name: editRoomName.trim(),
-      password: editRoomPassword.trim(),
-    };
-    setVisitedRooms(updatedRooms);
-    await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
+    const key = `visitedRooms_${username}`;
+    const updated = [...visitedRooms];
+    updated[editingRoomIndex] = { name: editRoomName.trim(), password: editRoomPassword.trim() };
+    setVisitedRooms(updated);
+    await AsyncStorage.setItem(key, JSON.stringify(updated));
     setShowEditModal(false);
-    // Alert.alert('Success', 'Room updated');
-  };
-
-  /** DELETE ROOM */
-  const deleteRoom = (index) => {
-    Alert.alert(
-      'Delete Room',
-      `Are you sure you want to delete "${visitedRooms[index].name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          onPress: async () => {
-            const currentUsername = username || (await AsyncStorage.getItem('username'));
-            const key = `visitedRooms_${currentUsername}`;
-            const updatedRooms = visitedRooms.filter((_, i) => i !== index);
-            setVisitedRooms(updatedRooms);
-            await AsyncStorage.setItem(key, JSON.stringify(updatedRooms));
-            // Alert.alert('Success', 'Room deleted');
-          },
-          style: 'destructive',
-        },
-      ]
-    );
   };
 
 return (
@@ -264,6 +146,33 @@ return (
       <View style = {styles.logoArea}>
         <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
       </View>
+      <TouchableOpacity 
+        style={styles.profileButtonTopLeft} 
+        onPress={() => navigation.navigate('Settings')}
+      >
+        {profilePic ? (
+          <Image 
+            key={profilePic} // Forces refresh when URL changes
+            source={{ 
+              uri: `${profilePic}?t=${new Date().getTime()}` // Fixed variable name to profilePic
+            }} 
+            style={styles.profileImage} 
+          />
+      ) : (
+        <Ionicons name="person-circle" size={64} color="#4D693A" />
+      )}
+      </TouchableOpacity>
+      {/* Profile Picture / User Icon - Top Left */}
+      <TouchableOpacity 
+        style={styles.profileButtonTopLeft} 
+        onPress={() => navigation.navigate('Settings')} // Or a dedicated Profile screen
+      >
+        {profilePic ? (
+          <Image source={{ uri: profilePic }} style={styles.profileImage} />
+        ) : (
+          <Ionicons name="person-circle" size={40} color="#4D693A" />
+        )}
+      </TouchableOpacity>
       {/* Settings button - Top right corner */}
       <TouchableOpacity 
         style={styles.settingsButtonTopRight} 
@@ -391,13 +300,29 @@ return (
 }
 
 const styles = StyleSheet.create({
-  background: { 
-    flex: 1, 
-    justifyContent: "flex-start", 
-    alignItems: "center", 
-    paddingTop: 60,
-    paddingBottom: 20,
+background: { flex: 1, justifyContent: "flex-start", alignItems: "center", paddingTop: 60 },
+  
+  // NEW STYLES
+  profileButtonTopLeft: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
   },
+  profileImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    borderWidth: 2,
+    borderColor: '#4D693A',
+  },
+  settingsButtonTopRight: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
+  Box: { flex: 1, width: '90%', borderWidth: 1.5, borderColor: '#4A3B32', overflow: 'hidden' },
   settingsButtonTopRight: {
     position: 'absolute',
     top: 50,
@@ -419,17 +344,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   button: {
-    // flex: 1,
-    // backgroundColor: '#4D693A',
-    // padding: 12,
-    // borderRadius: 8,
-    // marginHorizontal: 5,
-    // alignItems: 'center',
-    // borderRadius: 20,
-    
-    // height: 32,
-    // width: 10,
-    // Size
     width: 101,   
     height: 32,  
     backgroundColor: '#4D693A',
@@ -438,20 +352,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
 
   },
-  // buttonContainer: {
-  //   // Layout
-  //   flexDirection: 'row',
-  //   justifyContent: 'center', // Centers the group of buttons
-  //   alignItems: 'center',
-  //   gap: 20, // The space between the two buttons
-    
-  //   // Size & Border
-  //   width: '100%',
-  //   paddingVertical: 5,
-  //   borderBottomWidth: 1,       // This creates the single line underneath
-  //   borderBottomColor: '#4A3B32',
-    
-  // },
   buttonText: { color: 'white', fontFamily: "alexandria_bold"},
   recentlyVisitedContainer: {
     flex: 1,
@@ -508,6 +408,19 @@ const styles = StyleSheet.create({
     color: '#4D693A',
     fontSize: 18,
     marginLeft: 12,
+  },
+  profileButtonTopLeft: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, // Circular image
+    borderWidth: 1,
+    borderColor: '#4D693A',
   },
   Box: {
     flex: 1, 
@@ -625,7 +538,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
-  
 });
-

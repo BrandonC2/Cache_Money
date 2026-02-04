@@ -1,20 +1,28 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const uploadCloud = require("../middleware/cloudinaryConfig");
 const router = express.Router();
-// -------------------------
-// Multer setup
-// -------------------------
-
-
 // =========================
 // PUBLIC ROUTES
 // =========================
+router.get("/me/:username", async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({
+      username: user.username,
+      // Provide a fallback empty string if the field is missing
+      profilePicture: user.profilePicture || "" 
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
 // Sign in
 router.post("/signin", async (req, res) => {
@@ -45,6 +53,7 @@ router.post("/signin", async (req, res) => {
 });
 
 // Sign up
+/*
 router.post("/signup", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -87,6 +96,27 @@ router.post("/signup", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});*/
+router.post("/signup", async (req, res) => {
+  const { username, email, password } = req.body;
+  try {
+    const exists = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
+    if (exists) return res.status(409).json({ message: "User exists" });
+
+    const user = new User({ 
+      username, 
+      email: email.toLowerCase(), 
+      password,
+      profilePicture: "" // <--- Initialize this field as an empty string
+    });
+
+    await user.save();
+    
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    res.status(201).json({ token, user: { id: user._id, username: user.username } });
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 // =========================
@@ -95,39 +125,39 @@ router.post("/signup", async (req, res) => {
 router.use(auth); // everything below requires token
 
 // Get profile
-router.get("/profile", async (req, res) => {
+// backend/routes/userRoutes.js
+
+router.get("/profile", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("username profile");
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
+    const user = await User.findById(req.userId).select("-password");
     res.json({
       username: user.username,
-      profile: user.profile || "",
+      profile: user.profilePicture || "", // CHANGE: Map profilePicture to 'profile'
+      profilePicture: user.profilePicture || "" // Keep this for other screens
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Error fetching profile" });
   }
 });
 
 // -------------------------
 // Profile picture upload
 // -------------------------
-router.post("/upload-profile", uploadCloud.single("image"), async (req, res) => {
+router.post("/upload-profile", auth, uploadCloud.single("image"), async (req, res) => {
   try {
-    const userId = req.body.userId;
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    // req.file.path is the permanent Cloudinary URL
-    const imageUrl = req.file.path; 
+    const imageUrl = req.file.path; // This is the Cloudinary https:// link
 
+    // Use { new: true } to ensure 'user' contains the UPDATED data
     const user = await User.findByIdAndUpdate(
-      userId,
+      req.userId,
       { profilePicture: imageUrl },
-      { new: true }
+      { new: true } 
     );
 
-    res.json({ message: "Profile updated!", user });
+    // Return the URL explicitly
+    res.json({ ok: true, url: user.profilePicture });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -216,5 +246,13 @@ router.post("/profile/delete", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// backend/routes/userRoutes.js
+router.get("/me", async (req, res) => {
+  const user = await User.findById(req.user.id);
+  // user.profilePicture should ALREADY be the https:// cloudinary link
+  res.json({ profilePicture: user.profilePicture }); 
+});
+
 
 module.exports = router;

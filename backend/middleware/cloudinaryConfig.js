@@ -15,9 +15,10 @@ const storage = new CloudinaryStorage({
   const url = req.originalUrl.toLowerCase(); // Get the URL path
 
   // 1. Logic for Profiles
-  if (file.fieldname === 'profile' || url.includes('users') || url.includes('profile')) {
-    folderName = 'profiles';
-  } 
+// Change 'profile' to 'image'
+  if (file.fieldname === 'image' || url.includes('users') || url.includes('profile')) {
+      folderName = 'profiles';
+  }
   // 2. Logic for Recipes
   else if (url.includes('recipes')) {
     folderName = 'recipes';

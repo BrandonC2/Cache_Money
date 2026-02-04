@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Platform
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
@@ -47,33 +48,31 @@ export default function SettingsScreen({ navigation }) {
   // ----------------------
   // Load profile from backend or AsyncStorage
   // ----------------------
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem("authToken");
+const loadProfile = async () => {
+  try {
+    setLoading(true);
+    const token = await AsyncStorage.getItem("authToken");
+    const res = await apiClient.get("/users/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      // Fetch latest from backend
-      const res = await apiClient.get("/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    console.log("DEBUG: Response from server:", res.data);
 
-      setUsername(res.data.username || "");
+    setUsername(res.data.username || "");
+    
+    // Logic: Try 'profile' first, then 'profilePicture'
+    const picUrl = res.data.profile || res.data.profilePicture;
 
-      if (res.data.profile) {
-        // res.data.profile is now "https://res.cloudinary.com/..."
-        setProfile(res.data.profile);
-        await AsyncStorage.setItem("profilePath", res.data.profile);
-      } else {
-        setProfile(null);
-        await AsyncStorage.removeItem("profilePath");
-      }
-    } catch (err) {
-      console.error("Failed to load profile:", err);
-    } finally {
-      setLoading(false);
+    if (picUrl) {
+      setProfile(picUrl); // This updates the state that controls the <Image>
+      await AsyncStorage.setItem("profilePicture", picUrl);
+    } else {
+      setProfile(null); // Explicitly set null if no pic exists
     }
-  };
-
+  } catch (err) {
+    console.error("Load error:", err);
+  } finally { setLoading(false); }
+};
   // Refresh profile when screen is focused
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", loadProfile);
@@ -84,73 +83,47 @@ export default function SettingsScreen({ navigation }) {
   // Pick & upload profile image
   // ----------------------
   const handlePickImage = async () => {
-      try {
-        setProcessing(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5, // Lower quality slightly to ensure faster upload
+    });
 
-        // 1. Request Permissions
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permission.granted) {
-          return Alert.alert(
-            "Permission required",
-            "Please allow access to your photo library"
-          );
-        }
+    if (result.canceled) return;
 
-        // 2. Launch Image Picker
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ["images"],
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7,
-        });
+    setProcessing(true);
+    const token = await AsyncStorage.getItem("authToken");
+    
+    const formData = new FormData();
+    // The name "image" MUST match uploadCloud.single("image") on the backend
+    formData.append("image", {
+      uri: Platform.OS === 'ios' ? result.assets[0].uri.replace('file://', '') : result.assets[0].uri,
+      name: 'photo.jpg',
+      type: 'image/jpeg',
+    });
 
-        if (result.canceled) return;
+    const uploadRes = await apiClient.post("/users/upload-profile", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      },
+    });
 
-        let localUri = result.assets[0].uri;
-
-        // 3. iOS ph:// URI fix (Convert to a physical file path for the upload)
-        if (localUri.startsWith("ph://")) {
-          const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
-          await FileSystem.copyAsync({ from: localUri, to: tempUri });
-          localUri = tempUri;
-        }
-
-        // 4. Prepare FormData
-        const token = await AsyncStorage.getItem("authToken");
-        const formData = new FormData();
-        formData.append("image", {
-          uri: localUri,
-          name: `profile_${Date.now()}.jpg`,
-          type: "image/jpeg",
-        });
-
-        // 5. Upload to Backend (which now sends it to Cloudinary)
-        const uploadRes = await apiClient.post("/users/profile/picture", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        // 6. Handle Success
-        if (uploadRes.data.ok) {
-          const newCloudinaryUrl = uploadRes.data.url;
-          
-          // Update local state and cache with the permanent HTTPS link
-          setProfile(newCloudinaryUrl);
-          await AsyncStorage.setItem("profilePath", newCloudinaryUrl);
-          
-          Alert.alert("Success", "Profile picture updated!");
-        } else {
-          throw new Error("Upload failed");
-        }
-      } catch (err) {
-        console.error("Profile upload error:", err);
-        Alert.alert("Error", "Failed to update profile picture. Check your connection.");
-      } finally {
-        setProcessing(false);
-      }
-    };
+    if (uploadRes.data.url) {
+      const newUrl = uploadRes.data.url;
+      setProfile(newUrl);
+      await AsyncStorage.setItem("profilePicture", newUrl);
+      Alert.alert("Success", "Profile updated!");
+    }
+  } catch (err) {
+    console.log("Upload Failed:", err.response?.data || err.message);
+    Alert.alert("Error", "Upload failed. Check server logs.");
+  } finally {
+    setProcessing(false);
+  }
+};
   // ------------------------
   // Change username
   // ------------------------
@@ -285,11 +258,12 @@ export default function SettingsScreen({ navigation }) {
         text: "Logout",
         style: "destructive",
         onPress: async () => {
-          try {
-            await AsyncStorage.removeItem("authToken");
-            await AsyncStorage.removeItem("username");
-            navigation.replace("Login");
-          } catch (err) {
+    try {
+      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.removeItem("username");
+      await AsyncStorage.removeItem("profilePicture"); // <--- ADD THIS LINE
+      navigation.replace("Login");
+    } catch (err) {
             console.error("Logout error:", err);
             Alert.alert("Error", "Failed to logout");
           }
@@ -318,12 +292,20 @@ export default function SettingsScreen({ navigation }) {
       <View style={styles.section}>
         <View style={styles.userCard}>
           <TouchableOpacity onPress={handlePickImage} disabled={processing}>
-            {profile ? (
-              <Image source={{ uri: profile }} style={styles.profileImage} resizeMode="cover"/>
-            ) : (
-              <Ionicons name="person-circle" size={64} color="#4D693A" />
-            )}
-          </TouchableOpacity>
+          {/* Change the check to see if profile actually has a length */}
+          {profile && profile.length > 0 ? (
+            <Image 
+              key={profile} 
+              source={{ uri: profile }} 
+              style={styles.profileImage} 
+            />
+          ) : (
+            <View style={styles.placeholderIcon}>
+              <Ionicons name="person-circle" size={80} color="#4D693A" />
+              <Text style={{fontSize: 10, color: '#4D693A'}}>Add Photo</Text>
+            </View>
+          )}
+        </TouchableOpacity>
           <View style={styles.userInfo}>
             <Text style={styles.username}>{username}</Text>
             <Text style={styles.userLabel}>Current User</Text>
