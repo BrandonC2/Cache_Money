@@ -10,9 +10,23 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'recipes', // The folder name in your Cloudinary dashboard
-    allowed_formats: ['jpg', 'png', 'jpeg'],
+  params: async (req, file) => {
+    // Determine the folder based on the route or fieldname
+    let folderName = 'misc'; // Default folder
+    
+    if (file.fieldname === 'profile') {
+      folderName = 'profiles';
+    } else if (file.fieldname === 'recipe') {
+      folderName = 'recipes';
+    } else if (file.fieldname === 'ingredient') {
+      folderName = 'ingredients';
+    }
+
+    return {
+      folder: folderName,
+      allowed_formats: ['jpg', 'png', 'jpeg'],
+      public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
+    };
   },
 });
 

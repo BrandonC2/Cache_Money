@@ -6,6 +6,7 @@ const fs = require("fs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const createUpload = require("../utils/upload");
+const uploadCloud = require("../middleware/cloudinaryConfig");
 const uploadDirs = require("../utils/uploadDirs"); // import folder paths
 const router = express.Router();
 // -------------------------
@@ -117,24 +118,30 @@ router.get("/profile", async (req, res) => {
 // -------------------------
 router.post(
   "/profile/picture",
-  auth,
-  uploadCloud.single("image"), // Use Cloudinary here
+  auth, // Ensure the user is logged in
+  uploadCloud.single("profile"), 
   async (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // IMPORTANT: Use req.file.path for the full Cloudinary URL
+      const imageUrl = req.file.path; 
+
+      // Update the user document in MongoDB
+      await User.findByIdAndUpdate(req.userId, {
+        profile: imageUrl,
+      });
+
+      res.json({
+        ok: true,
+        url: imageUrl, // Sends back the full https:// link
+      });
+    } catch (err) {
+      console.error("Profile Upload Error:", err);
+      res.status(500).json({ error: "Failed to upload to cloud" });
     }
-
-    // Cloudinary gives the full URL in req.file.path
-    const imageUrl = req.file.path; 
-
-    await User.findByIdAndUpdate(req.userId, {
-      profile: imageUrl,
-    });
-
-    res.json({
-      ok: true,
-      url: imageUrl, // This is now a full https://... link
-    });
   }
 );
 

@@ -11,7 +11,7 @@ const uploadRecipe = createUpload(uploadDirs.recipes, "recipe");
 // Create Recipe
 // ===================
 
-router.post("/", uploadCloud.single("image"), async (req, res) => {
+router.post("/", uploadCloud.single("recipe"), async (req, res) => {
   try {
     const { name, description, foodGroup, createdBy, ingredients } = req.body;
 

@@ -7,9 +7,7 @@ const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
 const uploadDirs = require("../utils/uploadDirs"); // import folder paths
 
-
-const createUpload = require("../utils/upload");
-const uploadItem = createUpload(uploadDirs.items, "item");
+const uploadCloud = require("../middleware/cloudinaryConfig");
 
 // Helper to escape user input for regex
 function escapeRegExp(string) {
@@ -178,14 +176,13 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/inventory - Add new item
-router.post("/", async (req, res) => {
+router.post("/", uploadCloud.single("image"), async (req, res) => {
   try {
     console.log(`\n➕ POST /inventory REQUEST`);
     console.log(`   userId: ${req.userId}`);
     console.log(`   Request body:`, req.body);
     
     const { name, description, foodGroup, quantity, expirationDate, room } = req.body;
-
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ message: "Item name is required" });
     }
@@ -217,8 +214,10 @@ router.post("/", async (req, res) => {
       name: name.trim(),
       description,
       foodGroup: foodGroup || "Other",
-      quantity: quantity || 1,
+      quantity: quantity ? Number(quantity) : 1, // Ensure it's a number
       expirationDate,
+      // CAPTURE THE CLOUDINARY URL HERE:
+      image: req.file ? req.file.path : null, 
     });
 
     console.log(`   Before save - item object:`);
@@ -248,30 +247,28 @@ router.post("/", async (req, res) => {
 });
 
 // PUT /api/inventory/:id - Update item
-router.put("/:id", async (req, res) => {
+router.put("/:id", uploadCloud.single("image"), async (req, res) => {
   try {
     const item = await InventoryItem.findById(req.params.id);
-
-    if (!item) {
-      return res.status(404).json({ message: "Item not found" });
-    }
-
-    if (item.userId.toString() !== req.userId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    if (item.userId.toString() !== req.userId) return res.status(403).json({ message: "Forbidden" });
 
     const { name, description, foodGroup, quantity, expirationDate } = req.body;
 
     if (name) item.name = name;
     if (description) item.description = description;
     if (foodGroup) item.foodGroup = foodGroup;
-    if (quantity !== undefined) item.quantity = quantity;
+    if (quantity !== undefined) item.quantity = Number(quantity);
     if (expirationDate !== undefined) item.expirationDate = expirationDate;
+    
+    // IF A NEW IMAGE IS UPLOADED, UPDATE THE PATH:
+    if (req.file) {
+      item.image = req.file.path;
+    }
 
     await item.save();
     res.json({ message: "Item updated successfully!", item });
   } catch (err) {
-    console.error("❌ Error updating item:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });

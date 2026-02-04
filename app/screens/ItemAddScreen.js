@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
@@ -26,9 +27,25 @@ export default function AddScreen({ navigation }) {
   const [description, setDesc] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const [showFoodGroupModal, setShowFoodGroupModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  
 
   const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
 
   // Show Date Picker
   const onChange = (event, selectedDate) => {
@@ -44,45 +61,47 @@ export default function AddScreen({ navigation }) {
     }
 
     try {
+      setUploading(true);
       const username = await AsyncStorage.getItem("username");
+      const token = await AsyncStorage.getItem("authToken");
 
-      console.log(`📦 AddScreen.addItem()`);
-      console.log(`   username: ${username}`);
-      console.log(`   roomName from route.params: "${roomName}"`);
+      // We use FormData because we are sending a file
+      const formData = new FormData();
+      formData.append("name", itemName);
+      formData.append("description", description);
+      formData.append("foodGroup", foodGroup);
+      formData.append("expirationDate", expireDate.toISOString());
+      formData.append("room", roomName);
+      formData.append("createdBy", username); // Ensure this matches your backend field
 
-      if (!username || !roomName) {
-        Alert.alert("Error", "Missing username or room context.");
-        return;
+      if (selectedImage) {
+        const filename = selectedImage.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+
+        formData.append("image", {
+          uri: selectedImage,
+          name: filename,
+          type: type,
+        });
       }
 
-      const newItem = {
-        name: itemName,
-        description,
-        foodGroup,
-        expirationDate: expireDate,
-        room: roomName,     // ✅ ensure correct room
-        addedBy: username,  // ✅ include user
-      };
+      const res = await apiClient.post("/inventory", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      console.log(`   POST body: ${JSON.stringify(newItem)}`);
-
-      const res = await apiClient.post(`/inventory`, newItem);
-      Alert.alert("Success", res.data.message || "Item added successfully!");
-
-      // Reset form fields
-      setItem("");
-      setFg("");
-      setDesc("");
-      setExpire(new Date());
-
-      // Return to previous screen
+      Alert.alert("Success", "Item added to inventory!");
       navigation.goBack();
-
     } catch (err) {
-      console.error("Add item error:", err.response?.data || err.message);
-      Alert.alert("Error", err.response?.data?.message || "Failed to add item.");
+      console.error("Add item error:", err);
+      Alert.alert("Error", "Failed to save item.");
+    } finally {
+      setUploading(false);
     }
-};
+  };
 
 
   return (
@@ -147,7 +166,17 @@ export default function AddScreen({ navigation }) {
                 </Text>
                 <Text style={styles.dropdownIcon}>▼</Text>
               </TouchableOpacity>
-
+              {/* Image Picker Section */}
+              <Text style={styles.label}>Item Image</Text>
+              <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                {selectedImage ? (
+                  <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Text style={styles.imagePlaceholderText}>+ Tap to add photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
               {/* Expiration Date */}
               <Text style={styles.label}>Expiration Date</Text>
               <TouchableOpacity
@@ -313,6 +342,26 @@ const styles = StyleSheet.create({
     color: "#333",
     flex: 1,
     textAlign: "center",
+  },
+  imagePicker: {
+    height: 150,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#c2b9b2ff",
+    backgroundColor: "#e8d5c460",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    marginTop: 8,
+  },
+  previewImage: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePlaceholderText: {
+    color: "#4D693A",
+    fontWeight: "600",
   },
   formContainer: {
     paddingHorizontal: 20,
