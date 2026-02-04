@@ -5,15 +5,12 @@ const path = require("path");
 const fs = require("fs");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
-const createUpload = require("../utils/upload");
 const uploadCloud = require("../middleware/cloudinaryConfig");
-const uploadDirs = require("../utils/uploadDirs"); // import folder paths
 const router = express.Router();
 // -------------------------
 // Multer setup
 // -------------------------
 
-const uploadProfile = createUpload(uploadDirs.profile, "profile");
 
 // =========================
 // PUBLIC ROUTES
