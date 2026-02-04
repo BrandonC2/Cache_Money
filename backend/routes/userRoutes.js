@@ -113,34 +113,25 @@ router.get("/profile", async (req, res) => {
 // -------------------------
 // Profile picture upload
 // -------------------------
-router.post(
-  "/profile/picture",
-  auth, // Ensure the user is logged in
-  uploadCloud.single("image"), 
-  async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
+router.post("/upload-profile", uploadCloud.single("image"), async (req, res) => {
+  try {
+    const userId = req.body.userId;
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-      // IMPORTANT: Use req.file.path for the full Cloudinary URL
-      const imageUrl = req.file.path; 
+    // req.file.path is the permanent Cloudinary URL
+    const imageUrl = req.file.path; 
 
-      // Update the user document in MongoDB
-      await User.findByIdAndUpdate(req.userId, {
-        profile: imageUrl,
-      });
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profilePicture: imageUrl },
+      { new: true }
+    );
 
-      res.json({
-        ok: true,
-        url: imageUrl, // Sends back the full https:// link
-      });
-    } catch (err) {
-      console.error("Profile Upload Error:", err);
-      res.status(500).json({ error: "Failed to upload to cloud" });
-    }
+    res.json({ message: "Profile updated!", user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-);
+});
 
 // Update username
 router.put("/profile/username", async (req, res) => {

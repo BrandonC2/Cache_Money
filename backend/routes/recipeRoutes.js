@@ -60,6 +60,20 @@ router.put("/:id", uploadCloud.single("image"), async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      console.log("Recipe not found in DB for ID:", req.params.id);
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+    res.json(recipe);
+  } catch (err) {
+    console.error("Database Error:", err);
+    res.status(500).json({ error: "Invalid ID format or Server Error" });
+  }
+});
+
 // ===================
 // Get All Recipes
 // ===================
@@ -73,5 +87,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 module.exports = router;

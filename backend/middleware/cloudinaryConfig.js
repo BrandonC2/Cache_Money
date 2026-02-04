@@ -11,26 +11,29 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Determine the folder based on the route or fieldname
-    let folderName = 'misc'; // Default folder
-    
-    if (file.fieldname === 'profile') {
-      folderName = 'profiles';
-        } else if (file.fieldname === 'image') {
-        // Check the URL to see if it's a recipe or an inventory item
-        if (req.originalUrl.includes('recipes')) {
-            folderName = 'recipes';
-        } else {
-            folderName = 'items';
-        }
-    }
+  let folderName = 'misc';
+  const url = req.originalUrl.toLowerCase(); // Get the URL path
 
-    return {
-      folder: folderName,
-      allowed_formats: ['jpg', 'png', 'jpeg'],
-      public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
-    };
-  },
+  // 1. Logic for Profiles
+  if (file.fieldname === 'profile' || url.includes('users') || url.includes('profile')) {
+    folderName = 'profiles';
+  } 
+  // 2. Logic for Recipes
+  else if (url.includes('recipes')) {
+    folderName = 'recipes';
+  } 
+  // 3. Logic for Inventory
+  else if (url.includes('inventory') || url.includes('items')) {
+    folderName = 'items';
+  }
+
+  return {
+    folder: folderName,
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+    // The dash here is great! Keep it.
+    public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
+  };
+}
 });
 
 const uploadCloud = multer({ storage });

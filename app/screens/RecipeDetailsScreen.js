@@ -6,31 +6,28 @@ import apiClient from "../lib/apiClient"; // adjust the path if needed
 export default function RecipeDetailsScreen({ route, navigation }) {
   const [recipe, setRecipe] = useState(route.params.recipe);
 
-   useFocusEffect(
+  useFocusEffect(
     useCallback(() => {
-      let isActive = true; // prevent setting state if screen unmounted
-
-    const fetchRecipe = async () => {
-      try {
-        console.log("Fetching recipe ID:", recipe._id);
-        const res = await apiClient.get(`/recipes/${recipe._id}`);
-
-        if (isActive) {
-          // NEW CLOUDINARY LOGIC
-          setRecipe({
-            ...res.data,
-            // No URL construction needed!
-            fullImageUrl: res.data.image || null, 
-          });
+      let isActive = true;
+      const fetchRecipe = async () => {
+        try {
+          // Double check the URL here!
+          const res = await apiClient.get(`/recipes/${recipe._id}`);
+          if (isActive) {
+            setRecipe({ ...res.data, fullImageUrl: res.data.image || null });
+            setLoading(false);
+          }
+        } catch (err) {
+          console.error("404 Check - URL attempted:", `/recipes/${recipe._id}`);
+          setLoading(false);
         }
-      } catch (err) {
-        console.error("Failed to refresh recipe:", err);
-      }
-    };
-
+      };
       fetchRecipe();
-    }, [recipe._id])
+      return () => { isActive = false; };
+    }, [recipe?._id])
   );
+
+  if (!recipe) return <Text>No Recipe Data</Text>;
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{recipe.name}</Text>

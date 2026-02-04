@@ -168,7 +168,7 @@ const renderRecipe = ({ item }) => {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+            onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
           >
             {/* Recipe Image */}
             <Image 
