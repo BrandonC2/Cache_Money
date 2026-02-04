@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
   Alert,
-  RefreshControl, TextInput
+  RefreshControl, TextInput, ImageBackground
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiClient from "../lib/apiClient";
@@ -146,7 +146,10 @@ const renderRecipe = ({ item }) => {
 };
 
   return (
-    <View style={styles.container}>
+    <ImageBackground 
+      style={styles.background}
+      source={require("../assets/grid_paper.jpg")}
+      >
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -194,12 +197,13 @@ const renderRecipe = ({ item }) => {
       >
         <Text style={styles.createButtonText}>+ Create Recipe</Text>
       </TouchableOpacity>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F2ECD5" },
+  background: { flex: 1, justifyContent: "flex-start",  paddingTop: 60 },
+  //container: { flex: 1, backgroundColor: "#F2ECD5" },
   centerContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
   recipeCard: {
     backgroundColor: "#E8DCC8",

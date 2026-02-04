@@ -56,22 +56,22 @@ const loadProfile = async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("DEBUG: Response from server:", res.data);
-
-    setUsername(res.data.username || "");
+    // Extract the URL correctly
+    const remoteUrl = res.data.profile || res.data.profilePicture;
     
-    // Logic: Try 'profile' first, then 'profilePicture'
-    const picUrl = res.data.profile || res.data.profilePicture;
-
-    if (picUrl) {
-      setProfile(picUrl); // This updates the state that controls the <Image>
-      await AsyncStorage.setItem("profilePicture", picUrl);
-    } else {
-      setProfile(null); // Explicitly set null if no pic exists
+    if (remoteUrl && remoteUrl.startsWith('http')) {
+      // Add a timestamp to the URL to bypass React Native's image cache
+      const timestampedUrl = `${remoteUrl}?t=${new Date().getTime()}`;
+      setProfile(timestampedUrl);
+      await AsyncStorage.setItem("profilePicture", remoteUrl);
     }
+    
+    setUsername(res.data.username || "");
   } catch (err) {
-    console.error("Load error:", err);
-  } finally { setLoading(false); }
+    console.log("Load error:", err);
+  } finally {
+    setLoading(false);
+  }
 };
   // Refresh profile when screen is focused
   useEffect(() => {

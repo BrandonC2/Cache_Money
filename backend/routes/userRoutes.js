@@ -145,20 +145,24 @@ router.get("/profile", auth, async (req, res) => {
 // -------------------------
 router.post("/upload-profile", auth, uploadCloud.single("image"), async (req, res) => {
   try {
+    console.log("FILE RECEIVED:", req.file); // Check if Cloudinary sent back a file
+
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    const imageUrl = req.file.path; // This is the Cloudinary https:// link
+    const imageUrl = req.file.path; 
+    console.log("URL TO SAVE:", imageUrl); 
 
-    // Use { new: true } to ensure 'user' contains the UPDATED data
     const user = await User.findByIdAndUpdate(
       req.userId,
-      { profilePicture: imageUrl },
-      { new: true } 
+      { profile: imageUrl }, // Make sure this matches the Schema field
+      { new: true }
     );
 
-    // Return the URL explicitly
-    res.json({ ok: true, url: user.profilePicture });
+    console.log("DATABASE AFTER UPDATE:", user); // Look at the profile field here
+
+    res.json({ ok: true, url: user.profile });
   } catch (err) {
+    console.error("UPLOAD ROUTE ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });

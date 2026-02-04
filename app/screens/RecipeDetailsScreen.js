@@ -9,18 +9,19 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      const fetchRecipe = async () => {
-        try {
-          // Double check the URL here!
-          const res = await apiClient.get(`/recipes/${recipe._id}`);
-          if (isActive) {
-            setRecipe({ ...res.data, fullImageUrl: res.data.image || null });
-            setLoading(false);
-          }
-        } catch (err) {
-          console.error("404 Check - URL attempted:", `/recipes/${recipe._id}`);
-          setLoading(false);
-        }
+const fetchRecipe = async () => {
+  // If there's no ID, don't even bother the server
+  if (!recipe?._id) {
+    console.warn("Fetch aborted: No recipe ID found.");
+    return;
+  }
+
+  try {
+    const res = await apiClient.get(`/recipes/${recipe._id}`);
+    // ... rest of your code
+  } catch (err) {
+    console.error("404 Check - URL attempted:", `/recipes/${recipe._id}`, err);
+  }
       };
       fetchRecipe();
       return () => { isActive = false; };
