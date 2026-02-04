@@ -16,10 +16,13 @@ const storage = new CloudinaryStorage({
     
     if (file.fieldname === 'profile') {
       folderName = 'profiles';
-    } else if (file.fieldname === 'recipe') {
-      folderName = 'recipes';
-    } else if (file.fieldname === 'ingredient') {
-      folderName = 'ingredients';
+        } else if (file.fieldname === 'image') {
+        // Check the URL to see if it's a recipe or an inventory item
+        if (req.originalUrl.includes('recipes')) {
+            folderName = 'recipes';
+        } else {
+            folderName = 'items';
+        }
     }
 
     return {

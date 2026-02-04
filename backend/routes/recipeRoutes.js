@@ -11,28 +11,23 @@ const uploadRecipe = createUpload(uploadDirs.recipes, "recipe");
 // Create Recipe
 // ===================
 
-router.post("/", uploadCloud.single("recipe"), async (req, res) => {
+router.post("/", uploadCloud.single("image"), async (req, res) => {
   try {
-    const { name, description, foodGroup, createdBy, ingredients } = req.body;
-
-    // Cloudinary stores the full URL in req.file.path 
-    // Local Multer used req.file.filename
-    const imagePath = req.file ? req.file.path : null;
-
+    const { name, description, foodGroup } = req.body;
+    
     const newRecipe = new Recipe({
       name,
       description,
       foodGroup,
-      userId: createdBy, 
-      image: imagePath, // This now saves "https://res.cloudinary.com/..."
-      ingredients: JSON.parse(ingredients),
+      // req.file.path is the Cloudinary URL
+      image: req.file ? req.file.path : null, 
     });
 
-    const savedRecipe = await newRecipe.save();
-    res.status(201).json(savedRecipe);
+    await newRecipe.save();
+    res.status(201).json(newRecipe);
   } catch (err) {
-    console.error("Cloudinary Upload Error:", err);
-    res.status(500).json({ message: "Error saving recipe to cloud" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to create recipe" });
   }
 });
 
@@ -54,7 +49,7 @@ router.put("/:id", uploadRecipe.single("image"), async (req, res) => {
     if (recipeGroup) recipe.recipeGroup = recipeGroup; // Allow updating the category
     if (ingredients) recipe.ingredients = JSON.parse(ingredients);
 
-    if (req.file) recipe.image = req.file.filename;
+    if (req.file) recipe.image = req.file.path;
 
     await recipe.save();
 

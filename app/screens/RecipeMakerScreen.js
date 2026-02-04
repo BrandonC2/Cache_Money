@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { SafeAreaView, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Image,
   StyleSheet,
   Alert,
-  RefreshControl,
+  RefreshControl, TextInput
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import apiClient from "../lib/apiClient";
@@ -19,6 +19,8 @@ export default function RecipeMakerScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredRecipes, setFilteredRecipes] = useState([]); // To store search results
 
   // Load recipes from API
 const loadRecipes = async () => {
@@ -130,21 +132,60 @@ const renderRecipe = ({ item }) => {
     );
   }
 
+  const handleSearch = (text) => {
+  setSearchQuery(text);
+  
+  // Filter the original recipes array (assuming it's called 'recipes')
+  const filtered = recipes.filter((item) => {
+    const itemData = item.name ? item.name.toUpperCase() : "".toUpperCase();
+    const textData = text.toUpperCase();
+    return itemData.indexOf(textData) > -1;
+  });
+
+  setFilteredRecipes(filtered);
+};
+
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search recipes (e.g. Pasta)..."
+          value={searchQuery}
+          onChangeText={(text) => handleSearch(text)}
+          placeholderTextColor="#999"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => handleSearch("")}>
+            <Text style={styles.clearButton}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <FlatList
-        data={recipes}
+        data={searchQuery.length > 0 ? filteredRecipes : recipes}
         keyExtractor={(item) => item._id}
-        renderItem={renderRecipe}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4D693A"]} />
-        }
-        ListEmptyComponent={
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>No recipes yet. Be the first to create one!</Text>
-          </View>
-        }
+        contentContainerStyle={{ paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate("RecipeDetail", { recipe: item })}
+          >
+            {/* Recipe Image */}
+            <Image 
+              source={{ uri: item.image || 'https://via.placeholder.com/150' }} 
+              style={styles.cardImage} 
+            />
+            
+            {/* Recipe Info */}
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.cardCategory}>{item.foodGroup}</Text>
+              <Text style={styles.cardDescription} numberOfLines={2}>
+                {item.description}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
       />
 
       <TouchableOpacity 
@@ -202,5 +243,71 @@ const styles = StyleSheet.create({
   createButtonText: { color: "white", fontWeight: "bold", fontSize: 16 },
   errorText: { color: "#d9534f", textAlign: "center", marginBottom: 20 },
   retryButton: { backgroundColor: "#4D693A", padding: 12, borderRadius: 8 },
-  emptyText: { textAlign: "center", color: "#666", marginTop: 50 }
+  emptyText: { textAlign: "center", color: "#666", marginTop: 50 },
+  
+searchContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#e8d5c460",
+  borderRadius: 10,
+  margin: 15,
+  paddingHorizontal: 15,
+  borderWidth: 1,
+  borderColor: "#c2b9b2ff",
+},
+searchInput: {
+  flex: 1,
+  height: 45,
+  fontSize: 16,
+  color: "#333",
+},
+clearButton: {
+  fontSize: 18,
+  color: "#999",
+  padding: 5,
+},
+card: {
+  backgroundColor: "white",
+  borderRadius: 12,
+  marginHorizontal: 15,
+  marginBottom: 15,
+  flexDirection: "row", // Puts image and text side-by-side
+  overflow: "hidden",
+  elevation: 3, // Shadow for Android
+  shadowColor: "#000", // Shadow for iOS
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  borderWidth: 1,
+  borderColor: "#c2b9b2ff",
+},
+cardImage: {
+  width: 100,
+  height: 100,
+  backgroundColor: "#f0f0f0",
+},
+cardInfo: {
+  flex: 1,
+  padding: 10,
+  justifyContent: "center",
+},
+cardTitle: {
+  fontSize: 18,
+  fontWeight: "bold",
+  color: "#4D693A", // Matching your dark green theme
+  marginBottom: 2,
+},
+cardCategory: {
+  fontSize: 12,
+  color: "#888",
+  textTransform: "uppercase",
+  letterSpacing: 1,
+  marginBottom: 5,
+},
+cardDescription: {
+  fontSize: 14,
+  color: "#666",
+  lineHeight: 18,
+},
+
 });

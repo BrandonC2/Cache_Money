@@ -40,8 +40,6 @@ const uploadDirs = {
 };
 Object.values(uploadDirs).forEach(dir => fs.mkdirSync(dir, { recursive: true }));
 
-app.use(express.json());
-
 // Logger
 app.use((req, res, next) => {
   console.log(
