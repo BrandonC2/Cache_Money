@@ -21,34 +21,32 @@ export default function RecipeMakerScreen() {
   const [error, setError] = useState(null);
 
   // Load recipes from API
-  const loadRecipes = async () => {
-    setError(null);
-    try {
-      const res = await apiClient.get("/recipes");
-      
-      console.log(`Successfully fetched ${res.data.length} recipes.`);
+const loadRecipes = async () => {
+  setError(null);
+  try {
+    const res = await apiClient.get("/recipes");
+    
+    // NEW CLOUDINARY LOGIC
+    const fullData = res.data.map((r) => ({
+      ...r,
+      // Since 'image' is now a full URL from Cloudinary, use it directly
+      fullImageUrl: r.image || null, 
+    }));
 
-      // Construct full image URL for each recipe
-      const baseUrl = apiClient.defaults.baseURL.replace(/\/$/, ""); // Remove trailing slash if exists
-
-      const fullData = res.data.map((r) => ({
-        ...r,
-        fullImageUrl: r.fullImageUrl
-          ? `${baseUrl}${r.fullImageUrl}`
-          : r.image 
-            ? `${baseUrl}/uploads/recipes/${r.image}` // Fallback if fullImageUrl isn't provided
-            : null,
-      }));
-
-      setRecipes(fullData);
-    } catch (err) {
-      console.error("Failed to load recipes:", err);
-      setError("Unable to connect to the server. Please check your internet.");
-    } finally {
-      setRefreshing(false);
-      setLoading(false);
+    // LOG THIS: Copy this exact output from your console and paste it into Chrome
+    if (fullData.length > 0) {
+      console.log("🔗 TEST THIS LINK:", fullData[0].fullImageUrl);
     }
-  };
+
+    setRecipes(fullData);
+  } catch (err) {
+    console.error("Failed to load recipes:", err);
+    setError("Unable to connect to the server.");
+  } finally {
+    setRefreshing(false);
+    setLoading(false);
+  }
+};
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -62,43 +60,53 @@ export default function RecipeMakerScreen() {
     }, [])
   );
 
-  const renderRecipe = ({ item }) => (
-    <TouchableOpacity
-      style={styles.recipeCard}
-      onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
-    >
-      {item.fullImageUrl ? (
-        <Image 
-          source={{ uri: item.fullImageUrl }} 
-          style={styles.recipeImage} 
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.noImagePlaceholder}>
-          <Text style={{ color: "#888" }}>No Image Available</Text>
-        </View>
-      )}
-      
-      <View style={styles.recipeInfo}>
-        <View style={styles.row}>
-          <Text style={styles.recipeName}>{item.name}</Text>
-          {item.foodGroup || item.recipeGroup && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.foodGroup || item.recipeGroup}</Text>
-            </View>
-          )}
-        </View>
+const renderRecipe = ({ item }) => {
+    // Determine the group name safely
+    const groupName = item.foodGroup || item.recipeGroup;
+    
+    // Determine the chef name safely
+    const chefName = item.userId && typeof item.userId === 'object' 
+      ? item.userId.username 
+      : 'Community Member';
 
-        <Text style={styles.recipeUser}>
-          By: {typeof item.userId === 'object' ? item.userId.username : 'Community Member'}
-        </Text>
+    return (
+      <TouchableOpacity
+        style={styles.recipeCard}
+        onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
+      >
+        {item.fullImageUrl ? (
+          <Image 
+            source={{ uri: item.fullImageUrl }} 
+            style={styles.recipeImage} 
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.noImagePlaceholder}>
+            <Text style={{ color: "#888" }}>No Image Available</Text>
+          </View>
+        )}
         
-        <Text style={styles.recipeIngredients}>
-          🛒 {item.ingredients?.length || 0} Ingredients
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.recipeInfo}>
+          <View style={styles.row}>
+            <Text style={styles.recipeName}>{item.name}</Text>
+            
+            {/* FIXED LOGIC: We check if groupName exists first */}
+            {!!groupName && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{groupName}</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.recipeUser}>By: {chefName}</Text>
+          
+          <Text style={styles.recipeIngredients}>
+            🛒 {item.ingredients?.length || 0} Ingredients
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   // 1. LOADING STATE
   if (loading) {
@@ -163,7 +171,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     overflow: "hidden",
   },
-  recipeImage: { width: "100%", height: 180 },
+  recipeImage: { 
+    width: "100%",      // Takes up the full width of the card
+    height: 200,        // You MUST have a fixed height for remote images
+    backgroundColor: "#ddd", // Helps you see the box while the image loads
+  },
   noImagePlaceholder: { width: "100%", height: 180, backgroundColor: "#ddd", justifyContent: "center", alignItems: "center" },
   recipeInfo: { padding: 12 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

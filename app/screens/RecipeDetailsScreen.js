@@ -10,23 +10,23 @@ export default function RecipeDetailsScreen({ route, navigation }) {
     useCallback(() => {
       let isActive = true; // prevent setting state if screen unmounted
 
-      const fetchRecipe = async () => {
-        try {
-          console.log("Fetching recipe ID:", recipe._id);
-          const res = await apiClient.get(`/recipes/${recipe._id}`);
+    const fetchRecipe = async () => {
+      try {
+        console.log("Fetching recipe ID:", recipe._id);
+        const res = await apiClient.get(`/recipes/${recipe._id}`);
 
-          if (isActive) {
-            setRecipe({
-              ...res.data,
-              fullImageUrl: res.data.image
-                ? `${apiClient.defaults.baseURL}/uploads/recipes/${res.data.image}`
-                : null,
-            });
-          }
-        } catch (err) {
-          console.error("Failed to refresh recipe:", err);
+        if (isActive) {
+          // NEW CLOUDINARY LOGIC
+          setRecipe({
+            ...res.data,
+            // No URL construction needed!
+            fullImageUrl: res.data.image || null, 
+          });
         }
-      };
+      } catch (err) {
+        console.error("Failed to refresh recipe:", err);
+      }
+    };
 
       fetchRecipe();
     }, [recipe._id])

@@ -52,12 +52,6 @@ export default function SettingsScreen({ navigation }) {
       setLoading(true);
       const token = await AsyncStorage.getItem("authToken");
 
-      // Load cached profile first
-      const cachedPath = await AsyncStorage.getItem("profilePath");
-      if (cachedPath) {
-        setProfile(`${API_BASE_ROOT}${cachedPath}?t=${Date.now()}`);
-      }
-
       // Fetch latest from backend
       const res = await apiClient.get("/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
@@ -66,16 +60,15 @@ export default function SettingsScreen({ navigation }) {
       setUsername(res.data.username || "");
 
       if (res.data.profile) {
-        const savedPath = res.data.profile;
-        await AsyncStorage.setItem("profilePath", savedPath);
-        setProfile(`${API_BASE_ROOT}${savedPath}?t=${Date.now()}`);
+        // res.data.profile is now "https://res.cloudinary.com/..."
+        setProfile(res.data.profile);
+        await AsyncStorage.setItem("profilePath", res.data.profile);
       } else {
         setProfile(null);
         await AsyncStorage.removeItem("profilePath");
       }
     } catch (err) {
       console.error("Failed to load profile:", err);
-      Alert.alert("Error", "Failed to load profile from server");
     } finally {
       setLoading(false);
     }
@@ -91,62 +84,73 @@ export default function SettingsScreen({ navigation }) {
   // Pick & upload profile image
   // ----------------------
   const handlePickImage = async () => {
-    try {
-      setProcessing(true);
+      try {
+        setProcessing(true);
 
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        return Alert.alert(
-          "Permission required",
-          "Please allow access to your photo library"
-        );
+        // 1. Request Permissions
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          return Alert.alert(
+            "Permission required",
+            "Please allow access to your photo library"
+          );
+        }
+
+        // 2. Launch Image Picker
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.7,
+        });
+
+        if (result.canceled) return;
+
+        let localUri = result.assets[0].uri;
+
+        // 3. iOS ph:// URI fix (Convert to a physical file path for the upload)
+        if (localUri.startsWith("ph://")) {
+          const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
+          await FileSystem.copyAsync({ from: localUri, to: tempUri });
+          localUri = tempUri;
+        }
+
+        // 4. Prepare FormData
+        const token = await AsyncStorage.getItem("authToken");
+        const formData = new FormData();
+        formData.append("image", {
+          uri: localUri,
+          name: `profile_${Date.now()}.jpg`,
+          type: "image/jpeg",
+        });
+
+        // 5. Upload to Backend (which now sends it to Cloudinary)
+        const uploadRes = await apiClient.post("/users/profile/picture", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        // 6. Handle Success
+        if (uploadRes.data.ok) {
+          const newCloudinaryUrl = uploadRes.data.url;
+          
+          // Update local state and cache with the permanent HTTPS link
+          setProfile(newCloudinaryUrl);
+          await AsyncStorage.setItem("profilePath", newCloudinaryUrl);
+          
+          Alert.alert("Success", "Profile picture updated!");
+        } else {
+          throw new Error("Upload failed");
+        }
+      } catch (err) {
+        console.error("Profile upload error:", err);
+        Alert.alert("Error", "Failed to update profile picture. Check your connection.");
+      } finally {
+        setProcessing(false);
       }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-      });
-
-      if (result.canceled) return;
-
-      let localUri = result.assets[0].uri;
-
-      // iOS ph:// URI fix
-      if (localUri.startsWith("ph://")) {
-        const tempUri = `${FileSystem.cacheDirectory}profile_${Date.now()}.jpg`;
-        await FileSystem.copyAsync({ from: localUri, to: tempUri });
-        localUri = tempUri;
-      }
-
-      const token = await AsyncStorage.getItem("authToken");
-      const formData = new FormData();
-      formData.append("image", {
-        uri: localUri,
-        name: `profile_${Date.now()}.jpg`,
-        type: "image/jpeg",
-      });
-
-      const uploadRes = await apiClient.post("/users/profile/picture", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (!uploadRes.data.ok) throw new Error("Upload failed");
-
-      // Reload profile
-      await loadProfile();
-      Alert.alert("Success", "Profile picture updated!");
-    } catch (err) {
-      console.error("Profile upload error:", err);
-      Alert.alert("Error", "Failed to update profile picture");
-    } finally {
-      setProcessing(false);
-    }
-  };
+    };
   // ------------------------
   // Change username
   // ------------------------

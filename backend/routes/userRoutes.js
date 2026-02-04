@@ -118,13 +118,14 @@ router.get("/profile", async (req, res) => {
 router.post(
   "/profile/picture",
   auth,
-  uploadProfile.single("image"),
+  uploadCloud.single("image"), // Use Cloudinary here
   async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const imageUrl = `/uploads/profile/${req.file.filename}`;
+    // Cloudinary gives the full URL in req.file.path
+    const imageUrl = req.file.path; 
 
     await User.findByIdAndUpdate(req.userId, {
       profile: imageUrl,
@@ -132,7 +133,7 @@ router.post(
 
     res.json({
       ok: true,
-      url: imageUrl,
+      url: imageUrl, // This is now a full https://... link
     });
   }
 );

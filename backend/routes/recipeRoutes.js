@@ -3,47 +3,40 @@ const router = express.Router();
 const Recipe = require("../models/Recipe");
 const createUpload = require("../utils/upload");
 const uploadDirs = require("../utils/uploadDirs");
+const uploadCloud = require('../middleware/cloudinaryConfig');
 
 const uploadRecipe = createUpload(uploadDirs.recipes, "recipe");
 
 // ===================
 // Create Recipe
 // ===================
-router.post("/", uploadRecipe.single("image"), async (req, res) => {
+
+router.post("/", uploadCloud.single("image"), async (req, res) => {
   try {
-    // 1. Extract recipeGroup from req.body so it doesn't get lost
-    const { name, description, ingredients, createdBy, recipeGroup } = req.body;
+    const { name, description, foodGroup, createdBy, ingredients } = req.body;
 
-    // 2. Validation: Ensure the required fields from your logic are present
-    if (!name || !createdBy) {
-      return res.status(400).json({ message: "Missing required fields: name and createdBy are required." });
-    }
+    // Cloudinary stores the full URL in req.file.path 
+    // Local Multer used req.file.filename
+    const imagePath = req.file ? req.file.path : null;
 
-    // 3. Parse the ingredients string sent via FormData
-    const parsedIngredients = ingredients ? JSON.parse(ingredients) : [];
-
-    // 4. Create the new Recipe document mapping frontend keys to Schema keys
-    const recipe = new Recipe({
-      userId: createdBy, // Maps 'createdBy' from frontend to 'userId' in Schema
+    const newRecipe = new Recipe({
       name,
       description,
-      recipeGroup: recipeGroup || 'Other', // Saves the "Vegan/Dessert/etc" selection
-      ingredients: parsedIngredients,
-      image: req.file ? req.file.filename : null,
+      foodGroup,
+      userId: createdBy, 
+      image: imagePath, // This now saves "https://res.cloudinary.com/..."
+      ingredients: JSON.parse(ingredients),
     });
 
-    await recipe.save();
-
-    res.json({
-      message: "Recipe created successfully",
-      data: recipe,
-      fullImageUrl: recipe.image ? `/uploads/recipes/${recipe.image}` : null,
-    });
+    const savedRecipe = await newRecipe.save();
+    res.status(201).json(savedRecipe);
   } catch (err) {
-    console.error("Recipe creation error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Cloudinary Upload Error:", err);
+    res.status(500).json({ message: "Error saving recipe to cloud" });
   }
 });
+
+module.exports = router;
 
 // ===================
 // Update Recipe
