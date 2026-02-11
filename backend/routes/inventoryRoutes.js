@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const util = require("util");
 const InventoryItem = require("../models/InventoryItem");
+
+//Images
 //const auth = require("../middleware/auth");
 const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");

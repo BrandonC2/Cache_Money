@@ -7,9 +7,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-reanimated';
+
+//First Screens
 import LoginScreen from './app/screens/LoginScreen';
 import RegistrationScreen from './app/screens/RegistrationScreen';
 import AboutScreen from './app/screens/AboutScreen';
+
+//NavBar Navifational
 import KitchenHomepage from './app/screens/KitchenHomepage';
 import SplashScreen from './app/screens/TransitionScreen';
 import KitchenCollection from './app/screens/KitchenCollectionScreen';
@@ -17,15 +22,13 @@ import KitchenScreen from './app/screens/KitchenScreen';
 import AddScreen from './app/screens/ItemAddScreen';
 import RecipeDetailsScreen from './app/screens/RecipeDetailsScreen';
 import EditRecipeScreen from './app/screens/EditRecipeScreen';
-import 'react-native-reanimated';
+import UpcomingScreen from './app/screens/UpcomingScreen';
 
 
 //Currently not the main thing we are focusing on, 
 // I just them here to get the nav bar working
-import UpcomingScreen from './app/screens/UpcomingScreen';
 import RecipeMaker from './app/screens/RecipeMakerScreen';
 import RecipeCreatorScreen from './app/screens/RecipeCreatorScreen';
-import GroceryListScreen from './app/screens/GroceryListScreen';
 import CameraScreen from './app/screens/CameraScreen';
 import ReceiptReviewScreen from './app/screens/ReceiptReviewScreen';
 import SettingsScreen from './app/screens/SettingsScreen';
@@ -168,25 +171,23 @@ export default function App() {
   return(
   <NavigationContainer ref={navigationRef}>
     <Stack.Navigator initialRouteName={isAuthenticated ? "MainNavBar" : "About"}>
+            {/*Working*/}
       <Stack.Screen name = "SplashScreen" component ={SplashScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
-      {/*Not navigatable yet...; important for Q3*/}
+      <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
       <Stack.Screen name = "KitchenCollection" component ={KitchenCollection} options={{ headerShown: false }}/>
-      <Stack.Screen name = "Kitchen" component ={KitchenScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "ManualAdd" component ={AddScreen} options={{ headerShown: false }}/>
-      {/*   uncomment when about is fixed*/}
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "RecipeCreator" component ={RecipeCreatorScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "RecipeDetails" component ={RecipeDetailsScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "EditRecipe" component={EditRecipeScreen} />
-
-      
-      {/*NO LONGER NEEDED (maybe, keep just in case)}*/}
-      <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
-      <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
-      <Stack.Screen name = "ReceiptReview" component ={ReceiptReviewScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Settings" component ={SettingsScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "ReceiptReview" component ={ReceiptReviewScreen} options={{ headerShown: false }}/>
+      
+      {/*Eventual work*/}
+      <Stack.Screen name = "Kitchen" component ={KitchenScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Grocery" component={GroceryList} options={{ headerShown: false }}/>
 
     </Stack.Navigator>

@@ -2,9 +2,23 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, {useState, useCallback } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import apiClient from "../lib/apiClient"; // adjust the path if needed
+import { useRecipeCheck } from '../hooks/useRecipeCheck';
+import IngredientStatus from '../components/IngredientStatus';
+/*
+Add a button to where a user can create dish and app scans if user has ingredients 
+And if missing ingredients: add to grocery list
+Currently threeway
+*/
 
 export default function RecipeDetailsScreen({ route, navigation }) {
   const [recipe, setRecipe] = useState(route.params.recipe);
+  const { recipeId } = route.params; // Get ID from navigation
+  const { comparison, loading, checkAvailability, addMissingToGrocery } = useRecipeCheck(recipeId);
+
+  // 1. Run the check on mount
+  useEffect(() => {
+    checkAvailability();
+  }, [recipeId]);
 
   useFocusEffect(
     useCallback(() => {

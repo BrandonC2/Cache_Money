@@ -47,6 +47,7 @@ export default function RecipeCreatorScreen({ navigation }) {
   const [recipeGroup, setRecipeGroup] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [ingredients, setIngredients] = useState([]);
+  const [instructions, setInstructions] = useState([]);
   
   // State for the item being currently typed
   const [currentItem, setCurrentItem] = useState({
@@ -55,6 +56,11 @@ export default function RecipeCreatorScreen({ navigation }) {
     foodGroup: "",
     quantity: "",
     unit: "",
+  });
+
+  const [currentInstruction, setCurrentInstruction] = ({
+    description: "",
+    image: "",
   });
 
   const [error, setError] = useState("");
@@ -127,6 +133,40 @@ export default function RecipeCreatorScreen({ navigation }) {
       { text: "Cancel" },
       { text: "Delete", style: "destructive", onPress: () =>
           setIngredients(ingredients.filter((_, index) => index !== i))
+      },
+    ]);
+  };
+
+  // ===========================
+  // ADD / UPDATE INGREDIENT
+  // ===========================
+  const addOrUpdateInstruction = () => {
+
+    if (editingIndex !== null) {
+      const updated = [...ingredients];
+      updated[editingIndex] = currentInstruction;
+      setInstructions(updated);
+      setEditingIndex(null);
+    } else {
+      setInstructions([...instructions, currentInstruction]);
+    }
+
+    // Reset current item fields
+    setCurrentInstruction({ name: "", description: "", image: "" });
+    setError("");
+  };
+
+  const editInstruction = (index) => {
+    setCurrentInstruction(instructions[index]);
+    setEditingIndex(index);
+    setError("");
+  };
+
+  const deleteInstruction = (i) => {
+    Alert.alert("Delete?", "Remove this instruction?", [
+      { text: "Cancel" },
+      { text: "Delete", style: "destructive", onPress: () =>
+          setInstructions(instructions.filter((_, index) => index !== i))
       },
     ]);
   };
