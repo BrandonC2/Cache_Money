@@ -329,4 +329,23 @@ router.get("/category/:category", async (req, res) => {
   }
 });
 
+// GET /api/inventory/search/:query - Search items by name
+router.get("/search/:query", async (req, res) => {
+  try {
+    const { query } = req.params;
+    const safeQuery = escapeRegExp(query);
+
+    const items = await Item.find({
+      addedBy: req.userId, // Matches your schema field name
+      name: { $regex: safeQuery, $options: 'i' }
+    })
+    .limit(10)
+    .select("name foodGroup image"); // Only send what the search bar needs
+
+    res.status(200).json(items);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 module.exports = router;

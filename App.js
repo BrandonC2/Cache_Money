@@ -78,10 +78,25 @@ function NavigationBar() {
           ),
         }}
       />
-
+      {/*
       <Tab.Screen
         name="Upcoming"
         component={UpcomingScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View>
+              <Image
+                source={require('./app/assets/upcoming_new_icon.png')}
+                style={{ width: 30, height: 20 }}
+              />
+            </View>
+          ),
+        }}
+      />
+      */}
+      <Tab.Screen
+        name="Schedule"
+        component={ScheduleView}
         options={{
           tabBarIcon: ({ focused }) => (
             <View>

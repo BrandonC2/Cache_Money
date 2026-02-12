@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
+import { calculateConfidence } from '../utils/matchEngine'; // Ensure path is correct
 
 export const useRecipeCheck = (recipeId) => {
   const [loading, setLoading] = useState(false);
@@ -8,9 +9,27 @@ export const useRecipeCheck = (recipeId) => {
   const checkAvailability = async () => {
     setLoading(true);
     try {
-      // Calls the logic we defined in the previous step
       const response = await axios.get(`/api/grocery/check/${recipeId}`);
-      setComparison(response.data);
+      
+      // We map over the raw API data to add our "Confidence Intelligence"
+      const enhancedComparison = response.data.map(item => {
+        // Run our JS matching engine on the two names
+        const confidence = calculateConfidence(
+            { name: item.requiredName, quantity: item.requiredQty, unit: item.requiredUnit },
+            { name: item.foundName, quantity: item.foundQty, unit: item.foundUnit }
+          );
+        let status = 'missing';
+        if (confidence > 0.8) status = 'available';
+        else if (confidence > 0.5) status = 'low_stock';
+        return {
+          ...item,
+          confidenceScore: confidence,
+          // Logic to decide UI status based on the score
+          status: confidence > 0.8 ? 'available' : confidence > 0.4 ? 'substitute' : 'missing'
+        };
+      });
+
+      setComparison(enhancedComparison);
     } catch (err) {
       console.error("Check failed", err);
     } finally {
