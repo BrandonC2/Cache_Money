@@ -23,6 +23,10 @@ import AddScreen from './app/screens/ItemAddScreen';
 import RecipeDetailsScreen from './app/screens/RecipeDetailsScreen';
 import EditRecipeScreen from './app/screens/EditRecipeScreen';
 import UpcomingScreen from './app/screens/UpcomingScreen';
+import MealPrepScreen from './app/screens/MealPrep';
+import ScheduleView from './app/screens/ScheduleScreen';
+import SettingsScreen from './app/screens/SettingsScreen';
+
 
 
 //Currently not the main thing we are focusing on, 
@@ -31,7 +35,6 @@ import RecipeMaker from './app/screens/RecipeMakerScreen';
 import RecipeCreatorScreen from './app/screens/RecipeCreatorScreen';
 import CameraScreen from './app/screens/CameraScreen';
 import ReceiptReviewScreen from './app/screens/ReceiptReviewScreen';
-import SettingsScreen from './app/screens/SettingsScreen';
 import GroceryList from './app/screens/GroceryList';
 
 const Stack = createNativeStackNavigator();
@@ -187,7 +190,9 @@ export default function App() {
       <Stack.Screen name = "ReceiptReview" component ={ReceiptReviewScreen} options={{ headerShown: false }}/>
       
       {/*Eventual work*/}
+      <Stack.Screen name = "MealPrep" component ={MealPrepScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Kitchen" component ={KitchenScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name = "Schedule" component={ScheduleView} options={{ headerShown: false }}/>
       <Stack.Screen name = "Grocery" component={GroceryList} options={{ headerShown: false }}/>
 
     </Stack.Navigator>

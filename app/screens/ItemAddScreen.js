@@ -20,6 +20,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
 
+/*
+Most produce do not have explicit expiration dates (i.e fresh), thereby need to have a range for expiration (assuming conditions to maintain are good)
+
+*/
+
+
 export default function AddScreen({ navigation }) {
   const [itemName, setItem] = useState("");
   const [foodGroup, setFg] = useState("");
