@@ -163,6 +163,7 @@ return (
       )}
       </TouchableOpacity>
       {/* Profile Picture / User Icon - Top Left */}
+      {/*
       <TouchableOpacity 
         style={styles.profileButtonTopLeft} 
         onPress={() => navigation.navigate('Settings')} // Or a dedicated Profile screen
@@ -173,6 +174,7 @@ return (
           <Ionicons name="person-circle" size={40} color="#4D693A" />
         )}
       </TouchableOpacity>
+      */}
       {/* Settings button - Top right corner */}
       <TouchableOpacity 
         style={styles.settingsButtonTopRight} 
@@ -180,7 +182,7 @@ return (
       >
         <Ionicons name="settings" size={28} color="#4D693A" />
       </TouchableOpacity>
-
+    
       
       <View style={styles.Box}>
       {/* Create/Join Room Inputs */}
