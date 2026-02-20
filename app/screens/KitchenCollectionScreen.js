@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
-import { useIngredientSuggestions } from '../hooks/useIngredientSuggestions';
+import { useIngredientSuggestions } from '../hooks/useIngredientSuggestion';
 
 export default function KitchenCollection({ navigation, route }) {
   const [username, setUsername] = useState("");

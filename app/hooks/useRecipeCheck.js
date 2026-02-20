@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { calculateConfidence } from '../utils/matchEngine'; // Ensure path is correct
+import { calculateConfidence } from '../services/matchEngine';
 
 export const useRecipeCheck = (recipeId) => {
   const [loading, setLoading] = useState(false);
