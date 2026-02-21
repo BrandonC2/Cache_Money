@@ -171,18 +171,21 @@ const renderRecipe = ({ item }) => {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.card}
-            onPress={() => navigation.navigate("RecipeDetails", { recipe: item })}
+            onPress={() => navigation.navigate("RecipeDetails", { 
+              recipe: item, 
+              recipeId: item._id // ADD THIS LINE
+            })}
           >
             {/* Recipe Image */}
             <Image 
-              source={{ uri: item.image || 'https://via.placeholder.com/150' }} 
+              source={{ uri: item.fullImageUrl || 'https://via.placeholder.com/150' }} 
               style={styles.cardImage} 
             />
             
             {/* Recipe Info */}
             <View style={styles.cardInfo}>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardCategory}>{item.foodGroup}</Text>
+              <Text style={styles.cardCategory}>{item.foodGroup || item.recipeGroup}</Text>
               <Text style={styles.cardDescription} numberOfLines={2}>
                 {item.description}
               </Text>

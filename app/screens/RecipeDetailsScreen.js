@@ -71,13 +71,32 @@ export default function RecipeDetailsScreen({ route, navigation }) {
         )}
       </View>
 
-      <Text style={styles.sectionTitle}>Ingredients:</Text>
-      {recipe.ingredients.map((ing, i) => (
-        <View key={i} style={styles.ingredientItem}>
-          <Text style={{ fontWeight: "600" }}>{ing.name}</Text>
-          {/* You can use your IngredientStatus component here to show if it's in stock */}
-        </View>
-      ))}
+      {/* Ingredients Section */}
+<Text style={styles.sectionTitle}>Ingredients</Text>
+<View style={styles.ingredientsCard}>
+  {recipe.ingredients.map((ing, i) => (
+    <View key={i} style={styles.ingredientItem}>
+      <View style={styles.bullet} />
+      <Text style={styles.ingredientText}>
+        <Text style={styles.qtyText}>{ing.quantity} {ing.unit} </Text>
+        <Text style={styles.ingName}>{ing.name}</Text>
+      </Text>
+      {/* Optional: Show food group tag */}
+      <View style={styles.groupTag}>
+        <Text style={styles.groupTagText}>{ing.foodGroup}</Text>
+      </View>
+    </View>
+  ))}
+</View>
+
+{/* Instructions Section (Recommended addition) */}
+<Text style={styles.sectionTitle}>Instructions</Text>
+{recipe.instructions?.map((step, i) => (
+  <View key={i} style={styles.stepContainer}>
+    <Text style={styles.stepNumber}>{i + 1}</Text>
+    <Text style={styles.stepDescription}>{step.description}</Text>
+  </View>
+))}
 
       <TouchableOpacity
         style={styles.editBtn}
@@ -99,7 +118,44 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
   ingredientItem: { marginBottom: 12, padding: 10, backgroundColor: "#E8DCC8", borderRadius: 8 },
   editBtn: { marginTop: 20, padding: 10, alignItems: 'center' },
-  editText: { color: '#888' }
+  editText: { color: '#888' },
+  ingredientsCard: {
+  backgroundColor: "#FFF",
+  borderRadius: 12,
+  padding: 15,
+  marginVertical: 10,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+ingredientItem: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingVertical: 8,
+  borderBottomWidth: 1,
+  borderBottomColor: "#F0F0F0",
+},
+bullet: {
+  width: 6,
+  height: 6,
+  borderRadius: 3,
+  backgroundColor: "#4D693A",
+  marginRight: 10,
+},
+ingredientText: { flex: 1, fontSize: 16 },
+qtyText: { fontWeight: "700", color: "#4D693A" },
+ingName: { color: "#333" },
+groupTag: {
+  backgroundColor: "#E8F5E9",
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+  borderRadius: 4,
+},
+groupTagText: { fontSize: 10, color: "#4D693A", fontWeight: "bold" },
+// Instructions Styles
+stepContainer: { flexDirection: 'row', marginBottom: 15, paddingRight: 20 },
+stepNumber: { fontWeight: 'bold', color: '#4D693A', marginRight: 10 },
+stepDescription: { flex: 1, fontSize: 15, lineHeight: 22 }
 });
-
-

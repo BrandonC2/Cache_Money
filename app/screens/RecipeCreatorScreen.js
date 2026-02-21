@@ -10,377 +10,314 @@ import {
   Alert,
   FlatList,
   Modal,
+  Keyboard,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
 
+const RecipefoodGroups = ["Dessert", "Vegan", "Lactose-Free", "Entree", "Appetizer", "Gluten-Free", "Sauce", "Snack"];
 const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
-
-const RecipefoodGroups = [
-  "Dessert",
-  "Vegan",
-  "Lactose-Free",
-  "Entree",
-  "Appetizer",
-  "Gluten-Free",
-  "Sauce",
-  "Snack",
-];
-
-const units = [
-  "Cup(s)",
-  "Teaspoon(s)",
-  "Tablespoon(s)",
-  "Gram(s)",
-  "Quart(s)",
-  "Ounce(s)",
-  "Pound(s)",
-  "Gallon(s)",
-];
+const units = ["Cup(s)", "Teaspoon(s)", "Tablespoon(s)", "Gram(s)", "Ounce(s)", "Pound(s)"];
 
 export default function RecipeCreatorScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
+  
   const [recipeName, setRecipeName] = useState("");
   const [recipeDesc, setRecipeDesc] = useState("");
   const [recipeGroup, setRecipeGroup] = useState("");
-  const [imageUri, setImageUri] = useState(null);
+  const [mainImageUri, setMainImageUri] = useState(null);
   const [ingredients, setIngredients] = useState([]);
   const [instructions, setInstructions] = useState([]);
-  
-  // State for the item being currently typed
-  const [currentItem, setCurrentItem] = useState({
-    name: "",
-    description: "",
-    foodGroup: "",
-    quantity: "",
-    unit: "",
-  });
 
-  const [currentInstruction, setCurrentInstruction] = ({
-    description: "",
-    image: "",
-  });
-
-  const [error, setError] = useState("");
   const [showRecipeGroupModal, setShowRecipeGroupModal] = useState(false);
   const [showFoodGroupModal, setShowFoodGroupModal] = useState(false);
-  const [showUnitModal, setShowUnitModal] = useState(false); // FIXED: Added this state
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [showUnitModal, setShowUnitModal] = useState(false);
+  const [showInstructionModal, setShowInstructionModal] = useState(false);
+  
+  const [ingredientEditingIndex, setIngredientEditingIndex] = useState(null);
+  const [instructionEditingIndex, setInstructionEditingIndex] = useState(null);
 
+  const [currentItem, setCurrentItem] = useState({ name: "", foodGroup: "", quantity: "", unit: "" });
+  const [currentInstruction, setCurrentInstruction] = useState({ description: "", imageUri: null });
 
-  useEffect(() => {
-  const checkUser = async () => {
-    const id = await AsyncStorage.getItem("userId");
-    console.log("Current UserID in Storage:", id);
-    if (!id) {
-      setError("Warning: No User ID found. Please log in again.");
+  const pickImage = async (type) => {
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 0.6 });
+    if (!result.canceled) {
+      if (type === "main") setMainImageUri(result.assets[0].uri);
+      if (type === "step") setCurrentInstruction({ ...currentInstruction, imageUri: result.assets[0].uri });
     }
   };
-  checkUser();
-}, []);
 
-  // ===========================
-  // IMAGE PICKER
-  // ===========================
-  const pickImage = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Permission Required", "Enable photos to upload images.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled) setImageUri(result.assets[0].uri);
-  };
-
-  // ===========================
-  // ADD / UPDATE INGREDIENT
-  // ===========================
   const addOrUpdateIngredient = () => {
     if (!currentItem.name || !currentItem.foodGroup || !currentItem.quantity) {
-      setError("Name, Food Group, and Quantity are required.");
+      Alert.alert("Error", "Name, Quantity, and Food Group are required.");
       return;
     }
-
-    if (editingIndex !== null) {
+    if (ingredientEditingIndex !== null) {
       const updated = [...ingredients];
-      updated[editingIndex] = currentItem;
+      updated[ingredientEditingIndex] = currentItem;
       setIngredients(updated);
-      setEditingIndex(null);
+      setIngredientEditingIndex(null);
     } else {
       setIngredients([...ingredients, currentItem]);
     }
-
-    // Reset current item fields
-    setCurrentItem({ name: "", description: "", foodGroup: "", quantity: "", unit: "" });
-    setError("");
+    setCurrentItem({ name: "", foodGroup: "", quantity: "", unit: "" });
   };
 
-  const editIngredient = (index) => {
-    setCurrentItem(ingredients[index]);
-    setEditingIndex(index);
-    setError("");
+  const deleteIngredient = (index) => {
+    setIngredients(ingredients.filter((_, i) => i !== index));
   };
 
-  const deleteIngredient = (i) => {
-    Alert.alert("Delete?", "Remove this ingredient?", [
-      { text: "Cancel" },
-      { text: "Delete", style: "destructive", onPress: () =>
-          setIngredients(ingredients.filter((_, index) => index !== i))
-      },
-    ]);
-  };
-
-  // ===========================
-  // ADD / UPDATE INGREDIENT
-  // ===========================
   const addOrUpdateInstruction = () => {
-
-    if (editingIndex !== null) {
-      const updated = [...ingredients];
-      updated[editingIndex] = currentInstruction;
+    if (!currentInstruction.description) return;
+    if (instructionEditingIndex !== null) {
+      const updated = [...instructions];
+      updated[instructionEditingIndex] = currentInstruction;
       setInstructions(updated);
-      setEditingIndex(null);
+      setInstructionEditingIndex(null);
     } else {
       setInstructions([...instructions, currentInstruction]);
     }
-
-    // Reset current item fields
-    setCurrentInstruction({ name: "", description: "", image: "" });
-    setError("");
+    setCurrentInstruction({ description: "", imageUri: null });
+    setShowInstructionModal(false);
   };
 
-  const editInstruction = (index) => {
-    setCurrentInstruction(instructions[index]);
-    setEditingIndex(index);
-    setError("");
+  const moveInstruction = (index, direction) => {
+    const newInstructions = [...instructions];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newInstructions.length) return;
+    [newInstructions[index], newInstructions[targetIndex]] = [newInstructions[targetIndex], newInstructions[index]];
+    setInstructions(newInstructions);
   };
 
-  const deleteInstruction = (i) => {
-    Alert.alert("Delete?", "Remove this instruction?", [
-      { text: "Cancel" },
-      { text: "Delete", style: "destructive", onPress: () =>
-          setInstructions(instructions.filter((_, index) => index !== i))
-      },
-    ]);
-  };
-
-  // ===========================
-  // SUBMIT RECIPE
-  // ===========================
-  const submitRecipe = async () => {
-  if (!recipeName || ingredients.length === 0) {
-    Alert.alert("Error", "Please provide a name and at least one ingredient.");
-    return;
-  }
-
+const submitRecipe = async () => {
   try {
     const userId = await AsyncStorage.getItem("userId");
-    
-    // We match the backend expectations and the Atlas document structure here
     const form = new FormData();
+    
     form.append("name", recipeName);
-    form.append("description", recipeDesc || "");
-    
-    // Use 'foodGroup' to match your existing Atlas documents
-    form.append("foodGroup", recipeGroup || "Other"); 
-    
-    // Use 'createdBy' so the backend validation passes
-    form.append("createdBy", userId); 
+    form.append("description", recipeDesc);
+    form.append("foodGroup", recipeGroup || "Other");
+    form.append("createdBy", userId);
 
-    // Formatting ingredients to match the Object structure in your logs
-    const formattedIngredients = ingredients.map(ing => ({
-      name: ing.name,
-      quantity: Number(ing.quantity),
-      unit: ing.unit,
-      notes: ing.notes || ""
+    // FIX 1: Ensure ingredients are a clean JSON string
+    form.append("ingredients", JSON.stringify(ingredients));
+
+    // FIX 2: Ensure instructions are mapped correctly AND stringified
+    // This ensures MongoDB receives a valid array of objects
+    const formattedInstructions = instructions.map((step) => ({
+      description: step.description,
+      imageUri: step.imageUri || "" // If your backend handles step images, keep this
     }));
     
-    form.append("ingredients", JSON.stringify(formattedIngredients));
+    form.append("instructions", JSON.stringify(formattedInstructions));
 
-    if (imageUri) {
-      form.append("image", {
-        uri: imageUri,
-        name: `recipe_${Date.now()}.jpg`,
-        type: "image/jpeg",
+    // FIX 3: Main Image
+    if (mainImageUri) {
+      form.append("image", { 
+        uri: mainImageUri, 
+        name: "main_recipe.jpg", 
+        type: "image/jpeg" 
       });
     }
 
-    await apiClient.post("/recipes", form, {
-      headers: { "Content-Type": "multipart/form-data" },
+    // Use your IP address here if apiClient isn't updated!
+    await apiClient.post("/recipes", form, { 
+      headers: { "Content-Type": "multipart/form-data" } 
     });
 
-    Alert.alert("Success", "Recipe created!");
+    Alert.alert("Success", "Recipe saved to MongoDB!");
     navigation.goBack();
-
   } catch (err) {
-    console.error("Submission error:", err.response?.data || err.message);
-    Alert.alert("Error", "Failed to save recipe.");
+    console.error("Upload Error:", err);
+    Alert.alert("Error", "Failed to save recipe. Check console for Network Error.");
   }
 };
 
   return (
     <ImageBackground style={styles.background} source={require("../assets/grid_paper.jpg")}>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        
         <View style={styles.headerBar}>
           <CustomBackButton onPress={() => navigation.goBack()} />
-          <Text style={styles.headerTitle}>Create Recipe</Text>
-          <View style={{ width: 80 }} />
+          <Text style={styles.headerTitle}>New Recipe</Text>
+          <TouchableOpacity onPress={submitRecipe}>
+            <Text style={styles.saveHeaderBtn}>Save</Text>
+          </TouchableOpacity>
         </View>
 
         <FlatList
           data={[{ key: "form" }]}
+          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           renderItem={() => (
-            <View style={styles.formContainer}>
-              {error !== "" && <Text style={styles.errorText}>{error}</Text>}
+            <View>
+              {/* RECIPE META */}
+              <TextInput 
+                placeholder="Recipe Title" 
+                style={styles.mainTitleInput} 
+                value={recipeName} 
+                onChangeText={setRecipeName} 
+              />
 
-              <Text style={styles.label}>Recipe Name *</Text>
-              <TextInput value={recipeName} onChangeText={setRecipeName} style={styles.input} placeholder="Spaghetti" />
-              <Text style={styles.label}>Recipe Category *</Text>
-              <TouchableOpacity 
-                style={styles.selectorButton} 
-                onPress={() => setShowRecipeGroupModal(true)}
-              >
-                <Text>{recipeGroup || "Select Category (e.g. Vegan, Dessert)"}</Text>
+              <TouchableOpacity style={styles.selector} onPress={() => setShowRecipeGroupModal(true)}>
+                <Text style={{ color: recipeGroup ? '#000' : '#888' }}>
+                  {recipeGroup || "📂 Select Recipe Category"}
+                </Text>
               </TouchableOpacity>
-              <Text style={styles.label}>Recipe Notes</Text>
-              <TextInput value={recipeDesc} onChangeText={setRecipeDesc} style={styles.input} placeholder="Family recipe" />
 
-              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                <Text style={styles.imageButtonText}>{imageUri ? "Change Image" : "Upload Image"}</Text>
+              <TouchableOpacity style={styles.mainImageContainer} onPress={() => pickImage("main")}>
+                {mainImageUri ? (
+                  <Image source={{ uri: mainImageUri }} style={styles.fullImage} />
+                ) : (
+                  <Text style={{ color: "#666" }}>+ Add Cover Photo</Text>
+                )}
               </TouchableOpacity>
-              {imageUri && <Image source={{ uri: imageUri }} style={styles.previewImage} />}
 
               <View style={styles.divider} />
 
-              <Text style={styles.label}>{editingIndex !== null ? "Edit Ingredient" : "Add Ingredient"}</Text>
-              <TextInput 
-                placeholder="Ingredient Name *" 
-                value={currentItem.name} 
-                onChangeText={(t) => setCurrentItem({ ...currentItem, name: t })} 
-                style={styles.input} 
-              />
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View style={{ width: '48%' }}>
-                  <Text style={styles.label}>Qty *</Text>
-                  <TextInput 
-                    placeholder="2" 
-                    value={currentItem.quantity} 
-                    keyboardType="numeric" 
-                    onChangeText={(t) => setCurrentItem({ ...currentItem, quantity: t.replace(/[^0-9.]/g, '') })} 
-                    style={styles.input} 
-                  />
-                </View>
-                <View style={{ width: '48%' }}>
-                  <Text style={styles.label}>Unit</Text>
-                  <TouchableOpacity style={styles.selectorButton} onPress={() => setShowUnitModal(true)}>
-                    <Text numberOfLines={1}>{currentItem.unit || "Select"}</Text>
-                  </TouchableOpacity>
-                </View>
+              {/* INGREDIENT BUILDER */}
+              <Text style={styles.sectionTitle}>Ingredients</Text>
+              <View style={styles.ingredientInputRow}>
+                <TextInput 
+                  placeholder="Name" 
+                  value={currentItem.name} 
+                  onChangeText={(t) => setCurrentItem({...currentItem, name: t})} 
+                  style={[styles.smallInput, { flex: 2 }]} 
+                />
+                <TextInput 
+                  placeholder="Qty" 
+                  keyboardType="numeric"
+                  value={currentItem.quantity} 
+                  onChangeText={(t) => setCurrentItem({...currentItem, quantity: t})} 
+                  style={[styles.smallInput, { flex: 1, marginHorizontal: 5 }]} 
+                />
+              </View>
+              
+              <View style={styles.ingredientInputRow}>
+                <TouchableOpacity style={[styles.selector, { flex: 1, marginBottom: 0, marginRight: 5 }]} onPress={() => setShowUnitModal(true)}>
+                  <Text numberOfLines={1}>{currentItem.unit || "Unit"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.selector, { flex: 1, marginBottom: 0 }]} onPress={() => setShowFoodGroupModal(true)}>
+                  <Text numberOfLines={1}>{currentItem.foodGroup || "Group"}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.miniAddBtn} onPress={addOrUpdateIngredient}>
+                  <Text style={{ color: 'white', fontWeight: 'bold' }}>+</Text>
+                </TouchableOpacity>
               </View>
 
-              <Text style={styles.label}>Food Group *</Text>
-              <TouchableOpacity style={styles.selectorButton} onPress={() => setShowFoodGroupModal(true)}>
-                <Text>{currentItem.foodGroup || "Select Group"}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.addButton} onPress={addOrUpdateIngredient}>
-                <Text style={styles.addButtonText}>{editingIndex !== null ? "Update" : "+ Add to List"}</Text>
-              </TouchableOpacity>
-
-              {/* INGREDIENTS LIST DISPLAY */}
-              {ingredients.map((item, index) => (
-                <View key={index} style={styles.ingredientItem}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: "bold" }}>
-                      {item.quantity} {item.unit} {item.name}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: '#666' }}>
-                      {item.foodGroup} {item.description ? `• ${item.description}` : ""}
-                    </Text>
-                  </View>
-                  <View style={{ flexDirection: 'row' }}>
-                    <TouchableOpacity onPress={() => editIngredient(index)} style={styles.miniButton}>
-                      <Text style={{color: 'blue'}}>Edit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => deleteIngredient(index)} style={styles.miniButton}>
-                      <Text style={{color: 'red'}}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
+              {/* INGREDIENT LIST */}
+              {ingredients.map((item, idx) => (
+                <View key={idx} style={styles.ingredientChip}>
+                  <Text style={{ flex: 1 }}>{item.quantity} {item.unit} {item.name} ({item.foodGroup})</Text>
+                  <TouchableOpacity onPress={() => deleteIngredient(idx)}><Text style={{ color: 'red' }}>✕</Text></TouchableOpacity>
                 </View>
               ))}
 
-              <TouchableOpacity style={styles.submitButton} onPress={submitRecipe}>
-                <Text style={styles.submitButtonText}>CREATE RECIPE</Text>
-              </TouchableOpacity>
+              <View style={styles.divider} />
+
+              {/* INSTRUCTIONS */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Instructions</Text>
+                <TouchableOpacity style={styles.addStepTrigger} onPress={() => setShowInstructionModal(true)}>
+                  <Text style={styles.addStepTriggerText}>+ Add Step</Text>
+                </TouchableOpacity>
+              </View>
+
+              {instructions.map((item, idx) => (
+                <View key={idx} style={styles.stepCard}>
+                  <View style={styles.stepNumberCircle}><Text style={styles.stepNumberText}>{idx + 1}</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepDescText}>{item.description}</Text>
+                    {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.stepImageSmall} />}
+                  </View>
+                  <View style={styles.reorderArrows}>
+                    <TouchableOpacity onPress={() => moveInstruction(idx, 'up')} disabled={idx === 0}><Text style={[styles.arrow, idx === 0 && { opacity: 0.2 }]}>▲</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => moveInstruction(idx, 'down')} disabled={idx === instructions.length - 1}><Text style={[styles.arrow, idx === instructions.length - 1 && { opacity: 0.2 }]}>▼</Text></TouchableOpacity>
+                  </View>
+                </View>
+              ))}
             </View>
           )}
         />
 
-        {/* Unit Modal */}
-        <Modal visible={showUnitModal} transparent animationType="slide">
+        {/* --- MODALS --- */}
+        {/* Recipe Group Modal */}
+        <Modal visible={showRecipeGroupModal} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Unit</Text>
-              {units.map((u) => (
-                <TouchableOpacity key={u} style={styles.modalOption} onPress={() => { setCurrentItem({ ...currentItem, unit: u }); setShowUnitModal(false); }}>
-                  <Text>{u}</Text>
+              <Text style={styles.modalTitle}>Category</Text>
+              {RecipefoodGroups.map(g => (
+                <TouchableOpacity key={g} style={styles.modalOption} onPress={() => { setRecipeGroup(g); setShowRecipeGroupModal(false); }}>
+                  <Text>{g}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity onPress={() => setShowUnitModal(false)} style={styles.closeBtn}><Text style={{color:'white'}}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowRecipeGroupModal(false)} style={styles.cancelBtn}><Text>Cancel</Text></TouchableOpacity>
             </View>
           </View>
         </Modal>
-        {/* Recipe Food Group Modal */}
-        <Modal visible={showRecipeGroupModal} transparent animationType="slide">
+
+        {/* Unit Modal */}
+        <Modal visible={showUnitModal} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Recipe Category</Text>
-              <FlatList
-                data={RecipefoodGroups}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={styles.modalOption} 
-                    onPress={() => {
-                      setRecipeGroup(item);
-                      setShowRecipeGroupModal(false);
-                    }}
-                  >
-                    <Text style={{ fontSize: 16 }}>{item}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-              <TouchableOpacity 
-                onPress={() => setShowRecipeGroupModal(false)} 
-                style={styles.closeBtn}
-              >
-                <Text style={{color:'white'}}>Cancel</Text>
-              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Select Unit</Text>
+              {units.map(u => (
+                <TouchableOpacity key={u} style={styles.modalOption} onPress={() => { setCurrentItem({...currentItem, unit: u}); setShowUnitModal(false); }}>
+                  <Text>{u}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={() => setShowUnitModal(false)} style={styles.cancelBtn}><Text>Cancel</Text></TouchableOpacity>
             </View>
           </View>
         </Modal>
 
         {/* Food Group Modal */}
-        <Modal visible={showFoodGroupModal} transparent animationType="slide">
+        <Modal visible={showFoodGroupModal} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Food Group</Text>
-              {foodGroups.map((g) => (
-                <TouchableOpacity key={g} style={styles.modalOption} onPress={() => { setCurrentItem({ ...currentItem, foodGroup: g }); setShowFoodGroupModal(false); }}>
-                  <Text>{g}</Text>
+              {foodGroups.map(f => (
+                <TouchableOpacity key={f} style={styles.modalOption} onPress={() => { setCurrentItem({...currentItem, foodGroup: f}); setShowFoodGroupModal(false); }}>
+                  <Text>{f}</Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity onPress={() => setShowFoodGroupModal(false)} style={styles.closeBtn}><Text style={{color:'white'}}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowFoodGroupModal(false)} style={styles.cancelBtn}><Text>Cancel</Text></TouchableOpacity>
             </View>
           </View>
+        </Modal>
+
+        {/* Instruction Modal (Your Smooth Version) */}
+        <Modal visible={showInstructionModal} animationType="slide" transparent>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: '100%' }}>
+                <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHandle} />
+                    <TextInput
+                      placeholder="What's the next step?"
+                      multiline maxLength={300}
+                      style={styles.modalTextArea}
+                      value={currentInstruction.description}
+                      onChangeText={(t) => setCurrentInstruction({...currentInstruction, description: t})}
+                    />
+                    <TouchableOpacity style={styles.modalImagePicker} onPress={() => pickImage("step")}>
+                      {currentInstruction.imageUri ? <Image source={{ uri: currentInstruction.imageUri }} style={styles.fullImage} /> : <Text>📸 Add Step Photo</Text>}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.saveStepBtn} onPress={addOrUpdateInstruction}><Text style={styles.saveStepBtnText}>Save Step</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowInstructionModal(false)}><Text>Cancel</Text></TouchableOpacity>
+                  </View>
+                </TouchableWithoutFeedback>
+              </KeyboardAvoidingView>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
     </ImageBackground>
@@ -390,26 +327,37 @@ export default function RecipeCreatorScreen({ navigation }) {
 const styles = StyleSheet.create({
   background: { flex: 1 },
   container: { flex: 1 },
-  headerBar: { flexDirection: "row", justifyContent: "space-between", padding: 16, marginTop: 40, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontWeight: "bold" },
-  formContainer: { paddingHorizontal: 20, paddingBottom: 40 },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 4, color: '#333' },
-  input: { backgroundColor: '#fff', height: 45, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, marginBottom: 15 },
-  selectorButton: { backgroundColor: '#fff', height: 45, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, justifyContent: 'center', marginBottom: 15 },
-  imageButton: { height: 40, backgroundColor: "#666", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 10 },
-  imageButtonText: { color: "white", fontWeight: "600" },
-  previewImage: { width: "100%", height: 150, borderRadius: 10, marginBottom: 15 },
-  divider: { height: 1, backgroundColor: '#ccc', marginVertical: 20 },
-  addButton: { height: 45, backgroundColor: "#4D693A", borderRadius: 8, justifyContent: "center", alignItems: "center", marginBottom: 20 },
-  addButtonText: { color: "white", fontWeight: "bold" },
-  submitButton: { height: 55, backgroundColor: "#2e4221", borderRadius: 8, justifyContent: "center", alignItems: "center", marginTop: 30 },
-  submitButtonText: { color: "white", fontWeight: "bold", fontSize: 16 },
-  ingredientItem: { padding: 12, backgroundColor: '#fff', borderRadius: 8, marginBottom: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#eee' },
-  miniButton: { marginLeft: 15 },
-  errorText: { color: "red", fontWeight: 'bold', marginBottom: 10 },
-  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.4)" },
-  modalContent: { backgroundColor: "white", padding: 25, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
-  modalOption: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  closeBtn: { marginTop: 20, backgroundColor: '#333', padding: 15, borderRadius: 8, alignItems: 'center' }
+  headerBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E4221' },
+  saveHeaderBtn: { color: '#4D693A', fontWeight: 'bold', fontSize: 16 },
+  mainTitleInput: { fontSize: 28, fontWeight: 'bold', color: '#2E4221', marginBottom: 10 },
+  selector: { backgroundColor: '#fff', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#DDD', marginBottom: 15 },
+  mainImageContainer: { height: 180, backgroundColor: '#E0E0E0', borderRadius: 15, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  fullImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  divider: { height: 1, backgroundColor: '#CCC', marginVertical: 20 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#4D693A' },
+  ingredientInputRow: { flexDirection: 'row', marginBottom: 8 },
+  smallInput: { backgroundColor: '#fff', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#DDD' },
+  miniAddBtn: { backgroundColor: '#4D693A', width: 45, height: 45, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginLeft: 5 },
+  ingredientChip: { flexDirection: 'row', backgroundColor: '#FFF', padding: 10, borderRadius: 8, marginTop: 5, borderWidth: 1, borderColor: '#EEE' },
+  stepCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 15, borderRadius: 12, marginBottom: 10, alignItems: 'center' },
+  stepNumberCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#4D693A', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  stepNumberText: { color: '#FFF', fontWeight: 'bold' },
+  stepDescText: { fontSize: 14, color: '#333' },
+  stepImageSmall: { width: '100%', height: 100, borderRadius: 8, marginTop: 10 },
+  reorderArrows: { paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#EEE', marginLeft: 10 },
+  arrow: { fontSize: 18, color: '#4D693A' },
+  addStepTrigger: { backgroundColor: '#E8F5E9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  addStepTriggerText: { color: '#4D693A', fontWeight: 'bold' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: 20, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 5, backgroundColor: '#DDD', borderRadius: 3, alignSelf: 'center', marginBottom: 15 },
+  modalOption: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  modalTextArea: { height: 100, backgroundColor: '#F9F9F9', borderRadius: 12, padding: 15, textAlignVertical: 'top' },
+  modalImagePicker: { height: 120, backgroundColor: '#F0F0F0', borderRadius: 12, marginVertical: 15, justifyContent: 'center', alignItems: 'center' },
+  saveStepBtn: { backgroundColor: '#4D693A', padding: 16, borderRadius: 12, alignItems: 'center' },
+  saveStepBtnText: { color: '#FFF', fontWeight: 'bold' },
+  cancelBtn: { marginTop: 15, alignItems: 'center' }
 });
