@@ -61,7 +61,6 @@ export default function AddScreen({ navigation }) {
 
   // Add item function
   const addItem = async () => {
-    const [history, setHistory] = useState(getHistory());
     if (!itemName || !foodGroup) {
       setError("Please fill in all required fields.");
       return;

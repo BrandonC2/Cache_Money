@@ -4,7 +4,11 @@ import axios from 'axios';
 
 export const useIngredientSuggestions = (query) => {
   const [globalSuggestions, setGlobalSuggestions] = useState([]);
-  const localHistory = useMemo(() => getHistory(), []);
+  const [localHistory, setLocalHistory] = useState({});
+
+  useEffect(() => {
+    getHistory().then(setLocalHistory);
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
