@@ -1,32 +1,40 @@
-// need to reflect the keyS
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RECENT_KEY = 'pantry_history';
 
-export const saveToHistory = (item) => {
-    const history = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-  
-    // Add new item to the front, remove duplicates
+export const saveToHistory = async (item) => {
+  try {
+    const raw = await AsyncStorage.getItem(RECENT_KEY);
+    const history = raw ? JSON.parse(raw) : [];
     const updated = [item, ...history.filter(h => h.name !== item.name)].slice(0, 10);
-  
-    localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+    await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.error('saveToHistory error:', err);
+  }
 };
 
-export const getHistory = () => {
-    const data = localStorage.getItem(RECENT_KEY);
-    // Return an empty object if nothing exists yet
-    return data ? JSON.parse(data) : {};};
+export const getHistory = async () => {
+  try {
+    const data = await AsyncStorage.getItem(RECENT_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch (err) {
+    console.error('getHistory error:', err);
+    return {};
+  }
+};
 
-export const trackUsage = (ingredient) => {
-    const history = JSON.parse(localStorage.getItem('pantry_history') || '{}');
-  
-    // Use the name as a key for O(1) lookup
+export const trackUsage = async (ingredient) => {
+  try {
+    const raw = await AsyncStorage.getItem(RECENT_KEY);
+    const history = raw ? JSON.parse(raw) : {};
     const key = ingredient.name.toLowerCase();
-  
     history[key] = {
-        ...ingredient,
-        usageCount: (history[key]?.usageCount || 0) + 1,
-        lastUsed: Date.now()
+      ...ingredient,
+      usageCount: (history[key]?.usageCount || 0) + 1,
+      lastUsed: Date.now(),
     };
-
-    localStorage.setItem('pantry_history', JSON.stringify(history));
+    await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(history));
+  } catch (err) {
+    console.error('trackUsage error:', err);
+  }
 };
