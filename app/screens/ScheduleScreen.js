@@ -5,6 +5,7 @@ import apiClient from "../lib/apiClient";
 
 export default function ScheduleView({ navigation }) {
   const [mealPlans, setMealPlans] = useState({});
+  const [allPlans, setAllPlans] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [dayItems, setDayItems] = useState([]);
 
@@ -12,18 +13,20 @@ export default function ScheduleView({ navigation }) {
     fetchMealPlans();
   }, []);
 
+  useEffect(() => {
+    setDayItems(allPlans.filter((p) => p.date === selectedDate));
+  }, [selectedDate, allPlans]);
+
   const fetchMealPlans = async () => {
     try {
-      const res = await apiClient.get('/mealplans'); 
-      // Convert array to object for Calendar marking: { '2023-10-01': { marked: true } }
+      const res = await apiClient.get('/mealplans');
+      const plans = res.data || [];
+      setAllPlans(plans);
       const marked = {};
-      res.data.forEach(plan => {
+      plans.forEach((plan) => {
         marked[plan.date] = { marked: true, dotColor: '#4D693A' };
       });
       setMealPlans(marked);
-      
-      // Filter items for initial selected date
-      setDayItems(res.data.filter(p => p.date === selectedDate));
     } catch (err) {
       console.error("Error fetching plans", err);
     }

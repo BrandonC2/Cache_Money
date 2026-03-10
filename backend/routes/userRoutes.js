@@ -16,8 +16,7 @@ router.get("/me/:username", async (req, res) => {
 
     res.json({
       username: user.username,
-      // Provide a fallback empty string if the field is missing
-      profilePicture: user.profilePicture || "" 
+      profilePicture: user.profile || ""
     });
   } catch (err) {
     res.status(500).json({ message: "Server Error" });
@@ -132,8 +131,8 @@ router.get("/profile", auth, async (req, res) => {
     const user = await User.findById(req.userId).select("-password");
     res.json({
       username: user.username,
-      profile: user.profilePicture || "", // CHANGE: Map profilePicture to 'profile'
-      profilePicture: user.profilePicture || "" // Keep this for other screens
+      profile: user.profile || "",
+      profilePicture: user.profile || ""
     });
   } catch (err) {
     res.status(500).json({ message: "Error fetching profile" });
@@ -251,11 +250,9 @@ router.post("/profile/delete", async (req, res) => {
   }
 });
 
-// backend/routes/userRoutes.js
 router.get("/me", async (req, res) => {
-  const user = await User.findById(req.user.id);
-  // user.profilePicture should ALREADY be the https:// cloudinary link
-  res.json({ profilePicture: user.profilePicture }); 
+  const user = await User.findById(req.userId);
+  res.json({ profilePicture: user?.profile || "" });
 });
 
 

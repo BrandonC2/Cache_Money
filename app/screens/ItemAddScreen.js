@@ -26,7 +26,7 @@ Most produce do not have explicit expiration dates (i.e fresh), thereby need to 
 */
 
 
-export default function AddScreen({ navigation }) {
+export default function AddScreen({ navigation, route }) {
   const [itemName, setItem] = useState("");
   const [foodGroup, setFg] = useState("");
   const [expireDate, setExpire] = useState(new Date());
@@ -77,6 +77,12 @@ export default function AddScreen({ navigation }) {
       formData.append("description", description);
       formData.append("foodGroup", foodGroup);
       formData.append("expirationDate", expireDate.toISOString());
+      const roomName = route.params?.roomName || "";
+      if (!roomName) {
+        setError("Please add an item from a kitchen/room first, or go back and select a room.");
+        setUploading(false);
+        return;
+      }
       formData.append("room", roomName);
       formData.append("createdBy", username); // Ensure this matches your backend field
 

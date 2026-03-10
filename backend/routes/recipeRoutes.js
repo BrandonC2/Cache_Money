@@ -11,10 +11,10 @@ const uploadCloud = require('../middleware/cloudinaryConfig');
 // ===================
 router.post("/", uploadCloud.single("image"), async (req, res) => {
   try {
-    const { name, description, foodGroup, createdBy, ingredients } = req.body;
+    const { name, description, foodGroup, createdBy, ingredients, instructions } = req.body;
     
-    // Parse ingredients if sent as a JSON string from Frontend
     const parsedIngredients = ingredients ? JSON.parse(ingredients) : [];
+    const parsedInstructions = instructions ? JSON.parse(instructions) : [];
 
     const newRecipe = new Recipe({
       name,
@@ -22,7 +22,11 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
       foodGroup,
       createdBy,
       ingredients: parsedIngredients,
-      image: req.file ? req.file.path : null, // Cloudinary URL
+      instructions: parsedInstructions.map((step) => ({
+        description: step.description ?? "",
+        image: step.image || step.imageUri || "",
+      })),
+      image: req.file ? req.file.path : null,
     });
 
     await newRecipe.save();
@@ -39,7 +43,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
 // ✅ CHANGE: Use uploadCloud.single("image") here too!
 router.put("/:id", uploadCloud.single("image"), async (req, res) => {
   try {
-    const { name, description, ingredients, foodGroup } = req.body;
+    const { name, description, ingredients, foodGroup, instructions } = req.body;
 
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) return res.status(404).json({ message: "Recipe not found" });
@@ -48,6 +52,13 @@ router.put("/:id", uploadCloud.single("image"), async (req, res) => {
     if (description !== undefined) recipe.description = description;
     if (foodGroup) recipe.foodGroup = foodGroup;
     if (ingredients) recipe.ingredients = JSON.parse(ingredients);
+    if (instructions !== undefined) {
+      const parsed = JSON.parse(instructions);
+      recipe.instructions = parsed.map((step) => ({
+        description: step.description ?? "",
+        image: step.image || step.imageUri || "",
+      }));
+    }
 
     // Update image if a new one is uploaded to Cloudinary
     if (req.file) recipe.image = req.file.path;

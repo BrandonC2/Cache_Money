@@ -5,10 +5,9 @@ import apiClient from "../lib/apiClient";
 import { useRecipeCheck } from '../hooks/useRecipeCheck';
 
 export default function RecipeDetailsScreen({ route, navigation }) {
-  const [recipe, setRecipe] = useState(route.params.recipe);
-  const { recipeId } = route.params;
+  const [recipe, setRecipe] = useState(route.params?.recipe);
+  const recipeId = route.params?.recipeId || route.params?.recipe?._id;
   
-  // Custom hook to check if we have the ingredients
   const { comparison, loading, checkAvailability, addMissingToGrocery } = useRecipeCheck(recipeId);
 
   useEffect(() => {
@@ -18,23 +17,22 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      const fetchRecipe = async () => {
-  // If there's no ID, don't even bother the server
-  if (!recipe?._id) {
-    console.warn("Fetch aborted: No recipe ID found.");
-    return;
-  }
+      const recipeId = recipe?._id || route.params?.recipeId;
+      if (!recipeId) return;
 
-  try {
-    const res = await apiClient.get(`/recipes/${recipe._id}`);
-    // ... rest of your code
-  } catch (err) {
-    console.error("404 Check - URL attempted:", `/recipes/${recipe._id}`, err);
-  }
+      const fetchRecipe = async () => {
+        try {
+          const res = await apiClient.get(`/recipes/${recipeId}`);
+          if (isActive && res.data) {
+            setRecipe((prev) => ({ ...prev, ...res.data }));
+          }
+        } catch (err) {
+          console.error("Recipe fetch error:", err);
+        }
       };
       fetchRecipe();
       return () => { isActive = false; };
-    }, [recipe?._id])
+    }, [recipe?._id, route.params?.recipeId])
   );
 
   // Helper to handle the "Action" button
@@ -89,14 +87,29 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   ))}
 </View>
 
-{/* Instructions Section (Recommended addition) */}
+{/* Instructions Section */}
 <Text style={styles.sectionTitle}>Instructions</Text>
-{recipe.instructions?.map((step, i) => (
+{recipe.instructions?.length ? recipe.instructions.map((step, i) => (
   <View key={i} style={styles.stepContainer}>
     <Text style={styles.stepNumber}>{i + 1}</Text>
-    <Text style={styles.stepDescription}>{step.description}</Text>
+    <Text style={styles.stepDescription}>{typeof step.description === "string" ? step.description : step.description?.toString?.() || ""}</Text>
   </View>
-))}
+)) : (
+  <Text style={styles.emptyInstructions}>No instructions yet.</Text>
+)}
+
+      <TouchableOpacity
+        style={[styles.editBtn, styles.planBtn]}
+        onPress={() =>
+          navigation.navigate("MealPrep", {
+            recipeId: recipe._id,
+            recipeName: recipe.name,
+            ingredients: recipe.ingredients || [],
+          })
+        }
+      >
+        <Text style={styles.editText}>📅 Plan this meal</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.editBtn}
@@ -118,6 +131,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: "700", marginTop: 16, marginBottom: 8 },
   ingredientItem: { marginBottom: 12, padding: 10, backgroundColor: "#E8DCC8", borderRadius: 8 },
   editBtn: { marginTop: 20, padding: 10, alignItems: 'center' },
+  planBtn: { backgroundColor: '#E8F5E9', borderRadius: 8, marginTop: 12 },
   editText: { color: '#888' },
   ingredientsCard: {
   backgroundColor: "#FFF",
@@ -154,8 +168,8 @@ groupTag: {
   borderRadius: 4,
 },
 groupTagText: { fontSize: 10, color: "#4D693A", fontWeight: "bold" },
-// Instructions Styles
 stepContainer: { flexDirection: 'row', marginBottom: 15, paddingRight: 20 },
 stepNumber: { fontWeight: 'bold', color: '#4D693A', marginRight: 10 },
-stepDescription: { flex: 1, fontSize: 15, lineHeight: 22 }
+stepDescription: { flex: 1, fontSize: 15, lineHeight: 22 },
+emptyInstructions: { color: '#999', fontStyle: 'italic', marginVertical: 8 }
 });

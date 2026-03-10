@@ -21,7 +21,7 @@ const path = require('path');
 const fs = require("fs");
 app.use(cors({
   origin: "*", 
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 }));
 app.use(express.json());
 
@@ -68,6 +68,7 @@ app.use("/api/kitchens", require("./routes/kitchenRoutes"));
 app.use("/api/recipes", require("./routes/recipeRoutes"));
 app.use("/api/receipts", require("./routes/receiptRoutes"));
 app.use("/api/grocerylist", require("./routes/grocerylistRoutes"));
+app.use("/api/mealplans", require("./routes/mealplanRoutes"));
 
 // Image Uploaders
 app.use("/uploads/profile", express.static(uploadDirs.profile));
