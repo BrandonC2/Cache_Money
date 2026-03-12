@@ -2,9 +2,12 @@ const express = require("express");
 const router = express.Router();
 const Recipe = require("../models/Recipe");
 const InventoryItem = require("../models/InventoryItem");
-const GroceryItem = require("../models/GroceryItem"); // Assume you have this model
+const GroceryItem = require("../models/GroceryItem");
+const auth = require("../middleware/auth");
 
-// GET /api/grocery/check/:recipeId
+router.use(auth);
+
+// GET /api/grocerylist/check/:recipeId
 // Checks if the user has enough ingredients in inventory for a specific recipe
 router.get("/check/:recipeId", async (req, res) => {
   try {
@@ -45,22 +48,28 @@ router.get("/check/:recipeId", async (req, res) => {
   }
 });
 
-// POST /api/grocery/add-missing
+// POST /api/grocerylist/add-missing
 // Adds specific missing items to the grocery list
 router.post("/add-missing", async (req, res) => {
   try {
     const { items } = req.body; // Expecting array: [{ name, quantity, unit }]
-    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Items array is required" });
+    }
+
     const groceryPromises = items.map(item => {
+      const qty = Number(item.quantity) || 1;
+      const name = String(item?.name || "").trim();
+      if (!name) return Promise.resolve(null);
       return GroceryItem.findOneAndUpdate(
-        { userId: req.userId, name: item.name, status: 'pending' },
+        { userId: req.userId, name, status: 'pending' },
         { 
-          $inc: { quantity: item.quantity }, 
-          $set: { unit: item.unit, updatedAt: new Date() } 
+          $inc: { quantity: qty }, 
+          $set: { unit: item.unit ?? '', updatedAt: new Date() } 
         },
         { upsert: true, new: true }
       );
-    });
+    }).filter(Boolean);
 
     await Promise.all(groceryPromises);
     res.json({ message: "Missing items added to grocery list!" });

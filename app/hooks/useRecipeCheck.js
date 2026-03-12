@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 import { calculateConfidence } from '../services/matchEngine';
 
 export const useRecipeCheck = (recipeId) => {
@@ -7,29 +7,23 @@ export const useRecipeCheck = (recipeId) => {
   const [comparison, setComparison] = useState(null);
 
   const checkAvailability = async () => {
+    if (!recipeId) return;
     setLoading(true);
     try {
-      const response = await axios.get(`/api/grocery/check/${recipeId}`);
-      
-      // We map over the raw API data to add our "Confidence Intelligence"
-      const enhancedComparison = response.data.map(item => {
-        // Run our JS matching engine on the two names
+      const response = await apiClient.get(`/grocerylist/check/${recipeId}`);
+      const { canCook, ingredientsStatus } = response.data;
+
+      // Map over ingredientsStatus to add confidence scores (API returns: name, required, current, unit, isMissing, missingAmount)
+      const enhancedItems = (ingredientsStatus || []).map(item => {
         const confidence = calculateConfidence(
-            { name: item.requiredName, quantity: item.requiredQty, unit: item.requiredUnit },
-            { name: item.foundName, quantity: item.foundQty, unit: item.foundUnit }
-          );
-        let status = 'missing';
-        if (confidence > 0.8) status = 'available';
-        else if (confidence > 0.5) status = 'low_stock';
-        return {
-          ...item,
-          confidenceScore: confidence,
-          // Logic to decide UI status based on the score
-          status: confidence > 0.8 ? 'available' : confidence > 0.4 ? 'substitute' : 'missing'
-        };
+          { name: item.name, quantity: item.required, unit: item.unit },
+          { name: item.name, quantity: item.current, unit: item.unit }
+        );
+        const status = confidence > 0.8 ? 'available' : confidence > 0.4 ? 'substitute' : 'missing';
+        return { ...item, confidenceScore: confidence, status };
       });
 
-      setComparison(enhancedComparison);
+      setComparison({ canMake: canCook, ingredientsStatus: enhancedItems });
     } catch (err) {
       console.error("Check failed", err);
     } finally {
@@ -38,8 +32,12 @@ export const useRecipeCheck = (recipeId) => {
   };
 
   const addMissingToGrocery = async (missingItems) => {
+    const items = missingItems ?? (comparison?.ingredientsStatus || [])
+      .filter(i => i.isMissing)
+      .map(i => ({ name: i.name, quantity: i.missingAmount ?? i.required, unit: i.unit ?? '' }));
+    if (items.length === 0) return;
     try {
-      await axios.post('/api/grocery/add-missing', { items: missingItems });
+      await apiClient.post('/grocerylist/add-missing', { items });
       alert("Added to grocery list!");
     } catch (err) {
       alert("Failed to update list");

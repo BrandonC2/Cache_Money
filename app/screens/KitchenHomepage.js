@@ -47,7 +47,9 @@ const navigation = useNavigation();
           
           if (storedUsername) {
             setUsername(storedUsername);
-            if (localPic) setProfilePic(localPic); 
+            if (localPic) setProfilePic(localPic);
+            const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
+            if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
 
             // Sync with backend
             const res = await apiClient.get(`/users/me/${storedUsername}`);
@@ -125,6 +127,7 @@ const navigation = useNavigation();
         password: room.password.trim(),
         username: username.trim(),
       }, headers);
+      await saveVisitedRoom(room.name.trim(), room.password.trim());
       navigation.navigate('KitchenCollection', { roomName: room.name.trim(), username });
     } catch (err) { Alert.alert('Error', err.message); }
   };

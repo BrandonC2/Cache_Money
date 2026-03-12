@@ -7,6 +7,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from './app/lib/apiClient';
 import 'react-native-reanimated';
 
 //First Screens
@@ -172,7 +173,20 @@ export default function App() {
     const checkAuthStatus = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
-        setIsAuthenticated(!!token);
+        if (token) {
+          try {
+            const res = await apiClient.get('/users/profile');
+            const { username, profile, profilePicture } = res.data || {};
+            const picUrl = profile || profilePicture;
+            if (username) await AsyncStorage.setItem('username', username);
+            if (picUrl) await AsyncStorage.setItem('profilePicture', picUrl);
+          } catch (e) {
+            console.log('Profile sync skipped:', e?.message);
+          }
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } catch (error) {
         console.error('Error checking auth:', error);
       } finally {

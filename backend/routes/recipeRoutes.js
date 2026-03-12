@@ -13,7 +13,18 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
   try {
     const { name, description, foodGroup, createdBy, ingredients, instructions } = req.body;
     
-    const parsedIngredients = ingredients ? JSON.parse(ingredients) : [];
+    const parsedIngredients = ingredients
+      ? JSON.parse(ingredients)
+          .map((ing) => ({
+            name: ing.name ?? "",
+            foodGroup: ing.foodGroup ?? "Other",
+            quantity: Number(ing.quantity) || 0,
+            unit: ing.unit ?? "",
+            notes: ing.notes ?? "",
+            ...(ing.inventoryItemId && { inventoryItemId: ing.inventoryItemId }),
+          }))
+          .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0)
+      : [];
     const parsedInstructions = instructions ? JSON.parse(instructions) : [];
 
     const newRecipe = new Recipe({
@@ -51,7 +62,19 @@ router.put("/:id", uploadCloud.single("image"), async (req, res) => {
     if (name) recipe.name = name;
     if (description !== undefined) recipe.description = description;
     if (foodGroup) recipe.foodGroup = foodGroup;
-    if (ingredients) recipe.ingredients = JSON.parse(ingredients);
+    if (ingredients) {
+      const parsed = JSON.parse(ingredients)
+        .map((ing) => ({
+          name: ing.name ?? "",
+          foodGroup: ing.foodGroup ?? "Other",
+          quantity: Number(ing.quantity) || 0,
+          unit: ing.unit ?? "",
+          notes: ing.notes ?? "",
+          ...(ing.inventoryItemId && { inventoryItemId: ing.inventoryItemId }),
+        }))
+        .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0);
+      recipe.ingredients = parsed;
+    }
     if (instructions !== undefined) {
       const parsed = JSON.parse(instructions);
       recipe.instructions = parsed.map((step) => ({

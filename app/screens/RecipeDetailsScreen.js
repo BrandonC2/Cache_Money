@@ -36,13 +36,12 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   );
 
   // Helper to handle the "Action" button
-  const handleAction = () => {
+  const handleAction = async () => {
     if (comparison?.canMake) {
       console.log("Creating dish...");
       // Add logic to navigate to a 'Cook' screen or deduct inventory
     } else {
-      addMissingToGrocery();
-      alert("Missing items added to grocery list!");
+      await addMissingToGrocery();
     }
   };
 

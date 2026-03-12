@@ -85,7 +85,8 @@ export default function LoginScreen({navigation}) {
         }
 
         if (user?.profile) {
-          await AsyncStorage.setItem("profilePath", user.profile); // <-- consistent key
+          await AsyncStorage.setItem("profilePath", user.profile);
+          await AsyncStorage.setItem("profilePicture", user.profile); // Settings/KitchenHomepage use this key
         }
 
         navigation.replace("MainNavBar", {

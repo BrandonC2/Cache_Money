@@ -107,8 +107,14 @@ const submitRecipe = async () => {
     form.append("foodGroup", recipeGroup || "Other");
     form.append("createdBy", userId);
 
-    // FIX 1: Ensure ingredients are a clean JSON string
-    form.append("ingredients", JSON.stringify(ingredients));
+    // Ensure ingredients have quantity as Number and match Recipe schema
+    const formattedIngredients = ingredients.map((ing) => ({
+      name: ing.name || "",
+      foodGroup: ing.foodGroup || "Other",
+      quantity: Number(ing.quantity) || 0,
+      unit: ing.unit || "",
+    }));
+    form.append("ingredients", JSON.stringify(formattedIngredients));
 
     // FIX 2: Ensure instructions are mapped correctly AND stringified
     // This ensures MongoDB receives a valid array of objects

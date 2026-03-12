@@ -123,15 +123,21 @@ export default function KitchenCollection({ navigation, route }) {
       Alert.alert("Error", "Room name is required");
       return;
     }
+    if (!username) {
+      Alert.alert("Error", "User session not loaded");
+      return;
+    }
     try {
-      const visitedRoomsStr = await AsyncStorage.getItem("visitedRooms");
-      const visitedRooms = visitedRoomsStr ? JSON.parse(visitedRoomsStr) : [];
-      const roomIndex = visitedRooms.findIndex((r) => r.name === editingRoomName);
+      const key = `visitedRooms_${username}`;
+      const visitedRoomsStr = await AsyncStorage.getItem(key);
+      const rooms = visitedRoomsStr ? JSON.parse(visitedRoomsStr) : [];
+      const roomIndex = rooms.findIndex((r) => r.name === editingRoomName);
       if (roomIndex !== -1) {
-        visitedRooms[roomIndex].name = editRoomName;
-        if (editRoomPassword.trim()) visitedRooms[roomIndex].password = editRoomPassword;
-        await AsyncStorage.setItem("visitedRooms", JSON.stringify(visitedRooms));
-        setSelectedRoom(editRoomName);
+        rooms[roomIndex].name = editRoomName.trim();
+        if (editRoomPassword.trim()) rooms[roomIndex].password = editRoomPassword.trim();
+        await AsyncStorage.setItem(key, JSON.stringify(rooms));
+        setVisitedRooms(rooms);
+        setSelectedRoom(editRoomName.trim());
         setShowRoomEditModal(false);
       }
     } catch (err) {
