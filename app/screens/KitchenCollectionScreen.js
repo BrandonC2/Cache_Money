@@ -12,6 +12,7 @@ import {
   TextInput,
   Alert,
   ImageBackground,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -19,9 +20,21 @@ import apiClient from "../lib/apiClient";
 import CustomBackButton from "../components/CustomBackButton";
 import { useIngredientSuggestions } from '../hooks/useIngredientSuggestion';
 
+const FOOD_GROUP_OPTIONS = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice", "Other"];
+
+/** Days until expiry; null if no date (aligned with UpcomingScreen thresholds). */
+const getDaysUntilExpiry = (dateString) => {
+  if (!dateString) return null;
+  const today = new Date();
+  const expDate = new Date(dateString);
+  const diffTime = expDate - today;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
 export default function KitchenCollection({ navigation, route }) {
   const [username, setUsername] = useState("");
   const [visitedRooms, setVisitedRooms] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoom, setSelectedRoom] = useState(
     route.params?.roomName || null
   );
@@ -42,12 +55,62 @@ export default function KitchenCollection({ navigation, route }) {
   const [editRoomPassword, setEditRoomPassword] = useState("");
   const [showRoomEditModal, setShowRoomEditModal] = useState(false);
 
+  /** all | expiringSoon (≤3 days, matches yellow/red urgency) | latest (newest first) */
+  const [sortFilter, setSortFilter] = useState("all");
+  const [foodGroupFilter, setFoodGroupFilter] = useState("all");
+
   // --- INTEGRATED SEARCH HOOK ---
   const suggestions = useIngredientSuggestions(editItemName);
+  const filteredRoomItems = useMemo(() => {
+    let list = [...roomItems];
+
+    if (foodGroupFilter !== "all") {
+      const target = foodGroupFilter.toLowerCase();
+      list = list.filter(
+        (item) => (item.foodGroup || "Other").toLowerCase() === target
+      );
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      list = list.filter((item) => item.name?.toLowerCase().includes(query));
+    }
+
+    if (sortFilter === "expiringSoon") {
+      list = list.filter((item) => {
+        const d = getDaysUntilExpiry(item.expirationDate);
+        return d !== null && d <= 3;
+      });
+      list.sort((a, b) => {
+        const ta = a.expirationDate ? new Date(a.expirationDate).getTime() : Infinity;
+        const tb = b.expirationDate ? new Date(b.expirationDate).getTime() : Infinity;
+        return ta - tb;
+      });
+    } else if (sortFilter === "latest") {
+      list.sort((a, b) => {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return tb - ta;
+      });
+    }
+
+    return list;
+  }, [roomItems, searchQuery, foodGroupFilter, sortFilter]);
+
+  // Same rules as UpcomingScreen: red ≤1 day, yellow ≤3 days, green otherwise
+  const getExpirationBorderColor = (dateString) => {
+    if (!dateString) return "#BDBDBD";
+    const diffDays = getDaysUntilExpiry(dateString);
+    if (diffDays === null) return "#BDBDBD";
+    if (diffDays <= 1) return "#FF5252";
+    if (diffDays <= 3) return "#FFD700";
+    return "#4D693A";
+  };
 
   // Open edit modal for an item
-  const openEditItemModal = (index) => {
-    const item = roomItems[index];
+  const openEditItemModal = (item) => {
+    const index = roomItems.findIndex((i) => i._id === item._id);
+    if (index === -1) return;
     setEditingItemIndex(index);
     setEditItemName(item.name);
     setEditItemQuantity(item.quantity?.toString() || "");
@@ -116,7 +179,7 @@ export default function KitchenCollection({ navigation, route }) {
     );
   };
 
-  const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
+  const foodGroups = FOOD_GROUP_OPTIONS.filter((g) => g !== "Other");
 
   const saveRoomEdits = async () => {
     if (!editRoomName.trim()) {
@@ -184,6 +247,18 @@ export default function KitchenCollection({ navigation, route }) {
 
   const handleBack = () => navigation.goBack();
 
+  const hasActiveFilters =
+    searchQuery.trim() !== "" ||
+    foodGroupFilter !== "all" ||
+    sortFilter !== "all";
+
+  const roomEmptyMessage =
+    roomItems.length === 0
+      ? "No items in this kitchen yet."
+      : hasActiveFilters
+        ? "No items match your search or filters."
+        : "No items match your search.";
+
   if (selectedRoom) {
     return (
       <ImageBackground 
@@ -198,27 +273,116 @@ export default function KitchenCollection({ navigation, route }) {
           </View>
           
           <View style={styles.Box}>
+            <TextInput
+              style={styles.roomSearchInput}
+              placeholder="Search items in this room"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}
+              contentContainerStyle={styles.filterScrollContent}
+            >
+              {[
+                { key: "all", label: "All" },
+                { key: "expiringSoon", label: "Expiring soon" },
+                { key: "latest", label: "Latest" },
+              ].map(({ key, label }) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[
+                    styles.filterChip,
+                    sortFilter === key && styles.filterChipSelected,
+                  ]}
+                  onPress={() => setSortFilter(key)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      sortFilter === key && styles.filterChipTextSelected,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <Text style={styles.filterSectionLabel}>Food group</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filterScroll}
+              contentContainerStyle={styles.filterScrollContent}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.filterChip,
+                  foodGroupFilter === "all" && styles.filterChipSelected,
+                ]}
+                onPress={() => setFoodGroupFilter("all")}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    foodGroupFilter === "all" && styles.filterChipTextSelected,
+                  ]}
+                >
+                  All groups
+                </Text>
+              </TouchableOpacity>
+              {FOOD_GROUP_OPTIONS.map((g) => (
+                <TouchableOpacity
+                  key={g}
+                  style={[
+                    styles.filterChip,
+                    foodGroupFilter === g && styles.filterChipSelected,
+                  ]}
+                  onPress={() => setFoodGroupFilter(g)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      foodGroupFilter === g && styles.filterChipTextSelected,
+                    ]}
+                  >
+                    {g}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
             {loading ? (
               <View style={styles.centerContent}>
                 <ActivityIndicator size="large" color="#4D693A" />
               </View>
-            ) : roomItems.length === 0 ? (
+            ) : filteredRoomItems.length === 0 ? (
               <View style={styles.centerContent}>
-                <Text style={styles.emptyText}>No items in this kitchen yet.</Text>
+                <Text style={styles.emptyText}>{roomEmptyMessage}</Text>
               </View>
             ) : (
               <FlatList
                 key={'grid_layout'}
+                style={{ flex: 1 }}
                 numColumns={3}
-                data={roomItems}
+                data={filteredRoomItems}
                 keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.gridContainer}
-                renderItem={({ item, index }) => (
+                renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.gridItemContainer}
-                    onPress={() => openEditItemModal(index)}
+                    onPress={() => openEditItemModal(item)}
                   >
-                    <Image source={icon_search(item.name)} style={styles.gridIcon} />
+                    <View
+                      style={[
+                        styles.gridIconWrapper,
+                        { borderColor: getExpirationBorderColor(item.expirationDate) },
+                      ]}
+                    >
+                      <Image source={icon_search(item.name)} style={styles.gridIcon} />
+                    </View>
                     <Text style={styles.gridItemName} numberOfLines={1}>{item.name}</Text>
                   </TouchableOpacity>
                 )}
@@ -391,11 +555,66 @@ const styles = StyleSheet.create({
   cancelOptionButton: { paddingVertical: 14, paddingHorizontal: 16, alignItems: "center" },
   cancelOptionButtonText: { fontSize: 16, color: "#666", fontWeight: "600" },
   gridItemName: { fontSize: 12, fontWeight: '500', color: '#333', textAlign: 'center', width: '100%' },
-  gridIcon: { width: 90, height: 90, resizeMode: 'contain', marginBottom: 5 },
+  gridIconWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  gridIcon: { width: 78, height: 78, resizeMode: 'contain' },
   gridItemContainer: { flex: 1, maxWidth: '33.33%', alignItems: 'center', marginBottom: 20 },
   gridContainer: { paddingHorizontal: 10, paddingTop: 20, paddingBottom: 100 },
   background: { flex: 1, paddingTop: 60, paddingBottom: 20 },
   Box: { width: '90%', height: '80%', alignSelf: 'center', borderWidth: 1.5, borderColor: '#4A3B32', overflow: 'hidden', marginBottom: 150, marginTop: -10 },
+  roomSearchInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#d4d4d4",
+    backgroundColor: "#fff",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#333",
+  },
+  filterSectionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#666",
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: "#fff",
+  },
+  filterScroll: { maxHeight: 44, backgroundColor: "#fff" },
+  filterScrollContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingBottom: 6,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#c8c8c8",
+    backgroundColor: "#f5f5f5",
+    marginRight: 8,
+  },
+  filterChipSelected: {
+    borderColor: "#4D693A",
+    backgroundColor: "#e8efe3",
+  },
+  filterChipText: { fontSize: 13, color: "#444" },
+  filterChipTextSelected: { color: "#2d4a22", fontWeight: "600" },
   
   // --- NEW SEARCH DROPDOWN STYLES ---
   suggestionDropdown: {
