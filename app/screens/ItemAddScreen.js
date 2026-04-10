@@ -70,26 +70,33 @@ export default function AddScreen({ navigation, route }) {
       setUploading(true);
       const username = await AsyncStorage.getItem("username");
       const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        setError("You need to be logged in to add items.");
+        setUploading(false);
+        return;
+      }
 
-      // We use FormData because we are sending a file
-      const formData = new FormData();
-      formData.append("name", itemName);
-      formData.append("description", description);
-      formData.append("foodGroup", foodGroup);
-      formData.append("expirationDate", expireDate.toISOString());
       const roomName = route.params?.roomName || "";
       if (!roomName) {
         setError("Please add an item from a kitchen/room first, or go back and select a room.");
         setUploading(false);
         return;
       }
+
+      const formData = new FormData();
+      formData.append("name", itemName.trim());
+      formData.append("description", description || "");
+      formData.append("foodGroup", foodGroup);
+      formData.append("quantity", "1");
+      formData.append("expirationDate", expireDate.toISOString());
       formData.append("room", roomName);
-      formData.append("createdBy", username); // Ensure this matches your backend field
+      if (username) formData.append("createdBy", username);
 
       if (selectedImage) {
-        const filename = selectedImage.split("/").pop();
+        const filename = selectedImage.split("/").pop() || "photo.jpg";
         const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
+        const ext = (match && match[1]) || "jpg";
+        const type = ext.toLowerCase() === "png" ? "image/png" : "image/jpeg";
 
         formData.append("image", {
           uri: selectedImage,
@@ -98,18 +105,21 @@ export default function AddScreen({ navigation, route }) {
         });
       }
 
-      const res = await apiClient.post("/inventory", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
+      // Do not set Content-Type manually (boundary). Authorization is set here + apiClient interceptor for RN/axios.
+      await apiClient.post("/inventory", formData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       Alert.alert("Success", "Item added to inventory!");
       navigation.goBack();
     } catch (err) {
-      console.error("Add item error:", err);
-      Alert.alert("Error", "Failed to save item.");
+      console.error("Add item error:", err?.response?.data || err.message);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Failed to save item.";
+      Alert.alert("Error", String(msg));
     } finally {
       setUploading(false);
     }

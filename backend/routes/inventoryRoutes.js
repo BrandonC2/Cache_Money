@@ -4,11 +4,13 @@ const util = require("util");
 const InventoryItem = require("../models/InventoryItem");
 
 //Images
-//const auth = require("../middleware/auth");
+const auth = require("../middleware/auth");
 const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
 
 const uploadCloud = require("../middleware/cloudinaryConfig");
+
+router.use(auth);
 
 // Helper to escape user input for regex
 function escapeRegExp(string) {
@@ -182,6 +184,10 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
     console.log(`\n➕ POST /inventory REQUEST`);
     console.log(`   userId: ${req.userId}`);
     console.log(`   Request body:`, req.body);
+
+    if (!req.userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     
     const { name, description, foodGroup, quantity, expirationDate, room } = req.body;
     if (!name || typeof name !== 'string' || name.trim() === '') {
