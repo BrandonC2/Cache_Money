@@ -78,6 +78,35 @@ export default function EditRecipeScreen({ route, navigation }) {
   // =====================
   // 4. Save Logic
   // =====================
+  const deleteRecipe = () => {
+    Alert.alert(
+      "Remove recipe",
+      `Delete "${recipe.name}"? This cannot be undone. Scheduled meals for this recipe will be removed.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await apiClient.delete(`/recipes/${recipe._id}`);
+              Alert.alert("Removed", "Recipe was deleted.");
+              navigation.navigate("MainNavBar", { screen: "Recipe" });
+            } catch (err) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Could not delete recipe."
+              );
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const saveChanges = async () => {
     setLoading(true);
     try {
@@ -179,6 +208,10 @@ export default function EditRecipeScreen({ route, navigation }) {
       <TouchableOpacity style={styles.saveBtn} onPress={saveChanges} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>SAVE ALL CHANGES</Text>}
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteBtn} onPress={deleteRecipe} disabled={loading}>
+        <Text style={styles.deleteBtnText}>Remove recipe</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -201,5 +234,16 @@ const styles = StyleSheet.create({
   mainPreview: { width: '100%', height: 200, borderRadius: 10, marginTop: 20 },
   divider: { height: 1, backgroundColor: '#ccc', marginVertical: 20 },
   saveBtn: { backgroundColor: '#4CAF50', padding: 20, borderRadius: 12, marginTop: 20, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 }
+  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
+  deleteBtn: {
+    marginTop: 16,
+    marginBottom: 40,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#d9534f",
+    backgroundColor: "#fff5f5",
+  },
+  deleteBtnText: { color: "#d9534f", fontWeight: "600", fontSize: 16 },
 });

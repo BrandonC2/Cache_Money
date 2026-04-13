@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useState, useCallback, useEffect } from "react"; // Added useEffect here
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import apiClient from "../lib/apiClient";
 import { useRecipeCheck } from '../hooks/useRecipeCheck';
 
@@ -34,6 +34,33 @@ export default function RecipeDetailsScreen({ route, navigation }) {
       return () => { isActive = false; };
     }, [recipe?._id, route.params?.recipeId])
   );
+
+  const handleDeleteRecipe = () => {
+    if (!recipe?._id) return;
+    Alert.alert(
+      "Remove recipe",
+      `Delete "${recipe.name}"? Scheduled meals for this recipe will be removed from your calendar.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/recipes/${recipe._id}`);
+              Alert.alert("Removed", "Recipe was deleted.");
+              navigation.navigate("MainNavBar", { screen: "Recipe" });
+            } catch (err) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message || "Could not delete recipe."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Helper to handle the "Action" button
   const handleAction = async () => {
@@ -116,6 +143,10 @@ export default function RecipeDetailsScreen({ route, navigation }) {
       >
         <Text style={styles.editText}>Edit Recipe</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteRecipe}>
+        <Text style={styles.deleteBtnText}>Remove recipe</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -170,5 +201,16 @@ groupTagText: { fontSize: 10, color: "#4D693A", fontWeight: "bold" },
 stepContainer: { flexDirection: 'row', marginBottom: 15, paddingRight: 20 },
 stepNumber: { fontWeight: 'bold', color: '#4D693A', marginRight: 10 },
 stepDescription: { flex: 1, fontSize: 15, lineHeight: 22 },
-emptyInstructions: { color: '#999', fontStyle: 'italic', marginVertical: 8 }
+emptyInstructions: { color: '#999', fontStyle: 'italic', marginVertical: 8 },
+  deleteBtn: {
+    marginTop: 12,
+    marginBottom: 32,
+    padding: 14,
+    alignItems: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#d9534f",
+    backgroundColor: "#fff5f5",
+  },
+  deleteBtnText: { color: "#d9534f", fontWeight: "600", fontSize: 16 },
 });
