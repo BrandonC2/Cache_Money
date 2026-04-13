@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useCallback, useLayoutEffect } from "react";
+import React, { useState, useCallback, useLayoutEffect, useEffect } from "react";
 import { 
   Image,
   ImageBackground, 
@@ -13,15 +13,42 @@ import {
   Modal
 } from "react-native";
 import { useFonts } from 'expo-font';
+import { Asset } from 'expo-asset'; // Optimized: Pre-loading local images
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import API_BASE from '../config/api';
 import apiClient from '../lib/apiClient';
+
 export default function KitchenHomepage() {
-const navigation = useNavigation();
+  const navigation = useNavigation();
   
-  // 1. ALL STATES AT THE TOP
+  // 1. ASSET & FONT LOADING (Must be first)
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [fontsLoaded] = useFonts({
+    'alexandria_bold': require('../assets/fonts/alexandria_bold.ttf'),
+    'alexandria_regular': require('../assets/fonts/alexandria_regular.ttf'),
+    'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
+  });
+
+  // Pre-load background and logo images
+  useEffect(() => {
+    async function loadResources() {
+      try {
+        await Asset.loadAsync([
+          require("../assets/grid_paper.jpg"),
+          require('../assets/basket.png'),
+        ]);
+      } catch (e) {
+        console.warn("Error pre-loading assets:", e);
+      } finally {
+        setAssetsLoaded(true);
+      }
+    }
+    loadResources();
+  }, []);
+
+  // 2. APP STATE
   const [profilePic, setProfilePic] = useState(null);
   const [username, setUsername] = useState('');
   const [kitchenName, setKitchenName] = useState('');
@@ -31,13 +58,12 @@ const navigation = useNavigation();
   const [editRoomName, setEditRoomName] = useState('');
   const [editRoomPassword, setEditRoomPassword] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
-  
-  // 2. ALL HOOKS BEFORE ANY "RETURN"
+
+  // 3. HOOKS
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // Combined Focus Hook: Refreshes everything whenever screen is shown
   useFocusEffect(
     useCallback(() => {
       const loadAllData = async () => {
@@ -51,7 +77,6 @@ const navigation = useNavigation();
             const roomsStr = await AsyncStorage.getItem(`visitedRooms_${storedUsername}`);
             if (roomsStr) setVisitedRooms(JSON.parse(roomsStr));
 
-            // Sync with backend
             const res = await apiClient.get(`/users/me/${storedUsername}`);
             if (res.data?.profilePicture) {
               setProfilePic(res.data.profilePicture);
@@ -66,16 +91,12 @@ const navigation = useNavigation();
     }, [])
   );
 
-  const [fontsLoaded] = useFonts({
-    'alexandria_bold': require('../assets/fonts/alexandria_bold.ttf'),
-    'alexandria_regular': require('../assets/fonts/alexandria_regular.ttf'),
-    'alexandria_light': require('../assets/fonts/alexandria_light.ttf'),
-  });
+  // 4. CONDITIONAL RENDER (Wait for Assets + Fonts)
+  if (!fontsLoaded || !assetsLoaded) {
+    return null; // Or a <View style={{backgroundColor: '#FDFDFD'}} /> matching your grid paper
+  }
 
-  // 3. THE CONDITIONAL RETURN (Nothing below this can be a hook!)
-  if (!fontsLoaded) return null;
-
-  // --- Functions ---
+  // --- Handlers ---
   const getAuthHeaders = async () => {
     const token = await AsyncStorage.getItem("authToken");
     return { headers: { Authorization: `Bearer ${token}` } };
@@ -141,44 +162,31 @@ const navigation = useNavigation();
     setShowEditModal(false);
   };
 
-return (
+  return (
     <ImageBackground 
-        style={styles.background}
-        source={require("../assets/grid_paper.jpg")}
+      style={styles.background}
+      source={require("../assets/grid_paper.jpg")}
     >
-      <View style = {styles.logoArea}>
-        <Image source = {require('../assets/basket.png')} style = {styles.logo}/>
+      <View style={styles.logoArea}>
+        <Image source={require('../assets/basket.png')} style={styles.logo}/>
       </View>
+
       <TouchableOpacity 
         style={styles.profileButtonTopLeft} 
         onPress={() => navigation.navigate('Settings')}
       >
         {profilePic ? (
           <Image 
-            key={profilePic} // Forces refresh when URL changes
-            source={{ 
-              uri: `${profilePic}?t=${new Date().getTime()}` // Fixed variable name to profilePic
-            }} 
-            style={styles.profileImage} 
+            key={profilePic}
+            source={{ uri: `${profilePic}?t=${new Date().getTime()}` }} 
+            style={styles.profileImage}
+            fadeDuration={300} // Smoothly fades in remote images
           />
-      ) : (
-        <Ionicons name="person-circle" size={64} color="#4D693A" />
-      )}
-      </TouchableOpacity>
-      {/* Profile Picture / User Icon - Top Left */}
-      {/*
-      <TouchableOpacity 
-        style={styles.profileButtonTopLeft} 
-        onPress={() => navigation.navigate('Settings')} // Or a dedicated Profile screen
-      >
-        {profilePic ? (
-          <Image source={{ uri: profilePic }} style={styles.profileImage} />
         ) : (
-          <Ionicons name="person-circle" size={40} color="#4D693A" />
+          <Ionicons name="person-circle" size={45} color="#4D693A" />
         )}
       </TouchableOpacity>
-      */}
-      {/* Settings button - Top right corner */}
+
       <TouchableOpacity 
         style={styles.settingsButtonTopRight} 
         onPress={() => navigation.navigate('Settings')}
@@ -186,71 +194,64 @@ return (
         <Ionicons name="settings" size={28} color="#4D693A" />
       </TouchableOpacity>
     
-      
       <View style={styles.Box}>
-      {/* Create/Join Room Inputs */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Room Name"
-          value={kitchenName}
-          onChangeText={setKitchenName}
-          autoCapitalize="none"
-          style={styles.input}
-        />
-      <View style={styles.line} />
-        <TextInput
-          placeholder="Password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          autoCapitalize="none"
-          style={styles.input}
-        />
-      <View style={styles.line} />
-        <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', margin: 3 }}>
-          {/* <View style={styles.buttonContainer}> */}
-          <TouchableOpacity style={styles.button} onPress={createRoom}>
-            <Text style={styles.buttonText}>Create</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={joinRoom}>
-            <Text style={styles.buttonText}>Join</Text>
-          </TouchableOpacity>
-          {/* </View> */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            placeholder="Room Name"
+            value={kitchenName}
+            onChangeText={setKitchenName}
+            autoCapitalize="none"
+            style={styles.input}
+          />
+          <View style={styles.line} />
+          <TextInput
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            style={styles.input}
+          />
+          <View style={styles.line} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', margin: 3 }}>
+            <TouchableOpacity style={styles.button} onPress={createRoom}>
+              <Text style={styles.buttonText}>Create</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={joinRoom}>
+              <Text style={styles.buttonText}>Join</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={[styles.line, {left: 1, bottom: 0}]} />
+
+        <View style={styles.recentlyVisitedContainer}>
+          <Text style={styles.recentlyVisitedTitle}>Recently Visited Kitchens:</Text>
+          {visitedRooms.length === 0 ? (
+            <Text style={styles.emptyText}>No recently visited rooms yet</Text>
+          ) : (
+            <ScrollView 
+              style={styles.roomsScrollView}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              {visitedRooms.map((room, index) => (
+                <View key={index} style={styles.roomItemWrapper}>
+                  <TouchableOpacity
+                    onPress={() => quickJoin(room)}
+                    style={styles.quickJoinButton}
+                  >
+                    <View style={styles.quickJoinContent}>
+                      <Text style={styles.quickJoinText}>{room.name}</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </View>
-      <View style={[styles.line, {left: 1, bottom: 0}]} />
-      {/* <View style={styles.separator} /> */}
-      {/* Recently Visited Rooms - Larger scrollable section */}
-      <View style={styles.recentlyVisitedContainer}>
-        <Text style={styles.recentlyVisitedTitle}>Recently Visited Kitchens:</Text>
-        {visitedRooms.length === 0 ? (
-          <Text style={styles.emptyText}>No recently visited rooms yet</Text>
-        ) : (
-          <ScrollView 
-            style={styles.roomsScrollView}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled={true}
-          >
-            {visitedRooms.map((room, index) => (
-              <View key={index} style={styles.roomItemWrapper}>
-                <TouchableOpacity
-                  onPress={() => quickJoin(room)}
-                  style={styles.quickJoinButton}
-                >
-                  <View style={styles.quickJoinContent}>
-                    <Text style={styles.quickJoinText}>{room.name}</Text>
-                    {/* <Text style={styles.quickJoinSubtext}>Tap to quick join</Text> */}
-                  </View>
-                  {/* <Text style={styles.quickJoinArrow}>→</Text> */}
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
-      </View>
-      </View>
 
-      {/* Edit Room Modal */}
       <Modal
         visible={showEditModal}
         transparent={true}
@@ -297,6 +298,7 @@ return (
           </View>
         </View>
       </Modal>
+
       <Text style={styles.usernamePrint}>
         {username ? `${username}` : 'Cooking Crazy 4 U'}
       </Text>

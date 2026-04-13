@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { getHistory } from '../services/recentStorage';
-import axios from 'axios';
+import apiClient from '../lib/apiClient';
 
 export const useIngredientSuggestions = (query) => {
   const [globalSuggestions, setGlobalSuggestions] = useState([]);
@@ -13,7 +13,7 @@ export const useIngredientSuggestions = (query) => {
   useEffect(() => {
     const handler = setTimeout(() => {
       if (query && query.length > 2) {
-        axios.get(`/api/inventory/search/${query}`) 
+        apiClient.get(`/inventory/search/${encodeURIComponent(query)}`)
           .then(res => setGlobalSuggestions(res.data))
           .catch(err => console.error("❌ Search error:", err));
       } else {

@@ -38,6 +38,23 @@ export default function MealPrepScreen({ route, navigation }) {
 
   const insets = useSafeAreaInsets();
 
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  const getAvailableQuantity = (items, ingredient) => {
+    const ingredientName = normalize(ingredient?.name);
+    const ingredientUnit = normalize(ingredient?.unit);
+
+    return items
+      .filter((inv) => normalize(inv.name) === ingredientName)
+      .filter((inv) => {
+        const invUnit = normalize(inv.unit);
+        // If recipe/unit is unspecified, count all same-name inventory.
+        if (!ingredientUnit || !invUnit) return true;
+        return invUnit === ingredientUnit;
+      })
+      .reduce((sum, inv) => sum + (Number(inv.quantity) || 0), 0);
+  };
+
   useEffect(() => {
     fetchInventory();
     loadVisitedRooms();
@@ -68,20 +85,15 @@ export default function MealPrepScreen({ route, navigation }) {
 
   const calculateMissing = (currentInventory) => {
     const missing = ingredients.filter((req) => {
-      const invItem = currentInventory.find(
-        (inv) => inv.name.toLowerCase() === (req.name || "").toLowerCase()
-      );
-      return !invItem || invItem.quantity < (req.quantity || 0);
+      const availableQty = getAvailableQuantity(currentInventory, req);
+      return availableQty < (Number(req.quantity) || 0);
     });
     setMissingItems(missing);
   };
 
   const openAddModal = (item) => {
-    const needed =
-      inventory.find(
-        (inv) => inv.name.toLowerCase() === (item.name || "").toLowerCase()
-      )?.quantity ?? 0;
-    const qty = Math.max(0, (item.quantity || 0) - needed);
+    const availableQty = getAvailableQuantity(inventory, item);
+    const qty = Math.max(0, (Number(item.quantity) || 0) - availableQty);
     setAddItem(item);
     setAddQuantity(String(qty));
     setAddUnit(item.unit || "");
@@ -96,19 +108,30 @@ export default function MealPrepScreen({ route, navigation }) {
     }
     try {
       setAdding(true);
-      const formData = new FormData();
-      formData.append("name", addItem.name);
-      formData.append("foodGroup", addItem.foodGroup || "Other");
-      formData.append("quantity", Number(addQuantity));
-      formData.append("room", addRoom);
+      const payload = {
+        name: (addItem.name || "").trim(),
+        foodGroup: addItem.foodGroup || "Other",
+        quantity: Number(addQuantity),
+        unit: (addUnit || "").trim(),
+        room: addRoom.trim(),
+      };
 
-      await apiClient.post("/inventory", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (!payload.name) {
+        Alert.alert("Error", "Item name is required.");
+        return;
+      }
+      if (!payload.room) {
+        Alert.alert("Error", "Room is required.");
+        return;
+      }
+
+      await apiClient.post("/inventory", payload);
 
       Alert.alert("Success", "Item added to inventory!");
       setShowAddModal(false);
       setAddItem(null);
+      setAddQuantity("");
+      setAddUnit("");
       fetchInventory();
     } catch (err) {
       console.error("Add to inventory error:", err);
@@ -119,6 +142,13 @@ export default function MealPrepScreen({ route, navigation }) {
   };
 
   const handleSchedule = async () => {
+    if (missingItems.length > 0) {
+      Alert.alert(
+        "Missing ingredients",
+        "Add the missing ingredients to inventory before scheduling this meal."
+      );
+      return;
+    }
     try {
       setScheduling(true);
       await apiClient.post("/mealplans", {
@@ -126,16 +156,8 @@ export default function MealPrepScreen({ route, navigation }) {
         recipeName,
         date: selectedDate,
       });
-      Alert.alert(
-        "Scheduled!",
-        `${recipeName} is planned for ${selectedDate}.`,
-        [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("Schedule"),
-          },
-        ]
-      );
+      Alert.alert("Scheduled!", `${recipeName} is planned for ${selectedDate}.`);
+      navigation.navigate("Schedule", { selectedDate, refreshAt: Date.now() });
     } catch (err) {
       console.error("Schedule error:", err);
       Alert.alert(
@@ -234,15 +256,20 @@ export default function MealPrepScreen({ route, navigation }) {
         </View>
 
         <TouchableOpacity
-          style={[styles.confirmButton, scheduling && styles.confirmButtonDisabled]}
+          style={[
+            styles.confirmButton,
+            (scheduling || missingItems.length > 0) && styles.confirmButtonDisabled,
+          ]}
           onPress={handleSchedule}
-          disabled={scheduling}
+          disabled={scheduling || missingItems.length > 0}
         >
           {scheduling ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
             <Text style={styles.confirmButtonText}>
-              Schedule for {selectedDate}
+              {missingItems.length > 0
+                ? "Add missing ingredients to schedule"
+                : `Schedule for ${selectedDate}`}
             </Text>
           )}
         </TouchableOpacity>

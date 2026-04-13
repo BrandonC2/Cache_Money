@@ -27,6 +27,8 @@ import CustomBackButton from "../components/CustomBackButton";
 export default function AddScreen({ navigation }) {
   const [itemName, setItem] = useState("");
   const [foodGroup, setFg] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("");
   const [expireDate, setExpire] = useState(new Date());
   const [description, setDesc] = useState("");
   const [showPicker, setShowPicker] = useState(false);
@@ -34,6 +36,17 @@ export default function AddScreen({ navigation }) {
   const [error, setError] = useState("");
 
   const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
+
+  const getRoomContext = async () => {
+    const username = await AsyncStorage.getItem("username");
+    if (username) {
+      const userLastRoom = await AsyncStorage.getItem(`lastRoom_${username}`);
+      if (userLastRoom?.trim()) return userLastRoom.trim();
+    }
+
+    const globalLastRoom = await AsyncStorage.getItem("lastRoom");
+    return globalLastRoom?.trim() || "";
+  };
 
   // Show Date Picker
   const onChange = (event, selectedDate) => {
@@ -43,41 +56,33 @@ export default function AddScreen({ navigation }) {
 
   // Add item function
   const addItem = async () => {
-  if (!itemName || !foodGroup) {
+  if (!itemName.trim() || !foodGroup) {
     setError("Please fill in all required fields.");
     return;
   }
 
   try {
-    const username = await AsyncStorage.getItem("username");
-    // Prefer per-user lastRoom key, fallback to global lastRoom for compatibility
-    let roomName = null;
-    if (username) {
-      roomName = await AsyncStorage.getItem(`lastRoom_${username}`);
-    }
+    const roomName = await getRoomContext();
     if (!roomName) {
-      roomName = await AsyncStorage.getItem("lastRoom");
+      setError("Please select a room first, then try adding the item again.");
+      return;
     }
 
-    console.log(`📦 ItemAddScreen.addItem()`);
-    console.log(`   username: ${username}`);
-    console.log(`   roomName from AsyncStorage: "${roomName}"`);
-
-    if (!username || !roomName) {
-      Alert.alert("Error", "Missing username or room context.");
+    const parsedQty = Number(quantity);
+    if (!quantity || Number.isNaN(parsedQty) || parsedQty <= 0) {
+      setError("Please enter a valid quantity greater than 0.");
       return;
     }
 
     const newItem = {
-      name: itemName,
-      description,
+      name: itemName.trim(),
+      description: description.trim(),
       foodGroup,
       expirationDate: expireDate,
-      room: roomName,     // ✅ include room
-      addedBy: username,  // ✅ include user
+      quantity: parsedQty,
+      unit: unit.trim(),
+      room: roomName,
     };
-
-    console.log(`   POST body: ${JSON.stringify(newItem)}`);
 
   // Use centralized apiClient which attaches the auth token and already
   // has the '/api' prefix. POST to '/inventory' which maps to backend
@@ -89,13 +94,17 @@ export default function AddScreen({ navigation }) {
     setItem("");
     setFg("");
     setDesc("");
+    setQuantity("1");
+    setUnit("");
     setExpire(new Date());
 
   // Return to previous screen 
   navigation.goBack();
   } catch (err) {
     console.error("Add item error:", err.response?.data || err.message);
-    Alert.alert("Error", err.response?.data?.message || "Failed to add item.");
+    const message = err.response?.data?.message || "Failed to add item.";
+    setError(message);
+    Alert.alert("Error", message);
   }
 };
 
@@ -136,7 +145,10 @@ export default function AddScreen({ navigation }) {
               <TextInput
                 placeholder="e.g., Milk, Chicken Breast"
                 value={itemName}
-                onChangeText={setItem}
+                onChangeText={(text) => {
+                  setItem(text);
+                  if (error) setError("");
+                }}
                 style={styles.input}
                 placeholderTextColor="#999"
               />
@@ -146,7 +158,35 @@ export default function AddScreen({ navigation }) {
               <TextInput
                 placeholder="e.g., Organic, Bulk buy"
                 value={description}
-                onChangeText={setDesc}
+                onChangeText={(text) => {
+                  setDesc(text);
+                  if (error) setError("");
+                }}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.label}>Quantity *</Text>
+              <TextInput
+                placeholder="e.g., 1"
+                value={quantity}
+                onChangeText={(text) => {
+                  setQuantity(text);
+                  if (error) setError("");
+                }}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.label}>Unit</Text>
+              <TextInput
+                placeholder="e.g., pcs, cups, oz"
+                value={unit}
+                onChangeText={(text) => {
+                  setUnit(text);
+                  if (error) setError("");
+                }}
                 style={styles.input}
                 placeholderTextColor="#999"
               />

@@ -17,6 +17,7 @@ const inventorySchema = new mongoose.Schema({
   description: { type: String },
   foodGroup: { type: String, default: 'Other' }, // Protein, Grain, Dairy, Fruit, Vegetable, Spice
   quantity: { type: Number, default: 1 },
+  unit: { type: String, default: '' },
   expirationDate: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });

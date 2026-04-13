@@ -29,6 +29,8 @@ Most produce do not have explicit expiration dates (i.e fresh), thereby need to 
 export default function AddScreen({ navigation, route }) {
   const [itemName, setItem] = useState("");
   const [foodGroup, setFg] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("");
   const [expireDate, setExpire] = useState(new Date());
   const [description, setDesc] = useState("");
   const [showPicker, setShowPicker] = useState(false);
@@ -39,6 +41,20 @@ export default function AddScreen({ navigation, route }) {
   
 
   const foodGroups = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice"];
+
+  const getRoomContext = async () => {
+    const routeRoom = route.params?.roomName?.trim();
+    if (routeRoom) return routeRoom;
+
+    const username = await AsyncStorage.getItem("username");
+    if (username) {
+      const userLastRoom = await AsyncStorage.getItem(`lastRoom_${username}`);
+      if (userLastRoom?.trim()) return userLastRoom.trim();
+    }
+
+    const globalLastRoom = await AsyncStorage.getItem("lastRoom");
+    return globalLastRoom?.trim() || "";
+  };
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -61,30 +77,34 @@ export default function AddScreen({ navigation, route }) {
 
   // Add item function
   const addItem = async () => {
-    if (!itemName || !foodGroup) {
+    if (!itemName.trim() || !foodGroup) {
       setError("Please fill in all required fields.");
       return;
     }
 
     try {
       setUploading(true);
-      const username = await AsyncStorage.getItem("username");
-      const token = await AsyncStorage.getItem("authToken");
-
-      // We use FormData because we are sending a file
-      const formData = new FormData();
-      formData.append("name", itemName);
-      formData.append("description", description);
-      formData.append("foodGroup", foodGroup);
-      formData.append("expirationDate", expireDate.toISOString());
-      const roomName = route.params?.roomName || "";
+      const roomName = await getRoomContext();
       if (!roomName) {
-        setError("Please add an item from a kitchen/room first, or go back and select a room.");
-        setUploading(false);
+        setError("Please select a room first, then try adding the item again.");
         return;
       }
+
+      const parsedQty = Number(quantity);
+      if (!quantity || Number.isNaN(parsedQty) || parsedQty <= 0) {
+        setError("Please enter a valid quantity greater than 0.");
+        return;
+      }
+
+      // Model-aligned payload: name, description, foodGroup, quantity, unit, expirationDate, room
+      const formData = new FormData();
+      formData.append("name", itemName.trim());
+      formData.append("description", description.trim());
+      formData.append("foodGroup", foodGroup);
+      formData.append("quantity", String(parsedQty));
+      formData.append("unit", unit.trim());
+      formData.append("expirationDate", expireDate.toISOString());
       formData.append("room", roomName);
-      formData.append("createdBy", username); // Ensure this matches your backend field
 
       if (selectedImage) {
         const filename = selectedImage.split("/").pop();
@@ -101,15 +121,24 @@ export default function AddScreen({ navigation, route }) {
       const res = await apiClient.post("/inventory", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       });
 
       Alert.alert("Success", "Item added to inventory!");
+      setItem("");
+      setDesc("");
+      setFg("");
+      setQuantity("1");
+      setUnit("");
+      setExpire(new Date());
+      setSelectedImage(null);
+      setError("");
       navigation.goBack();
     } catch (err) {
       console.error("Add item error:", err);
-      Alert.alert("Error", "Failed to save item.");
+      const message = err.response?.data?.message || "Failed to save item.";
+      setError(message);
+      Alert.alert("Error", message);
     } finally {
       setUploading(false);
     }
@@ -152,7 +181,10 @@ export default function AddScreen({ navigation, route }) {
               <TextInput
                 placeholder="e.g., Milk, Chicken Breast"
                 value={itemName}
-                onChangeText={setItem}
+                onChangeText={(text) => {
+                  setItem(text);
+                  if (error) setError("");
+                }}
                 style={styles.input}
                 placeholderTextColor="#999"
               />
@@ -162,7 +194,35 @@ export default function AddScreen({ navigation, route }) {
               <TextInput
                 placeholder="e.g., Organic, Bulk buy"
                 value={description}
-                onChangeText={setDesc}
+                onChangeText={(text) => {
+                  setDesc(text);
+                  if (error) setError("");
+                }}
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.label}>Quantity *</Text>
+              <TextInput
+                placeholder="e.g., 1"
+                value={quantity}
+                onChangeText={(text) => {
+                  setQuantity(text);
+                  if (error) setError("");
+                }}
+                keyboardType="numeric"
+                style={styles.input}
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.label}>Unit</Text>
+              <TextInput
+                placeholder="e.g., pcs, cups, oz"
+                value={unit}
+                onChangeText={(text) => {
+                  setUnit(text);
+                  if (error) setError("");
+                }}
                 style={styles.input}
                 placeholderTextColor="#999"
               />

@@ -183,7 +183,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
     console.log(`   userId: ${req.userId}`);
     console.log(`   Request body:`, req.body);
     
-    const { name, description, foodGroup, quantity, expirationDate, room } = req.body;
+    const { name, description, foodGroup, quantity, unit, expirationDate, room } = req.body;
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ message: "Item name is required" });
     }
@@ -216,6 +216,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
       description,
       foodGroup: foodGroup || "Other",
       quantity: quantity ? Number(quantity) : 1, // Ensure it's a number
+      unit: typeof unit === "string" ? unit.trim() : "",
       expirationDate,
       // CAPTURE THE CLOUDINARY URL HERE:
       image: req.file ? req.file.path : null, 
@@ -254,12 +255,13 @@ router.put("/:id", uploadCloud.single("image"), async (req, res) => {
     if (!item) return res.status(404).json({ message: "Item not found" });
     if (item.userId.toString() !== req.userId) return res.status(403).json({ message: "Forbidden" });
 
-    const { name, description, foodGroup, quantity, expirationDate } = req.body;
+    const { name, description, foodGroup, quantity, unit, expirationDate } = req.body;
 
     if (name) item.name = name;
     if (description) item.description = description;
     if (foodGroup) item.foodGroup = foodGroup;
     if (quantity !== undefined) item.quantity = Number(quantity);
+    if (unit !== undefined) item.unit = String(unit).trim();
     if (expirationDate !== undefined) item.expirationDate = expirationDate;
     
     // IF A NEW IMAGE IS UPLOADED, UPDATE THE PATH:
@@ -335,15 +337,16 @@ router.get("/search/:query", async (req, res) => {
     const { query } = req.params;
     const safeQuery = escapeRegExp(query);
 
-    const items = await Item.find({
-      addedBy: req.userId, // Matches your schema field name
+    const items = await InventoryItem.find({
+      userId: req.userId,
       name: { $regex: safeQuery, $options: 'i' }
     })
     .limit(10)
-    .select("name foodGroup image"); // Only send what the search bar needs
+    .select("name foodGroup unit quantity");
 
     res.status(200).json(items);
   } catch (err) {
+    console.error("❌ Search inventory error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });

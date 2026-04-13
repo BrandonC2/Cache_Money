@@ -2,29 +2,52 @@ import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert,  } from "react-native";
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import apiClient from "../lib/apiClient";
 
-export default function ScheduleView({ navigation }) {
+export default function ScheduleView({ navigation, route }) {
   const [markedDates, setMarkedDates] = useState({});
   const [allPlans, setAllPlans] = useState([]);
   const [inventory, setInventory] = useState([]); // New state for expiry items
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    route?.params?.selectedDate || new Date().toISOString().split('T')[0]
+  );
   const [dayItems, setDayItems] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (route?.params?.selectedDate) {
+      setSelectedDate(route.params.selectedDate);
+    }
+  }, [route?.params?.selectedDate]);
+
+  useEffect(() => {
+    if (route?.params?.refreshAt) {
+      fetchData();
+    }
+  }, [route?.params?.refreshAt]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
+  const toDateKey = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value.split("T")[0];
+    if (value instanceof Date) return value.toISOString().split("T")[0];
+    return null;
+  };
+
   // Filter both meals and expiring items for the selected day
   useEffect(() => {
     const meals = allPlans.filter((p) => p.date === selectedDate);
     const dateStr = selectedDate;
-    const expires = inventory.filter((i) => {
-      const exp = i.expirationDate || i.expiryDate;
-      if (!exp) return false;
-      const d = typeof exp === 'string' ? exp.split('T')[0] : exp.toISOString?.().split('T')[0];
-      return d === dateStr;
-    });
+    const expires = inventory.filter((i) => toDateKey(i.expirationDate || i.expiryDate) === dateStr);
     setDayItems({ meals, expires });
   }, [selectedDate, allPlans, inventory]);
 
@@ -46,14 +69,18 @@ export default function ScheduleView({ navigation }) {
 
       // Add Meal Dots
       plans.forEach((plan) => {
-        marked[plan.date] = { 
-          dots: [{ key: 'meal', color: '#4D693A' }] 
-        };
+        const planDate = toDateKey(plan.date);
+        if (!planDate) return;
+        if (!marked[planDate]) marked[planDate] = { dots: [] };
+        if (!marked[planDate].dots.find((d) => d.key === "meal")) {
+          marked[planDate].dots.push({ key: 'meal', color: '#4D693A' });
+        }
       });
 
       // Add Expiry Dots (Red)
       items.forEach((item) => {
-        const date = item.expiryDate;
+        const date = toDateKey(item.expirationDate || item.expiryDate);
+        if (!date) return;
         if (!marked[date]) {
           marked[date] = { dots: [] };
         }
@@ -76,6 +103,15 @@ export default function ScheduleView({ navigation }) {
         console.error("Error setting up request:", err.message);
       }
       Alert.alert("Sync Error", "Could not load your pantry items.");
+    }
+  };
+
+  const handleMarkAsCooked = async (planId) => {
+    try {
+      await apiClient.patch(`/mealplans/complete/${planId}`);
+      await fetchData();
+    } catch (err) {
+      Alert.alert("Error", err.response?.data?.message || "Could not mark meal as cooked.");
     }
   };
 
