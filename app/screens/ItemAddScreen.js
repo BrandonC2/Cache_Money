@@ -84,32 +84,34 @@ export default function AddScreen({ navigation, route }) {
 
     try {
       setUploading(true);
-      const roomName = await getRoomContext();
+      const username = await AsyncStorage.getItem("username");
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        setError("You need to be logged in to add items.");
+        setUploading(false);
+        return;
+      }
+
+      const roomName = route.params?.roomName || "";
       if (!roomName) {
         setError("Please select a room first, then try adding the item again.");
         return;
       }
 
-      const parsedQty = Number(quantity);
-      if (!quantity || Number.isNaN(parsedQty) || parsedQty <= 0) {
-        setError("Please enter a valid quantity greater than 0.");
-        return;
-      }
-
-      // Model-aligned payload: name, description, foodGroup, quantity, unit, expirationDate, room
       const formData = new FormData();
       formData.append("name", itemName.trim());
-      formData.append("description", description.trim());
+      formData.append("description", description || "");
       formData.append("foodGroup", foodGroup);
-      formData.append("quantity", String(parsedQty));
-      formData.append("unit", unit.trim());
+      formData.append("quantity", "1");
       formData.append("expirationDate", expireDate.toISOString());
       formData.append("room", roomName);
+      if (username) formData.append("createdBy", username);
 
       if (selectedImage) {
-        const filename = selectedImage.split("/").pop();
+        const filename = selectedImage.split("/").pop() || "photo.jpg";
         const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
+        const ext = (match && match[1]) || "jpg";
+        const type = ext.toLowerCase() === "png" ? "image/png" : "image/jpeg";
 
         formData.append("image", {
           uri: selectedImage,
@@ -118,10 +120,9 @@ export default function AddScreen({ navigation, route }) {
         });
       }
 
-      const res = await apiClient.post("/inventory", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // Do not set Content-Type manually (boundary). Authorization is set here + apiClient interceptor for RN/axios.
+      await apiClient.post("/inventory", formData, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       Alert.alert("Success", "Item added to inventory!");
@@ -135,10 +136,13 @@ export default function AddScreen({ navigation, route }) {
       setError("");
       navigation.goBack();
     } catch (err) {
-      console.error("Add item error:", err);
-      const message = err.response?.data?.message || "Failed to save item.";
-      setError(message);
-      Alert.alert("Error", message);
+      console.error("Add item error:", err?.response?.data || err.message);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Failed to save item.";
+      Alert.alert("Error", String(msg));
     } finally {
       setUploading(false);
     }

@@ -74,7 +74,7 @@ export default function RegistrationScreen({ navigation }) {
         setLoading(false);
         return;
       }
-      const { token } = signupData;
+      const token = signupData.token || loginData.token;
       if (token) {
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('username', username);

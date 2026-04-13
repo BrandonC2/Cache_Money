@@ -11,14 +11,31 @@ import {
   Modal,
   TextInput,
   Alert,
-  ImageBackground,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
-import CustomBackButton from "../components/CustomBackButton";
 import { useIngredientSuggestions } from '../hooks/useIngredientSuggestion';
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+
+const OLIVE = "#5d5f4a";
+const OLIVE_MUTED = "#6b6d56";
+const CREAM = "#e8e4db";
+const INK = "#2d2e26";
+const BG = "#dcd8cc";
+const AMBER_BORDER = "rgba(217,119,6,0.2)";
+const AMBER_BG = "rgba(254,243,199,0.75)";
+
+const FOOD_GROUP_CARD_BG = {
+  Protein: "#f5e6e6",
+  Grain: "#ead5c8",
+  Dairy: "#eee0d4",
+  Fruit: "#fce4dc",
+  Vegetable: "#d4e5c3",
+  Spice: "#ece8dc",
+  Other: "rgba(255,255,255,0.88)",
+};
 
 const FOOD_GROUP_OPTIONS = ["Protein", "Grain", "Dairy", "Fruit", "Vegetable", "Spice", "Other"];
 
@@ -31,7 +48,15 @@ const getDaysUntilExpiry = (dateString) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
+const getItemCardBackground = (item) => {
+  const d = getDaysUntilExpiry(item.expirationDate);
+  if (d !== null && d <= 3) return "#f5e6e6";
+  const g = item.foodGroup || "Other";
+  return FOOD_GROUP_CARD_BG[g] || FOOD_GROUP_CARD_BG.Other;
+};
+
 export default function KitchenCollection({ navigation, route }) {
+  const insets = useSafeAreaInsets();
   const [username, setUsername] = useState("");
   const [visitedRooms, setVisitedRooms] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,16 +121,6 @@ export default function KitchenCollection({ navigation, route }) {
 
     return list;
   }, [roomItems, searchQuery, foodGroupFilter, sortFilter]);
-
-  // Same rules as UpcomingScreen: red ≤1 day, yellow ≤3 days, green otherwise
-  const getExpirationBorderColor = (dateString) => {
-    if (!dateString) return "#BDBDBD";
-    const diffDays = getDaysUntilExpiry(dateString);
-    if (diffDays === null) return "#BDBDBD";
-    if (diffDays <= 1) return "#FF5252";
-    if (diffDays <= 3) return "#FFD700";
-    return "#4D693A";
-  };
 
   // Open edit modal for an item
   const openEditItemModal = (item) => {
@@ -260,141 +275,166 @@ export default function KitchenCollection({ navigation, route }) {
         : "No items match your search.";
 
   if (selectedRoom) {
+    const expiringSoon = (it) => {
+      const d = getDaysUntilExpiry(it.expirationDate);
+      return d !== null && d <= 3;
+    };
+
     return (
-      <ImageBackground 
-        style={styles.background}
-        source={require("../assets/grid_paper.jpg")}
-      >
+      <SafeAreaView style={styles.safeRoot} edges={["top", "left", "right"]}>
         <View style={styles.container}>
-          <View style={styles.headerBarContainer}>
-            <CustomBackButton onPress={() => handleBack()} />
-            <Text style={styles.headerBarTitle}>{selectedRoom}</Text>
-            <View style={{ width: 60 }} />
-          </View>
-          
-          <View style={styles.Box}>
-            <TextInput
-              style={styles.roomSearchInput}
-              placeholder="Search items in this room"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterScroll}
-              contentContainerStyle={styles.filterScrollContent}
+          <View style={styles.invHeaderRow}>
+            <TouchableOpacity
+              style={styles.backPill}
+              onPress={handleBack}
+              activeOpacity={0.9}
             >
-              {[
-                { key: "all", label: "All" },
-                { key: "expiringSoon", label: "Expiring soon" },
-                { key: "latest", label: "Latest" },
-              ].map(({ key, label }) => (
+              <Ionicons name="chevron-back" size={18} color={CREAM} style={{ marginRight: 4 }} />
+              <Text style={styles.backPillText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.kitchenTitle}>{selectedRoom}</Text>
+
+          <TextInput
+            style={styles.roomSearchInput}
+            placeholder="Search items in this room"
+            placeholderTextColor={`${OLIVE}66`}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.sortPillsScroll}
+            contentContainerStyle={styles.sortPillsContent}
+          >
+            {[
+              { key: "all", label: "All" },
+              { key: "expiringSoon", label: "Expiring soon" },
+              { key: "latest", label: "Latest" },
+            ].map(({ key, label }) => {
+              const selected = sortFilter === key;
+              const isExpiringChip = key === "expiringSoon";
+              return (
                 <TouchableOpacity
                   key={key}
                   style={[
-                    styles.filterChip,
-                    sortFilter === key && styles.filterChipSelected,
+                    styles.sortPill,
+                    isExpiringChip && selected && styles.sortPillAmber,
+                    (!isExpiringChip || !selected) && selected && styles.sortPillSelected,
+                    !selected && styles.sortPillIdle,
                   ]}
                   onPress={() => setSortFilter(key)}
+                  activeOpacity={0.85}
                 >
                   <Text
                     style={[
-                      styles.filterChipText,
-                      sortFilter === key && styles.filterChipTextSelected,
+                      styles.sortPillText,
+                      selected && styles.sortPillTextSelected,
                     ]}
                   >
                     {label}
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <Text style={styles.filterSectionLabel}>Food group</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filterScroll}
-              contentContainerStyle={styles.filterScrollContent}
+              );
+            })}
+          </ScrollView>
+
+          <Text style={styles.filterSectionLabel}>Food group</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+            contentContainerStyle={styles.categoryScrollContent}
+          >
+            <TouchableOpacity
+              style={[
+                styles.categoryChip,
+                foodGroupFilter === "all" && styles.categoryChipSelected,
+              ]}
+              onPress={() => setFoodGroupFilter("all")}
             >
-              <TouchableOpacity
+              <Text
                 style={[
-                  styles.filterChip,
-                  foodGroupFilter === "all" && styles.filterChipSelected,
+                  styles.categoryChipText,
+                  foodGroupFilter === "all" && styles.categoryChipTextSelected,
                 ]}
-                onPress={() => setFoodGroupFilter("all")}
+              >
+                All groups
+              </Text>
+            </TouchableOpacity>
+            {FOOD_GROUP_OPTIONS.map((g) => (
+              <TouchableOpacity
+                key={g}
+                style={[
+                  styles.categoryChip,
+                  foodGroupFilter === g && styles.categoryChipSelected,
+                ]}
+                onPress={() => setFoodGroupFilter(g)}
               >
                 <Text
                   style={[
-                    styles.filterChipText,
-                    foodGroupFilter === "all" && styles.filterChipTextSelected,
+                    styles.categoryChipText,
+                    foodGroupFilter === g && styles.categoryChipTextSelected,
                   ]}
                 >
-                  All groups
+                  {g}
                 </Text>
               </TouchableOpacity>
-              {FOOD_GROUP_OPTIONS.map((g) => (
-                <TouchableOpacity
-                  key={g}
-                  style={[
-                    styles.filterChip,
-                    foodGroupFilter === g && styles.filterChipSelected,
-                  ]}
-                  onPress={() => setFoodGroupFilter(g)}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      foodGroupFilter === g && styles.filterChipTextSelected,
-                    ]}
-                  >
-                    {g}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            {loading ? (
-              <View style={styles.centerContent}>
-                <ActivityIndicator size="large" color="#4D693A" />
-              </View>
-            ) : filteredRoomItems.length === 0 ? (
-              <View style={styles.centerContent}>
-                <Text style={styles.emptyText}>{roomEmptyMessage}</Text>
-              </View>
-            ) : (
-              <FlatList
-                key={'grid_layout'}
-                style={{ flex: 1 }}
-                numColumns={3}
-                data={filteredRoomItems}
-                keyExtractor={(item) => item._id}
-                contentContainerStyle={styles.gridContainer}
-                renderItem={({ item }) => (
+            ))}
+          </ScrollView>
+
+          {loading ? (
+            <View style={styles.centerContent}>
+              <ActivityIndicator size="large" color={OLIVE} />
+            </View>
+          ) : filteredRoomItems.length === 0 ? (
+            <View style={styles.centerContent}>
+              <Text style={styles.emptyText}>{roomEmptyMessage}</Text>
+            </View>
+          ) : (
+            <FlatList
+              key={"grid_layout"}
+              style={{ flex: 1 }}
+              numColumns={3}
+              data={filteredRoomItems}
+              keyExtractor={(item) => item._id}
+              contentContainerStyle={styles.gridContainer}
+              columnWrapperStyle={styles.gridRow}
+              renderItem={({ item }) => (
+                <View style={styles.gridCell}>
                   <TouchableOpacity
-                    style={styles.gridItemContainer}
+                    style={[
+                      styles.gridCard,
+                      { backgroundColor: getItemCardBackground(item) },
+                    ]}
                     onPress={() => openEditItemModal(item)}
+                    activeOpacity={0.92}
                   >
-                    <View
-                      style={[
-                        styles.gridIconWrapper,
-                        { borderColor: getExpirationBorderColor(item.expirationDate) },
-                      ]}
-                    >
-                      <Image source={icon_search(item.name)} style={styles.gridIcon} />
-                    </View>
-                    <Text style={styles.gridItemName} numberOfLines={1}>{item.name}</Text>
+                    <Image source={icon_search(item.name)} style={styles.gridIcon} />
+                    <Text style={styles.gridItemName} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                    {expiringSoon(item) ? (
+                      <Text style={styles.expiringBadge}>Expiring soon</Text>
+                    ) : null}
                   </TouchableOpacity>
-                )}
-              />
-            )}
-          </View>
+                </View>
+              )}
+            />
+          )}
 
           <TouchableOpacity
-            style={styles.addButton}
+            style={[styles.addButton, { bottom: Math.max(insets.bottom, 12) + 8 }]}
             onPress={() => navigation.navigate("ManualAdd", { roomName: selectedRoom })}
+            activeOpacity={0.9}
           >
-            <Text style={styles.addText}>➕ Add Item</Text>
+            <Ionicons name="add" size={22} color={CREAM} style={{ marginRight: 8 }} />
+            <Text style={styles.addText}>Add Item</Text>
           </TouchableOpacity>
 
           {/* Edit Item Options Modal */}
@@ -403,7 +443,7 @@ export default function KitchenCollection({ navigation, route }) {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>{roomItems[editingItemIndex]?.name || "Item"}</Text>
                 <TouchableOpacity style={styles.optionButton} onPress={openEditForm}>
-                  <Ionicons name="create" size={20} color="#4D693A" />
+                  <Ionicons name="create" size={20} color={OLIVE} />
                   <Text style={styles.optionButtonText}>Edit Item</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.optionButton} onPress={() => { setShowItemEditModal(false); deleteItem(editingItemIndex); }}>
@@ -476,10 +516,10 @@ export default function KitchenCollection({ navigation, route }) {
                 </TouchableOpacity>
 
                 <View style={styles.modalButtonRow}>
-                  <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setShowItemEditForm(false)}>
+                  <TouchableOpacity style={[styles.modalButton, styles.cancelButton, styles.modalBtnHalf]} onPress={() => setShowItemEditForm(false)}>
                     <Text style={styles.modalButtonText}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={saveItemEdits}>
+                  <TouchableOpacity style={[styles.modalButton, styles.saveButton, styles.modalBtnHalf]} onPress={saveItemEdits}>
                     <Text style={styles.modalButtonText}>Save</Text>
                   </TouchableOpacity>
                 </View>
@@ -487,159 +527,322 @@ export default function KitchenCollection({ navigation, route }) {
             </View>
           </Modal>
         </View>
-      </ImageBackground>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity style={styles.returnButtonHeader} onPress={() => navigation.navigate("MainNavBar")}>
-          <Text style={styles.returnButtonHeaderText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerBarTitle}>Your Rooms</Text>
-        <View style={{ width: 80 }} />
+    <SafeAreaView style={styles.safeRoot} edges={["top", "left", "right", "bottom"]}>
+      <View style={styles.roomListRoot}>
+        <View style={styles.invHeaderRow}>
+          <TouchableOpacity
+            style={styles.backPill}
+            onPress={() => navigation.navigate("MainNavBar")}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="chevron-back" size={18} color={CREAM} style={{ marginRight: 4 }} />
+            <Text style={styles.backPillText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.kitchenTitle}>Your Rooms</Text>
+        {visitedRooms.length === 0 ? (
+          <View style={styles.centerContent}>
+            <Text style={styles.emptyText}>No rooms yet.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={visitedRooms}
+            keyExtractor={(item) => item.name}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => setSelectedRoom(item.name)}
+                style={styles.roomCardNew}
+                activeOpacity={0.9}
+              >
+                <View style={styles.roomCardContent}>
+                  <Text style={styles.roomCardTitleNew}>{item.name}</Text>
+                  <Text style={styles.roomCardSubtitleNew}>Tap to view items</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={OLIVE} />
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={styles.listContentNew}
+          />
+        )}
       </View>
-      {visitedRooms.length === 0 ? (
-        <View style={styles.centerContent}><Text style={styles.emptyText}>No rooms yet.</Text></View>
-      ) : (
-        <FlatList
-          data={visitedRooms}
-          keyExtractor={(item) => item.name}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => setSelectedRoom(item.name)} style={styles.roomCard}>
-              <View style={styles.roomCardContent}>
-                <Text style={styles.roomCardTitle}>{item.name}</Text>
-                <Text style={styles.roomCardSubtitle}>Tap to view items</Text>
-              </View>
-              <Text style={styles.roomCardArrow}>→</Text>
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  headerBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#f8f8f8", borderBottomWidth: 1, borderBottomColor: "#ddd", marginTop: 40 },
-  headerBarContainer: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 12, paddingVertical: 12, backgroundColor: "transparent", marginTop: 8 },
-  returnButtonHeaderText: { fontSize: 16, fontWeight: "600", color: "#007bff" },
-  headerBarTitle: { fontSize: 18, fontWeight: "bold", color: "#333", textAlign: "center" },
-  centerContent: { flex: 1, justifyContent: "center", alignItems: "center" },
-  listContent: { paddingHorizontal: 20, paddingVertical: 12, paddingBottom: 20 },
-  roomCard: { backgroundColor: "white", padding: 16, borderRadius: 10, marginVertical: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center", elevation: 3 },
-  roomCardContent: { flex: 1 },
-  roomCardTitle: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  roomCardSubtitle: { fontSize: 13, color: "#999" },
-  roomCardArrow: { fontSize: 20, color: "#4D693A", marginLeft: 12 },
-  addButton: { position: "absolute", bottom: 20, left: 20, right: 20, backgroundColor: "#4D693A", padding: 14, borderRadius: 10, alignItems: "center" },
-  addText: { color: "white", fontSize: 16, fontWeight: "bold" },
-  emptyText: { color: "#777", fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.4)", justifyContent: "center", alignItems: "center" },
-  modalContent: { backgroundColor: "#fcfaf2ff", borderColor: "#94938eff", borderRadius: 30, padding: 20, width: "85%", maxHeight: "80%" },
-  modalTitle: { fontSize: 20, fontWeight: "bold", color: "#333", marginBottom: 16, textAlign: "center" },
-  modalLabel: { fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 6, marginTop: 12 },
-  modalInput: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, backgroundColor: "#f1e9e2ff" },
-  foodGroupButton: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#f1e9e2ff", marginTop: 6 },
-  foodGroupButtonText: { fontSize: 14, color: "#333" },
-  modalButtonRow: { flexDirection: "row", gap: 10, marginTop: 20 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center" },
-  cancelButton: { backgroundColor: "#4D693A" },
-  saveButton: { backgroundColor: "#4D693A" },
-  modalButtonText: { fontSize: 14, fontWeight: "600", color: "white" },
-  optionButton: { flexDirection: "row", alignItems: "center", paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  optionButtonText: { fontSize: 16, color: "#4D693A", marginLeft: 12, fontWeight: "600" },
-  cancelOptionButton: { paddingVertical: 14, paddingHorizontal: 16, alignItems: "center" },
-  cancelOptionButtonText: { fontSize: 16, color: "#666", fontWeight: "600" },
-  gridItemName: { fontSize: 12, fontWeight: '500', color: '#333', textAlign: 'center', width: '100%' },
-  gridIconWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 14,
-    borderWidth: 2.5,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  gridIcon: { width: 78, height: 78, resizeMode: 'contain' },
-  gridItemContainer: { flex: 1, maxWidth: '33.33%', alignItems: 'center', marginBottom: 20 },
-  gridContainer: { paddingHorizontal: 10, paddingTop: 20, paddingBottom: 100 },
-  background: { flex: 1, paddingTop: 60, paddingBottom: 20 },
-  Box: { width: '90%', height: '80%', alignSelf: 'center', borderWidth: 1.5, borderColor: '#4A3B32', overflow: 'hidden', marginBottom: 150, marginTop: -10 },
-  roomSearchInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#d4d4d4",
-    backgroundColor: "#fff",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#333",
-  },
-  filterSectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#666",
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 4,
-    backgroundColor: "#fff",
-  },
-  filterScroll: { maxHeight: 44, backgroundColor: "#fff" },
-  filterScrollContent: {
+  safeRoot: { flex: 1, backgroundColor: BG },
+  container: { flex: 1, paddingHorizontal: 24 },
+  roomListRoot: { flex: 1, paddingHorizontal: 24 },
+  invHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingBottom: 6,
+    paddingVertical: 8,
   },
-  filterChip: {
+  backPill: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: OLIVE,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  backPillText: { color: CREAM, fontSize: 14, fontWeight: "600" },
+  kitchenTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: INK,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  roomSearchInput: {
+    width: "100%",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.65)",
     borderWidth: 1,
-    borderColor: "#c8c8c8",
-    backgroundColor: "#f5f5f5",
+    borderColor: "rgba(93,95,74,0.2)",
+    borderRadius: 10,
+    fontSize: 15,
+    color: INK,
+    marginBottom: 12,
+  },
+  sortPillsScroll: { maxHeight: 40, marginBottom: 8 },
+  sortPillsContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingRight: 8,
+  },
+  sortPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
     marginRight: 8,
   },
-  filterChipSelected: {
-    borderColor: "#4D693A",
-    backgroundColor: "#e8efe3",
+  sortPillIdle: {
+    backgroundColor: "rgba(255,255,255,0.65)",
+    borderColor: "rgba(93,95,74,0.2)",
   },
-  filterChipText: { fontSize: 13, color: "#444" },
-  filterChipTextSelected: { color: "#2d4a22", fontWeight: "600" },
-  
-  // --- NEW SEARCH DROPDOWN STYLES ---
+  sortPillSelected: {
+    backgroundColor: "rgba(255,255,255,0.85)",
+    borderColor: "rgba(93,95,74,0.35)",
+  },
+  sortPillAmber: {
+    backgroundColor: AMBER_BG,
+    borderColor: AMBER_BORDER,
+  },
+  sortPillText: { fontSize: 12, color: `${INK}b3` },
+  sortPillTextSelected: { color: INK, fontWeight: "600" },
+  filterSectionLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: `${INK}99`,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  categoryScroll: { maxHeight: 48, marginBottom: 12 },
+  categoryScrollContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 4,
+  },
+  categoryChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.2)",
+    marginRight: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  categoryChipSelected: {
+    backgroundColor: "rgba(232,239,227,0.95)",
+    borderColor: OLIVE,
+  },
+  categoryChipText: { fontSize: 14, color: INK },
+  categoryChipTextSelected: { fontWeight: "700", color: OLIVE },
+  centerContent: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 24 },
+  emptyText: { color: `${INK}99`, fontSize: 16, textAlign: "center", paddingHorizontal: 20 },
+  gridContainer: { paddingBottom: 120, paddingTop: 8 },
+  gridRow: { justifyContent: "space-between", marginBottom: 12, paddingHorizontal: 0 },
+  gridCell: { width: "31%", maxWidth: "31%" },
+  gridCard: {
+    aspectRatio: 1,
+    borderRadius: 14,
+    padding: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  gridIcon: { width: 44, height: 44, resizeMode: "contain", marginBottom: 6 },
+  gridItemName: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: INK,
+    textAlign: "center",
+    width: "100%",
+  },
+  expiringBadge: {
+    marginTop: 4,
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#d97706",
+  },
+  addButton: {
+    position: "absolute",
+    left: 24,
+    right: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: OLIVE,
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addText: { color: CREAM, fontSize: 16, fontWeight: "700" },
+  listContentNew: { paddingBottom: 24, paddingTop: 8 },
+  roomCardNew: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.2)",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  roomCardContent: { flex: 1 },
+  roomCardTitleNew: { fontSize: 17, fontWeight: "700", color: INK },
+  roomCardSubtitleNew: { fontSize: 13, color: `${INK}88`, marginTop: 4 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: CREAM,
+    borderRadius: 20,
+    padding: 20,
+    width: "88%",
+    maxHeight: "85%",
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.15)",
+  },
+  modalTitle: {
+    fontSize: 19,
+    fontWeight: "700",
+    color: INK,
+    marginBottom: 14,
+    textAlign: "center",
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: INK,
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.22)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    color: INK,
+  },
+  foodGroupButton: {
+    borderWidth: 1,
+    borderColor: "rgba(93,95,74,0.22)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    marginTop: 4,
+  },
+  foodGroupButtonText: { fontSize: 15, color: INK },
+  modalButtonRow: { flexDirection: "row", marginTop: 20, justifyContent: "space-between" },
+  modalBtnHalf: { width: "48%" },
+  modalButton: { paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  cancelButton: { backgroundColor: OLIVE_MUTED },
+  saveButton: { backgroundColor: OLIVE },
+  modalButtonText: { fontSize: 15, fontWeight: "600", color: CREAM },
+  optionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(93,95,74,0.12)",
+  },
+  optionButtonText: { fontSize: 16, color: OLIVE, marginLeft: 12, fontWeight: "600" },
+  cancelOptionButton: { paddingVertical: 14, alignItems: "center" },
+  cancelOptionButtonText: { fontSize: 16, color: `${INK}99`, fontWeight: "600" },
   suggestionDropdown: {
-    position: 'absolute',
-    top: 45,
+    position: "absolute",
+    top: 46,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "rgba(93,95,74,0.2)",
     maxHeight: 150,
-    elevation: 5,
-    shadowColor: '#000',
+    elevation: 6,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    zIndex: 10000, 
+    shadowOpacity: 0.15,
+    zIndex: 10000,
   },
   suggestionItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  suggestionText: { fontSize: 14, color: '#333' },
-  globalLabel: { fontSize: 10, color: '#4D693A', fontWeight: 'bold', backgroundColor: '#eef2eb', paddingHorizontal: 5, borderRadius: 4 },
+  suggestionText: { fontSize: 14, color: INK },
+  globalLabel: {
+    fontSize: 10,
+    color: OLIVE,
+    fontWeight: "700",
+    backgroundColor: "#eef2eb",
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
 });

@@ -33,7 +33,7 @@ router.post("/signin", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: String(user._id) }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
@@ -79,7 +79,7 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: String(user._id) }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
@@ -111,7 +111,7 @@ router.post("/signup", async (req, res) => {
 
     await user.save();
     
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ userId: String(user._id) }, process.env.JWT_SECRET, { expiresIn: "1d" });
     res.status(201).json({ token, user: { id: user._id, username: user.username } });
   } catch (err) { 
     res.status(500).json({ error: err.message }); 
