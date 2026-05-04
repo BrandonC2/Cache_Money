@@ -1,8 +1,10 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Recipe = require("../models/Recipe");
 const MealPlan = require("../models/MealPlan");
 const uploadCloud = require('../middleware/cloudinaryConfig');
+const { optionalSingleImage } = require('../middleware/cloudinaryConfig');
 
 // ❌ DELETE THESE LINES (They use the old local system)
 // const uploadRecipe = createUpload(uploadDirs.recipes, "recipe"); 
@@ -53,7 +55,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
 // Update Recipe
 // ===================
 // ✅ CHANGE: Use uploadCloud.single("image") here too!
-router.put("/:id", uploadCloud.single("image"), async (req, res) => {
+router.put("/:id", optionalSingleImage("image"), async (req, res) => {
   try {
     const { name, description, ingredients, foodGroup, instructions } = req.body;
 
@@ -100,12 +102,20 @@ router.put("/:id", uploadCloud.single("image"), async (req, res) => {
 // ===================
 router.delete("/:id", async (req, res) => {
   try {
-    const recipe = await Recipe.findById(req.params.id);
+    const rawId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(rawId)) {
+      return res.status(400).json({ message: "Invalid recipe id" });
+    }
+    const objectId = new mongoose.Types.ObjectId(rawId);
+    const recipe = await Recipe.findById(objectId);
     if (!recipe) {
       return res.status(404).json({ message: "Recipe not found" });
     }
-    await MealPlan.deleteMany({ recipeId: req.params.id });
-    await Recipe.findByIdAndDelete(req.params.id);
+    // Match meal plans whether recipeId was stored as ObjectId or string
+    await MealPlan.deleteMany({
+      $or: [{ recipeId: rawId }, { recipeId: objectId }],
+    });
+    await Recipe.findByIdAndDelete(objectId);
     res.json({ message: "Recipe removed successfully" });
   } catch (err) {
     console.error("Recipe delete error:", err);

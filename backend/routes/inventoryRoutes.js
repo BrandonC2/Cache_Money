@@ -9,6 +9,7 @@ const Kitchen = require("../models/Kitchen");
 const User = require("../models/User");
 
 const uploadCloud = require("../middleware/cloudinaryConfig");
+const { optionalSingleImage } = require("../middleware/cloudinaryConfig");
 
 router.use(auth);
 
@@ -255,7 +256,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
 });
 
 // PUT /api/inventory/:id - Update item
-router.put("/:id", uploadCloud.single("image"), async (req, res) => {
+router.put("/:id", optionalSingleImage("image"), async (req, res) => {
   try {
     const item = await InventoryItem.findById(req.params.id);
     if (!item) return res.status(404).json({ message: "Item not found" });

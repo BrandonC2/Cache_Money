@@ -8,6 +8,24 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 
+function toHexObjectIdString(value) {
+  if (value == null || value === "") return "";
+  if (typeof value === "object") {
+    if (typeof value.$oid === "string") return toHexObjectIdString(value.$oid);
+    if (typeof value.toString === "function") {
+      const s = String(value.toString()).trim();
+      if (/^[a-fA-F0-9]{24}$/.test(s)) return s;
+    }
+    return "";
+  }
+  const s = String(value).trim();
+  return /^[a-fA-F0-9]{24}$/.test(s) ? s : "";
+}
+
+function recipeDocumentId(recipeLike) {
+  return toHexObjectIdString(recipeLike?._id) || toHexObjectIdString(recipeLike?.id);
+}
+
 export default function EditRecipeScreen({ route, navigation }) {
   const { recipe } = route.params;
 
@@ -79,6 +97,11 @@ export default function EditRecipeScreen({ route, navigation }) {
   // 4. Save Logic
   // =====================
   const deleteRecipe = () => {
+    const id = recipeDocumentId(recipe);
+    if (!id) {
+      Alert.alert("Error", "Could not determine this recipe's id. Go back and open the recipe again.");
+      return;
+    }
     Alert.alert(
       "Remove recipe",
       `Delete "${recipe.name}"? This cannot be undone. Scheduled meals for this recipe will be removed.`,
@@ -90,14 +113,16 @@ export default function EditRecipeScreen({ route, navigation }) {
           onPress: async () => {
             try {
               setLoading(true);
-              await apiClient.delete(`/recipes/${recipe._id}`);
+              await apiClient.delete(`/recipes/${id}`);
               Alert.alert("Removed", "Recipe was deleted.");
               navigation.navigate("MainNavBar", { screen: "Recipe" });
             } catch (err) {
-              Alert.alert(
-                "Error",
-                err.response?.data?.message || "Could not delete recipe."
-              );
+              const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.message ||
+                "Could not delete recipe.";
+              Alert.alert("Error", String(msg));
             } finally {
               setLoading(false);
             }
@@ -108,6 +133,11 @@ export default function EditRecipeScreen({ route, navigation }) {
   };
 
   const saveChanges = async () => {
+    const rid = recipeDocumentId(recipe);
+    if (!rid) {
+      Alert.alert("Error", "Recipe id is missing. Go back and open this recipe again.");
+      return;
+    }
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("authToken");
@@ -139,17 +169,26 @@ export default function EditRecipeScreen({ route, navigation }) {
       });
       formData.append("instructions", JSON.stringify(finalInstructions));
 
-      const res = await apiClient.put(`/recipes/${recipe._id}`, formData, {
+      const res = await apiClient.put(`/recipes/${rid}`, formData, {
         headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
 
       // Update Local Navigation State
-      const updated = res.data.data;
-      updated.fullImageUrl = updated.image 
-        ? `${apiClient.defaults.baseURL}/uploads/recipes/${updated.image}?t=${Date.now()}` 
-        : null;
+      const payload = res.data?.data;
+      if (!payload) {
+        Alert.alert("Error", "Invalid response from server.");
+        return;
+      }
+      const updated = { ...payload, _id: recipeDocumentId(payload) || rid };
+      if (updated.image && String(updated.image).startsWith("http")) {
+        updated.fullImageUrl = updated.image;
+      } else if (updated.image) {
+        updated.fullImageUrl = `${apiClient.defaults.baseURL}/uploads/recipes/${updated.image}?t=${Date.now()}`;
+      } else {
+        updated.fullImageUrl = null;
+      }
 
-      navigation.navigate("RecipeDetails", { recipe: updated });
+      navigation.navigate("RecipeDetails", { recipe: updated, recipeId: updated._id });
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Failed to update recipe.");

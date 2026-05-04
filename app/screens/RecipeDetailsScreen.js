@@ -4,9 +4,33 @@ import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIn
 import apiClient from "../lib/apiClient";
 import { useRecipeCheck } from '../hooks/useRecipeCheck';
 
+/** Only returns a valid Mongo ObjectId hex string (prevents bad URLs → 404). */
+function toHexObjectIdString(value) {
+  if (value == null || value === "") return "";
+  if (typeof value === "object") {
+    if (typeof value.$oid === "string") return toHexObjectIdString(value.$oid);
+    if (typeof value.toString === "function") {
+      const s = String(value.toString()).trim();
+      if (/^[a-fA-F0-9]{24}$/.test(s)) return s;
+    }
+    return "";
+  }
+  const s = String(value).trim();
+  return /^[a-fA-F0-9]{24}$/.test(s) ? s : "";
+}
+
+function recipeDocumentId(recipeLike, fallbackId) {
+  return (
+    toHexObjectIdString(recipeLike?._id) ||
+    toHexObjectIdString(recipeLike?.id) ||
+    toHexObjectIdString(fallbackId)
+  );
+}
+
 export default function RecipeDetailsScreen({ route, navigation }) {
   const [recipe, setRecipe] = useState(route.params?.recipe);
-  const recipeId = route.params?.recipeId || route.params?.recipe?._id;
+  const recipeId =
+    recipeDocumentId(recipe, route.params?.recipeId) || toHexObjectIdString(route.params?.recipeId);
   
   const { comparison, loading, checkAvailability, addMissingToGrocery } = useRecipeCheck(recipeId);
 
@@ -17,14 +41,21 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      const recipeId = recipe?._id || route.params?.recipeId;
-      if (!recipeId) return;
+      const rid =
+        recipeDocumentId(recipe, route.params?.recipeId) ||
+        toHexObjectIdString(route.params?.recipeId);
+      if (!rid) return;
 
       const fetchRecipe = async () => {
         try {
-          const res = await apiClient.get(`/recipes/${recipeId}`);
+          const res = await apiClient.get(`/recipes/${rid}`);
           if (isActive && res.data) {
-            setRecipe((prev) => ({ ...prev, ...res.data }));
+            setRecipe((prev) => {
+              const merged = { ...(prev || {}), ...res.data };
+              const id = recipeDocumentId(merged, route.params?.recipeId);
+              if (id) merged._id = id;
+              return merged;
+            });
           }
         } catch (err) {
           console.error("Recipe fetch error:", err);
@@ -32,11 +63,15 @@ export default function RecipeDetailsScreen({ route, navigation }) {
       };
       fetchRecipe();
       return () => { isActive = false; };
-    }, [recipe?._id, route.params?.recipeId])
+    }, [recipe, route.params?.recipeId])
   );
 
   const handleDeleteRecipe = () => {
-    if (!recipe?._id) return;
+    const id = recipeDocumentId(recipe, route.params?.recipeId);
+    if (!id) {
+      Alert.alert("Error", "Could not determine this recipe's id. Go back and open the recipe again.");
+      return;
+    }
     Alert.alert(
       "Remove recipe",
       `Delete "${recipe.name}"? Scheduled meals for this recipe will be removed from your calendar.`,
@@ -47,14 +82,16 @@ export default function RecipeDetailsScreen({ route, navigation }) {
           style: "destructive",
           onPress: async () => {
             try {
-              await apiClient.delete(`/recipes/${recipe._id}`);
+              await apiClient.delete(`/recipes/${id}`);
               Alert.alert("Removed", "Recipe was deleted.");
               navigation.navigate("MainNavBar", { screen: "Recipe" });
             } catch (err) {
-              Alert.alert(
-                "Error",
-                err.response?.data?.message || "Could not delete recipe."
-              );
+              const msg =
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.message ||
+                "Could not delete recipe.";
+              Alert.alert("Error", String(msg));
             }
           },
         },

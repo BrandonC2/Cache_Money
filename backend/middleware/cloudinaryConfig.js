@@ -38,4 +38,17 @@ const storage = new CloudinaryStorage({
 });
 
 const uploadCloud = multer({ storage });
+
+/** Skip multer for application/json so PUT handlers do not 500 (Multipart: Boundary not found). */
+function optionalSingleImage(fieldName) {
+  return (req, res, next) => {
+    const ct = req.headers["content-type"] || "";
+    if (ct.includes("multipart/form-data")) {
+      return uploadCloud.single(fieldName)(req, res, next);
+    }
+    next();
+  };
+}
+
 module.exports = uploadCloud;
+module.exports.optionalSingleImage = optionalSingleImage;
