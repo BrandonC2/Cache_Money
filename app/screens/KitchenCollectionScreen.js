@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 import { useIngredientSuggestions } from '../hooks/useIngredientSuggestion';
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 const OLIVE = "#5d5f4a";
 const OLIVE_MUTED = "#6b6d56";
@@ -63,6 +64,7 @@ const inventoryItemId = (raw) => {
 
 export default function KitchenCollection({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [username, setUsername] = useState("");
   const [visitedRooms, setVisitedRooms] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -257,7 +259,22 @@ export default function KitchenCollection({ navigation, route }) {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.kitchenTitle}>{selectedRoom}</Text>
+          <View style={styles.titleAddRow}>
+            <Text style={styles.kitchenTitle} numberOfLines={2}>
+              {selectedRoom}
+            </Text>
+            <TouchableOpacity
+              style={styles.addItemPill}
+              onPress={() => navigation.navigate("ManualAdd", { roomName: selectedRoom })}
+              activeOpacity={0.92}
+              accessibilityLabel="Add item"
+            >
+              <Text style={styles.addItemPillText}>Add Item</Text>
+              <View style={styles.addItemPlusWrap}>
+                <Ionicons name="add" size={20} color={CREAM} />
+              </View>
+            </TouchableOpacity>
+          </View>
 
           <TextInput
             style={styles.roomSearchInput}
@@ -308,7 +325,7 @@ export default function KitchenCollection({ navigation, route }) {
               numColumns={3}
               data={filteredRoomItems}
               keyExtractor={(item, index) => (item._id != null ? String(item._id) : `item-${index}`)}
-              contentContainerStyle={styles.gridContainer}
+              contentContainerStyle={[styles.gridContainer, { paddingBottom: tabBarHeight + 28 }]}
               columnWrapperStyle={styles.gridRow}
               renderItem={({ item }) => (
                 <View style={styles.gridCell}>
@@ -325,11 +342,6 @@ export default function KitchenCollection({ navigation, route }) {
               )}
             />
           )}
-
-          <TouchableOpacity style={[styles.addButton, { bottom: Math.max(insets.bottom, 12) + 8 }]} onPress={() => navigation.navigate("ManualAdd", { roomName: selectedRoom })} activeOpacity={0.9}>
-            <Ionicons name="add" size={22} color={CREAM} style={{ marginRight: 8 }} />
-            <Text style={styles.addText}>Add Item</Text>
-          </TouchableOpacity>
 
           {/* Edit Item Options Modal */}
           <Modal visible={showItemEditModal} transparent animationType="fade">
@@ -428,7 +440,7 @@ export default function KitchenCollection({ navigation, route }) {
     <SafeAreaView style={styles.safeRoot} edges={["top", "left", "right", "bottom"]}>
       <View style={styles.roomListRoot}>
         <View style={styles.invHeaderRow}>
-          <TouchableOpacity style={styles.backPill} onPress={() => navigation.navigate("MainNavBar")} activeOpacity={0.9}>
+          <TouchableOpacity style={styles.backPill} onPress={() => navigation.goBack()} activeOpacity={0.9}>
             <Ionicons name="chevron-back" size={18} color={CREAM} style={{ marginRight: 4 }} />
             <Text style={styles.backPillText}>Back</Text>
           </TouchableOpacity>
@@ -464,7 +476,50 @@ const styles = StyleSheet.create({
   invHeaderRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   backPill: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, backgroundColor: OLIVE, borderRadius: 8 },
   backPillText: { color: CREAM, fontSize: 14, fontWeight: "600" },
-  kitchenTitle: { fontSize: 24, fontWeight: "700", color: INK, marginBottom: 12, marginTop: 4 },
+  titleAddRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  kitchenTitle: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: "700",
+    color: INK,
+    paddingRight: 8,
+  },
+  addItemPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: OLIVE,
+    borderRadius: 12,
+    paddingLeft: 14,
+    paddingRight: 10,
+    paddingVertical: 10,
+    flexShrink: 0,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
+  },
+  addItemPillText: {
+    color: CREAM,
+    fontSize: 15,
+    fontWeight: "700",
+    marginRight: 6,
+  },
+  addItemPlusWrap: {
+    width: 20,
+    height: 20,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   roomSearchInput: { width: "100%", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "rgba(255,255,255,0.65)", borderWidth: 1, borderColor: "rgba(93,95,74,0.2)", borderRadius: 10, fontSize: 15, color: INK, marginBottom: 12 },
   sortPillsScroll: { maxHeight: 40, marginBottom: 8 },
   sortPillsContent: { flexDirection: "row", alignItems: "center", paddingRight: 8 },
@@ -483,15 +538,13 @@ const styles = StyleSheet.create({
   categoryChipTextSelected: { fontWeight: "700", color: OLIVE },
   centerContent: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 24 },
   emptyText: { color: `${INK}99`, fontSize: 16, textAlign: "center", paddingHorizontal: 20 },
-  gridContainer: { paddingBottom: 120, paddingTop: 8 },
+  gridContainer: { paddingTop: 8 },
   gridRow: { justifyContent: "space-between", marginBottom: 12 },
   gridCell: { width: "31%", maxWidth: "31%" },
   gridCard: { aspectRatio: 1, borderRadius: 14, padding: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(93,95,74,0.1)" },
   gridIcon: { width: 44, height: 44, resizeMode: "contain", marginBottom: 6 },
   gridItemName: { fontSize: 11, fontWeight: "600", color: INK, textAlign: "center", width: "100%" },
   expiringBadge: { marginTop: 4, fontSize: 9, fontWeight: "700", color: "#d97706" },
-  addButton: { position: "absolute", left: 24, right: 24, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: OLIVE, paddingVertical: 14, borderRadius: 12 },
-  addText: { color: CREAM, fontSize: 16, fontWeight: "700" },
   listContentNew: { paddingBottom: 24, paddingTop: 8 },
   roomCardNew: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 16, paddingHorizontal: 16, marginBottom: 10, backgroundColor: "rgba(255,255,255,0.72)", borderWidth: 1, borderColor: "rgba(93,95,74,0.2)", borderRadius: 12 },
   roomCardContent: { flex: 1 },

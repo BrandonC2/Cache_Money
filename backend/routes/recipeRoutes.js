@@ -3,18 +3,51 @@ const mongoose = require("mongoose");
 const router = express.Router();
 const Recipe = require("../models/Recipe");
 const MealPlan = require("../models/MealPlan");
+const User = require("../models/User");
+const auth = require("../middleware/auth");
 const uploadCloud = require('../middleware/cloudinaryConfig');
 const { optionalSingleImage } = require('../middleware/cloudinaryConfig');
+
+function utcDayBounds(now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
+}
+
+function recipeDailyLimit() {
+  const n = parseInt(process.env.RECIPE_DAILY_LIMIT ?? "10", 10);
+  return Number.isFinite(n) && n >= 1 ? n : 10;
+}
 
 // ❌ DELETE THESE LINES (They use the old local system)
 // const uploadRecipe = createUpload(uploadDirs.recipes, "recipe"); 
 
 // ===================
-// Create Recipe
+// Create Recipe (authenticated — daily limit per user)
 // ===================
-router.post("/", uploadCloud.single("image"), async (req, res) => {
+router.post("/", auth, uploadCloud.single("image"), async (req, res) => {
   try {
-    const { name, description, foodGroup, createdBy, ingredients, instructions } = req.body;
+    const uid = req.userId;
+    const user = await User.findById(uid).select("isAdmin").lean();
+    const dailyLimit = recipeDailyLimit();
+
+    if (!user?.isAdmin) {
+      const { start, end } = utcDayBounds();
+      const createdToday = await Recipe.countDocuments({
+        createdAt: { $gte: start, $lt: end },
+        userId: uid,
+      });
+      if (createdToday >= dailyLimit) {
+        return res.status(429).json({
+          message: `You can create up to ${dailyLimit} recipes per day. Try again tomorrow.`,
+          limit: dailyLimit,
+          resetAt: end.toISOString(),
+        });
+      }
+    }
+
+    const { name, description, foodGroup, ingredients, instructions } = req.body;
     
     const parsedIngredients = ingredients
       ? JSON.parse(ingredients)
@@ -34,7 +67,7 @@ router.post("/", uploadCloud.single("image"), async (req, res) => {
       name,
       description,
       foodGroup,
-      createdBy,
+      userId: uid,
       ingredients: parsedIngredients,
       instructions: parsedInstructions.map((step) => ({
         description: step.description ?? "",

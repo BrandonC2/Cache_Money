@@ -7,6 +7,95 @@ const auth = require("../middleware/auth");
 
 router.use(auth);
 
+// GET /api/grocerylist — all grocery items for the current user
+router.get("/", async (req, res) => {
+  try {
+    const items = await GroceryItem.find({ userId: req.userId })
+      .sort({ updatedAt: -1 })
+      .limit(200)
+      .lean();
+    res.json(items);
+  } catch (err) {
+    console.error("Grocery list GET error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// POST /api/grocerylist — add item (merges quantity if same pending name)
+router.post("/", async (req, res) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+    const quantity = Math.max(1, Number(req.body?.quantity) || 1);
+    const unit = String(req.body?.unit || "").trim();
+
+    let item = await GroceryItem.findOne({
+      userId: req.userId,
+      name,
+      status: "pending",
+    });
+    if (item) {
+      item.quantity += quantity;
+      await item.save();
+      return res.json(item);
+    }
+
+    item = await GroceryItem.create({
+      userId: req.userId,
+      name,
+      quantity,
+      unit,
+      status: "pending",
+    });
+    res.status(201).json(item);
+  } catch (err) {
+    console.error("Grocery list POST error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// PATCH /api/grocerylist/:id — toggle pending / bought (checked in UI)
+router.patch("/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (status !== "pending" && status !== "bought") {
+      return res.status(400).json({ message: "status must be pending or bought" });
+    }
+    const item = await GroceryItem.findOne({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    item.status = status;
+    await item.save();
+    res.json(item);
+  } catch (err) {
+    console.error("Grocery list PATCH error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// DELETE /api/grocerylist/:id
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await GroceryItem.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+    if (!deleted) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Grocery list DELETE error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // GET /api/grocerylist/check/:recipeId
 // Checks if the user has enough ingredients in inventory for a specific recipe
 router.get("/check/:recipeId", async (req, res) => {

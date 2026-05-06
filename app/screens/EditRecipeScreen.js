@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   View, TextInput, Button, Image, Alert, StyleSheet, 
   ScrollView, Text, TouchableOpacity, ActivityIndicator 
@@ -28,6 +28,7 @@ function recipeDocumentId(recipeLike) {
 
 export default function EditRecipeScreen({ route, navigation }) {
   const { recipe } = route.params;
+  const deleteInFlight = useRef(false);
 
   // --- State ---
   const [name, setName] = useState(recipe.name);
@@ -111,11 +112,18 @@ export default function EditRecipeScreen({ route, navigation }) {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            if (deleteInFlight.current) return;
+            deleteInFlight.current = true;
             try {
               setLoading(true);
               await apiClient.delete(`/recipes/${id}`);
-              Alert.alert("Removed", "Recipe was deleted.");
-              navigation.navigate("MainNavBar", { screen: "Recipe" });
+              Alert.alert("Removed", "Recipe was deleted.", [
+                {
+                  text: "OK",
+                  onPress: () =>
+                    navigation.navigate("MainNavBar", { screen: "Recipe" }),
+                },
+              ]);
             } catch (err) {
               const msg =
                 err.response?.data?.message ||
@@ -125,6 +133,7 @@ export default function EditRecipeScreen({ route, navigation }) {
               Alert.alert("Error", String(msg));
             } finally {
               setLoading(false);
+              deleteInFlight.current = false;
             }
           },
         },

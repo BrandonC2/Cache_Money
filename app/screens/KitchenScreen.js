@@ -57,7 +57,15 @@ export default function KitchenRoom({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('KitchenCollection')} style={{ marginBottom: 10 }}>
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate("MainNavBar", {
+            screen: "Pantry",
+            params: { screen: "KitchenCollection", params: {} },
+          })
+        }
+        style={{ marginBottom: 10 }}
+      >
         <Text style={{ fontSize: 25, color: "#007bff" }}>← Return</Text>
       </TouchableOpacity>
 

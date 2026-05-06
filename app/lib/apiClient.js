@@ -1,6 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE from '../config/api';
+import {
+  clearStoredCredentials,
+  notifySessionUnauthorized,
+} from './authSession';
 
 // Ensure frontend requests include the '/api' prefix to match backend mounts.
 // This avoids 404s when backend routes are mounted under /api/* (e.g. /api/receipts).
@@ -19,5 +23,30 @@ client.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+function shouldIgnoreUnauthorizedLogout(url) {
+  const path = String(url || '');
+  return (
+    path.includes('/users/login') ||
+    path.includes('/users/register')
+  );
+}
+
+client.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    if (
+      status === 401 &&
+      !shouldIgnoreUnauthorizedLogout(url) &&
+      !(error.config && error.config.skipAuthLogout === true)
+    ) {
+      await clearStoredCredentials();
+      notifySessionUnauthorized();
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default client;

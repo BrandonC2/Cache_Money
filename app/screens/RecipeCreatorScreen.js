@@ -135,15 +135,22 @@ const submitRecipe = async () => {
     }
 
     // Use your IP address here if apiClient isn't updated!
-    await apiClient.post("/recipes", form, { 
-      headers: { "Content-Type": "multipart/form-data" } 
+    await apiClient.post("/recipes", form, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
 
     Alert.alert("Success", "Recipe saved to MongoDB!");
     navigation.goBack();
   } catch (err) {
     console.error("Upload Error:", err);
-    Alert.alert("Error", "Failed to save recipe. Check console for Network Error.");
+    const status = err.response?.status;
+    const msg =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      "Failed to save recipe.";
+    const title = status === 429 ? "Daily limit" : status === 401 ? "Sign in required" : "Error";
+    Alert.alert(title, String(msg));
   }
 };
 

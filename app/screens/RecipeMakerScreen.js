@@ -1,4 +1,4 @@
-import React, { SafeAreaView, useState, useCallback } from "react";
+import React, { SafeAreaView, useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,10 @@ import apiClient from "../lib/apiClient";
 export default function RecipeMakerScreen() {
   const navigation = useNavigation();
   const [recipes, setRecipes] = useState([]);
+  const recipesRef = useRef([]);
+  useEffect(() => {
+    recipesRef.current = recipes;
+  }, [recipes]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -27,15 +31,13 @@ const loadRecipes = async () => {
   setError(null);
   try {
     const res = await apiClient.get("/recipes");
-    
-    // NEW CLOUDINARY LOGIC
-    const fullData = res.data.map((r) => ({
+    const rows = Array.isArray(res.data) ? res.data : [];
+
+    const fullData = rows.map((r) => ({
       ...r,
-      // Since 'image' is now a full URL from Cloudinary, use it directly
-      fullImageUrl: r.image || null, 
+      fullImageUrl: r.image || null,
     }));
 
-    // LOG THIS: Copy this exact output from your console and paste it into Chrome
     if (fullData.length > 0) {
       console.log("🔗 TEST THIS LINK:", fullData[0].fullImageUrl);
     }
@@ -43,7 +45,11 @@ const loadRecipes = async () => {
     setRecipes(fullData);
   } catch (err) {
     console.error("Failed to load recipes:", err);
-    setError("Unable to connect to the server.");
+    // Returning from delete navigates here and triggers refresh; only show the
+    // full-screen error when we have no cached rows (first load / empty list).
+    if (recipesRef.current.length === 0) {
+      setError("Unable to connect to the server.");
+    }
   } finally {
     setRefreshing(false);
     setLoading(false);

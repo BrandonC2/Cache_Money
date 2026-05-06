@@ -7,7 +7,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
 import apiClient from './app/lib/apiClient';
+import {
+  clearStoredCredentials,
+  registerUnauthorizedHandler,
+} from './app/lib/authSession';
 import 'react-native-reanimated';
 
 //First Screens
@@ -40,6 +45,17 @@ import GroceryList from './app/screens/GroceryList';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const PantryStack = createNativeStackNavigator();
+
+/** Pantry tab = Kitchen home + room inventory so the bottom tab bar stays visible in kitchens. */
+function PantryStackNavigator() {
+  return (
+    <PantryStack.Navigator screenOptions={{ headerShown: false }}>
+      <PantryStack.Screen name="KitchenHome" component={KitchenHomepage} />
+      <PantryStack.Screen name="KitchenCollection" component={KitchenCollection} />
+    </PantryStack.Navigator>
+  );
+}
 
 function NavigationBar() {
   return (
@@ -67,7 +83,7 @@ function NavigationBar() {
     >
       <Tab.Screen
         name="Pantry"
-        component={KitchenHomepage}
+        component={PantryStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
             <View>
@@ -170,29 +186,55 @@ export default function App() {
   const navigationRef = React.useRef();
 
   useEffect(() => {
+    registerUnauthorizedHandler(() => {
+      setIsAuthenticated(false);
+      navigationRef.current?.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
+    });
+
     const checkAuthStatus = async () => {
       try {
         const token = await AsyncStorage.getItem('authToken');
-        if (token) {
-          try {
-            const res = await apiClient.get('/users/profile');
-            const { username, profile, profilePicture } = res.data || {};
-            const picUrl = profile || profilePicture;
-            if (username) await AsyncStorage.setItem('username', username);
-            if (picUrl) await AsyncStorage.setItem('profilePicture', picUrl);
-          } catch (e) {
-            console.log('Profile sync skipped:', e?.message);
-          }
+        if (!token) {
+          setIsAuthenticated(false);
+          return;
+        }
+
+        try {
+          const res = await apiClient.get('/users/profile', {
+            skipAuthLogout: true,
+          });
+          const { username, profile, profilePicture } = res.data || {};
+          const picUrl = profile || profilePicture;
+          if (username) await AsyncStorage.setItem('username', username);
+          if (picUrl) await AsyncStorage.setItem('profilePicture', picUrl);
           setIsAuthenticated(true);
-        } else {
+        } catch (e) {
+          const status = e.response?.status;
+          const invalidAuth =
+            status === 401 ||
+            status === 403 ||
+            e.response?.data?.message === 'Invalid token' ||
+            e.response?.data?.message === 'Invalid token payload';
+
+          if (invalidAuth) {
+            await clearStoredCredentials();
+          }
+
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
     };
+
     checkAuthStatus();
   }, []);
 
@@ -208,7 +250,6 @@ export default function App() {
       <Stack.Screen name = "Login" component ={LoginScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "Registration" component ={RegistrationScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "MainNavBar" component ={NavigationBar} options={{ headerShown: false }}/>
-      <Stack.Screen name = "KitchenCollection" component ={KitchenCollection} options={{ headerShown: false }}/>
       <Stack.Screen name = "KitchenHome" component ={KitchenHomepage} options={{ headerShown: false }}/>
       <Stack.Screen name = "ManualAdd" component ={AddScreen} options={{ headerShown: false }}/>
       <Stack.Screen name = "About" component ={AboutScreen} options={{ headerShown: false }}/>
