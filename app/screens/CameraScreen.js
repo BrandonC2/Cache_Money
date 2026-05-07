@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../lib/apiClient";
 
 /**
  * CameraScreen: Capture receipt photos
@@ -63,13 +64,23 @@ export default function CameraScreen({ navigation }) {
         return;
       }
 
-      // NOTE: Real OCR integration is pending. Instead of showing a mock
-      // auto-generated list, we pass the captured photo URI to the review
-      // screen and leave rawText empty so the user can enter or trigger OCR
-      // from the backend in a future integration.
+      const form = new FormData();
+      form.append("image", {
+        uri: photo.uri,
+        name: `receipt-${Date.now()}.jpg`,
+        type: "image/jpeg",
+      });
+
+      const response = await apiClient.post("/receipts/scan", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const data = response.data || {};
+
       navigation.navigate("ReceiptReview", {
-        photoUri: photo.uri,
-        rawText: "",
+        photoUri: data.imageUri || photo.uri,
+        rawText: data.rawText || "",
+        receiptId: data.receiptId || null,
+        items: Array.isArray(data.items) ? data.items : [],
       });
     } catch (err) {
       console.error("Camera error:", err);

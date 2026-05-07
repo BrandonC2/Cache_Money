@@ -2,9 +2,75 @@ const express = require('express');
 const router = express.Router();
 const Receipt = require('../models/Receipt');
 const InventoryItem = require('../models/InventoryItem');
-//const auth = require('../middleware/auth');
-const fs = require('fs');
-const path = require('path');
+const auth = require('../middleware/auth');
+const uploadCloud = require('../middleware/cloudinaryConfig');
+
+router.use(auth);
+
+function tabScannerEndpoint() {
+  return process.env.TABSCANNER_API_URL || 'https://api.tabscanner.com/api/2/process';
+}
+
+function tabScannerApiKey() {
+  return process.env.TABSCANNER_API_KEY || '';
+}
+
+function extractTextCandidates(payload) {
+  const sources = [];
+  if (!payload || typeof payload !== 'object') return sources;
+  if (typeof payload.text === 'string') sources.push(payload.text);
+  if (typeof payload.rawText === 'string') sources.push(payload.rawText);
+  if (typeof payload.ocrText === 'string') sources.push(payload.ocrText);
+  if (Array.isArray(payload.lines)) {
+    sources.push(payload.lines.map((x) => (typeof x === 'string' ? x : x?.text || '')).join('\n'));
+  }
+  if (Array.isArray(payload.items)) {
+    sources.push(payload.items.map((x) => x?.text || x?.name || '').join('\n'));
+  }
+  if (payload.result && typeof payload.result === 'object') {
+    sources.push(...extractTextCandidates(payload.result));
+  }
+  if (payload.data && typeof payload.data === 'object') {
+    sources.push(...extractTextCandidates(payload.data));
+  }
+  if (Array.isArray(payload.pages)) {
+    for (const p of payload.pages) sources.push(...extractTextCandidates(p));
+  }
+  return sources.filter(Boolean);
+}
+
+function extractItemsCandidates(payload) {
+  if (!payload || typeof payload !== 'object') return [];
+  const candidates = [];
+  if (Array.isArray(payload.items)) candidates.push(...payload.items);
+  if (Array.isArray(payload.line_items)) candidates.push(...payload.line_items);
+  if (Array.isArray(payload.products)) candidates.push(...payload.products);
+  if (payload.result && typeof payload.result === 'object') {
+    candidates.push(...extractItemsCandidates(payload.result));
+  }
+  if (payload.data && typeof payload.data === 'object') {
+    candidates.push(...extractItemsCandidates(payload.data));
+  }
+  return candidates;
+}
+
+function normalizeTabScannerItems(payload) {
+  const rawItems = extractItemsCandidates(payload);
+  const mapped = rawItems
+    .map((it) => {
+      const name = String(it?.name || it?.description || it?.text || '').trim();
+      if (!name) return null;
+      return {
+        name: cleanItemName(name),
+        quantity: Math.max(1, Number(it?.quantity || it?.qty || 1) || 1),
+        price: Number(it?.price || it?.amount || 0) || undefined,
+        originalText: String(it?.text || it?.description || name),
+        category: 'Other',
+      };
+    })
+    .filter(Boolean);
+  return mapped;
+}
 
 // Helper: Clean item names (remove brand prefixes like "hz", "del", "campbells", etc.)
 const cleanItemName = (text) => {
@@ -158,6 +224,81 @@ router.post('/upload', async (req, res) => {
   } catch (err) {
     console.error('Receipt upload error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/receipts/scan
+// Upload image, send to TabScanner OCR, and return parsed items
+router.post('/scan', uploadCloud.single('image'), async (req, res) => {
+  try {
+    if (!req.file?.path) {
+      return res.status(400).json({ message: 'Receipt image file is required' });
+    }
+    const apiKey = tabScannerApiKey();
+    if (!apiKey) {
+      return res.status(500).json({ message: 'TABSCANNER_API_KEY is not configured on the server' });
+    }
+
+    const endpoint = tabScannerEndpoint();
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'X-API-Key': apiKey,
+      },
+      body: JSON.stringify({
+        image_url: req.file.path,
+        imageUrl: req.file.path,
+        document: { url: req.file.path },
+      }),
+    });
+
+    const text = await response.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
+    }
+
+    if (!response.ok) {
+      return res.status(502).json({
+        message: 'TabScanner request failed',
+        providerStatus: response.status,
+        providerData: data,
+      });
+    }
+
+    const textCandidates = extractTextCandidates(data);
+    const rawText = textCandidates[0] || '';
+    let items = normalizeTabScannerItems(data);
+    if (!items.length) {
+      items = categorizeItems(parseReceiptText(rawText));
+    } else {
+      items = categorizeItems(items);
+    }
+
+    const receipt = new Receipt({
+      userId: req.userId,
+      imageUri: req.file.path,
+      rawText,
+      items,
+      status: 'pending',
+    });
+    await receipt.save();
+
+    res.status(201).json({
+      ok: true,
+      receiptId: receipt._id,
+      imageUri: req.file.path,
+      rawText,
+      items: receipt.items,
+      provider: 'tabscanner',
+    });
+  } catch (err) {
+    console.error('Receipt scan error:', err);
+    res.status(500).json({ message: 'Failed to scan receipt', error: err.message });
   }
 });
 

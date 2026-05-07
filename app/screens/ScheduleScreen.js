@@ -115,6 +115,28 @@ export default function ScheduleView({ navigation, route }) {
     }
   };
 
+  const handleDeleteMealPlan = (planId, recipeName) => {
+    Alert.alert(
+      "Delete meal",
+      `Remove "${recipeName}" from the schedule?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/mealplans/${planId}`);
+              await fetchData();
+            } catch (err) {
+              Alert.alert("Error", err.response?.data?.message || "Could not delete meal plan.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Calendar
@@ -148,11 +170,19 @@ export default function ScheduleView({ navigation, route }) {
                 <Text style={styles.mealName}>{item.recipeName}</Text>
                 <Text style={styles.statusText}>Status: {item.status}</Text>
               </View>
-              {item.status === 'planned' && (
-                <TouchableOpacity style={styles.cookButton} onPress={() => handleMarkAsCooked(item._id)}>
-                  <Text style={styles.cookButtonText}>Cooked</Text>
+              <View style={styles.actionsCol}>
+                {item.status === 'planned' && (
+                  <TouchableOpacity style={styles.cookButton} onPress={() => handleMarkAsCooked(item._id)}>
+                    <Text style={styles.cookButtonText}>Cooked</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteMealPlan(item._id, item.recipeName)}
+                >
+                  <Text style={styles.deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
-              )}
+              </View>
             </View>
           )}
         />
@@ -179,6 +209,9 @@ const styles = StyleSheet.create({
   statusText: { color: '#666', fontSize: 12 },
   cookButton: { backgroundColor: '#4D693A', padding: 8, borderRadius: 5 },
   cookButtonText: { color: '#fff', fontWeight: 'bold' },
+  actionsCol: { alignItems: 'flex-end' },
+  deleteButton: { marginTop: 6, paddingVertical: 4, paddingHorizontal: 6 },
+  deleteButtonText: { color: '#B42318', fontWeight: '600', fontSize: 12 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 20 },
   expiryBorder: {
     borderLeftWidth: 5,

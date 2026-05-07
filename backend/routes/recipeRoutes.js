@@ -88,7 +88,7 @@ router.post("/", auth, uploadCloud.single("image"), async (req, res) => {
 // Update Recipe
 // ===================
 // ✅ CHANGE: Use uploadCloud.single("image") here too!
-router.put("/:id", optionalSingleImage("image"), async (req, res) => {
+router.put("/:id", auth, optionalSingleImage("image"), async (req, res) => {
   try {
     const { name, description, ingredients, foodGroup, instructions } = req.body;
 
@@ -133,7 +133,7 @@ router.put("/:id", optionalSingleImage("image"), async (req, res) => {
 // ===================
 // Delete Recipe
 // ===================
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
     const rawId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(rawId)) {
@@ -156,7 +156,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
     if (!recipe) {

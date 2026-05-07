@@ -167,4 +167,23 @@ router.patch("/complete/:id", async (req, res) => {
   }
 });
 
+// DELETE /api/mealplans/:id - Delete meal plan (owner only)
+router.delete("/:id", async (req, res) => {
+  try {
+    const plan = await MealPlan.findById(req.params.id);
+    if (!plan) {
+      return res.status(404).json({ message: "Meal plan not found" });
+    }
+    if (plan.userId.toString() !== req.userId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await MealPlan.findByIdAndDelete(req.params.id);
+    res.json({ message: "Meal plan deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting meal plan:", err);
+    res.status(500).json({ message: "Could not delete meal plan" });
+  }
+});
+
 module.exports = router;

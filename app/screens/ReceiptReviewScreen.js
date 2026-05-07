@@ -29,7 +29,7 @@ import CustomBackButton from "../components/CustomBackButton";
  * - Clicking save uploads to backend and imports to inventory
  */
 export default function ReceiptReviewScreen({ route, navigation }) {
-  const { photoUri, rawText } = route.params || {};
+  const { photoUri, rawText, receiptId: routeReceiptId, items: routeItems } = route.params || {};
   const [roomNameState, setRoomNameState] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +86,13 @@ export default function ReceiptReviewScreen({ route, navigation }) {
 
   // Upload receipt to backend
   useEffect(() => {
+    if (routeReceiptId && Array.isArray(routeItems)) {
+      setReceiptId(routeReceiptId);
+      setItems(routeItems);
+      setLoading(false);
+      return;
+    }
+
     const uploadReceipt = async () => {
       try {
         setLoading(true);
