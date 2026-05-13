@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -17,10 +17,6 @@ export default function RegistrationScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    console.log('API_BASE (Registration):', API_BASE);
-  }, []);
 
   const handleSignUp = async () => {
     setError("");

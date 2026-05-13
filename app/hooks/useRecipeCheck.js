@@ -61,5 +61,25 @@ export const useRecipeCheck = (recipeId) => {
     }
   };
 
-  return { comparison, loading, checkAvailability, addMissingToGrocery };
+  /** Deducts recipe ingredients from pantry (server uses same rules as marking a planned meal cooked). */
+  const cookRecipe = async () => {
+    if (!recipeId) {
+      return { ok: false, message: "Missing recipe id." };
+    }
+    try {
+      await apiClient.post(`/grocerylist/cook/${recipeId}`);
+      await checkAvailability();
+      return { ok: true };
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Could not update pantry.";
+      await checkAvailability();
+      return { ok: false, message: String(msg) };
+    }
+  };
+
+  return { comparison, loading, checkAvailability, addMissingToGrocery, cookRecipe };
 };

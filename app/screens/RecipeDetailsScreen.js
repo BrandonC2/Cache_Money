@@ -1,5 +1,5 @@
-import { useFocusEffect } from "@react-navigation/native";
-import React, { useState, useCallback, useEffect, useRef } from "react"; // Added useEffect here
+import { useFocusEffect, CommonActions } from "@react-navigation/native";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import apiClient from "../lib/apiClient";
 import { useRecipeCheck } from '../hooks/useRecipeCheck';
@@ -37,7 +37,18 @@ export default function RecipeDetailsScreen({ route, navigation }) {
     : recipeDocumentId(recipe, route.params?.recipeId) ||
       toHexObjectIdString(route.params?.recipeId);
   
-  const { comparison, loading, checkAvailability, addMissingToGrocery } = useRecipeCheck(recipeId);
+  const { comparison, loading, checkAvailability, addMissingToGrocery, cookRecipe } =
+    useRecipeCheck(recipeId);
+  const [actionBusy, setActionBusy] = useState(false);
+
+  /** Stable id from route only — avoids refetch loops when merged `recipe` state updates after GET. */
+  const focusFetchId = useMemo(
+    () =>
+      toHexObjectIdString(route.params?.recipeId) ||
+      recipeDocumentId(route.params?.recipe, route.params?.recipeId) ||
+      "",
+    [route.params?.recipeId, route.params?.recipe]
+  );
 
   useEffect(() => {
     checkAvailability();
@@ -46,11 +57,9 @@ export default function RecipeDetailsScreen({ route, navigation }) {
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      if (recipeRemoved) return;
-      const rid =
-        recipeDocumentId(recipe, route.params?.recipeId) ||
-        toHexObjectIdString(route.params?.recipeId);
-      if (!rid) return;
+      if (recipeRemoved) return undefined;
+      const rid = focusFetchId;
+      if (!rid) return undefined;
 
       const fetchRecipe = async () => {
         try {
@@ -68,8 +77,10 @@ export default function RecipeDetailsScreen({ route, navigation }) {
         }
       };
       fetchRecipe();
-      return () => { isActive = false; };
-    }, [recipe, route.params?.recipeId, recipeRemoved])
+      return () => {
+        isActive = false;
+      };
+    }, [recipeRemoved, focusFetchId])
   );
 
   const handleDeleteRecipe = () => {
@@ -96,7 +107,26 @@ export default function RecipeDetailsScreen({ route, navigation }) {
                 {
                   text: "OK",
                   onPress: () =>
-                    navigation.navigate("MainNavBar", { screen: "Recipe" }),
+                    navigation.dispatch(
+                      CommonActions.reset({
+                        index: 0,
+                        routes: [
+                          {
+                            name: "MainNavBar",
+                            state: {
+                              routes: [
+                                { name: "Pantry" },
+                                { name: "Schedule" },
+                                { name: "Camera" },
+                                { name: "Grocery" },
+                                { name: "Recipe" },
+                              ],
+                              index: 4,
+                            },
+                          },
+                        ],
+                      })
+                    ),
                 },
               ]);
             } catch (err) {
@@ -115,11 +145,19 @@ export default function RecipeDetailsScreen({ route, navigation }) {
     );
   };
 
-  // Helper to handle the "Action" button
   const handleAction = async () => {
     if (comparison?.canMake) {
-      console.log("Creating dish...");
-      // Add logic to navigate to a 'Cook' screen or deduct inventory
+      try {
+        setActionBusy(true);
+        const result = await cookRecipe();
+        if (result.ok) {
+          Alert.alert("Enjoy!", "Ingredients were deducted from your pantry.");
+        } else {
+          Alert.alert("Could not cook", result.message || "Try again.");
+        }
+      } finally {
+        setActionBusy(false);
+      }
     } else {
       await addMissingToGrocery();
     }
@@ -134,7 +172,7 @@ export default function RecipeDetailsScreen({ route, navigation }) {
       
       {/* Dynamic Action Button */}
       <View style={styles.actionSection}>
-        {loading ? (
+        {loading || actionBusy ? (
           <ActivityIndicator color="#000" />
         ) : (
           <TouchableOpacity 

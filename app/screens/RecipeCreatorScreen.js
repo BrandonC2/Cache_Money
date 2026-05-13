@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   ImageBackground,
   StyleSheet,
@@ -15,8 +15,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import apiClient from "../lib/apiClient";
@@ -44,8 +44,29 @@ export default function RecipeCreatorScreen({ navigation }) {
   const [ingredientEditingIndex, setIngredientEditingIndex] = useState(null);
   const [instructionEditingIndex, setInstructionEditingIndex] = useState(null);
 
+  const [quota, setQuota] = useState(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
+
   const [currentItem, setCurrentItem] = useState({ name: "", foodGroup: "", quantity: "", unit: "" });
   const [currentInstruction, setCurrentInstruction] = useState({ description: "", imageUri: null });
+
+  const loadQuota = useCallback(async () => {
+    try {
+      setQuotaLoading(true);
+      const { data } = await apiClient.get("/recipes/daily-quota");
+      setQuota(data);
+    } catch {
+      setQuota(null);
+    } finally {
+      setQuotaLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadQuota();
+    }, [loadQuota])
+  );
 
   const pickImage = async (type) => {
     const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 0.6 });
@@ -98,14 +119,33 @@ export default function RecipeCreatorScreen({ navigation }) {
   };
 
 const submitRecipe = async () => {
+  if (quota?.limitReached && !quota?.isAdmin) {
+    let body = `You have used all ${quota.limit} recipe creations for this UTC day.`;
+    if (quota.resetAt) {
+      try {
+        body += ` You can create more after ${new Date(quota.resetAt).toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}.`;
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    Alert.alert("Daily recipe limit reached", body);
+    return;
+  }
   try {
-    const userId = await AsyncStorage.getItem("userId");
+    const title = recipeName.trim();
+    if (!title) {
+      Alert.alert("Error", "Recipe title is required.");
+      return;
+    }
+
     const form = new FormData();
     
-    form.append("name", recipeName);
+    form.append("name", title);
     form.append("description", recipeDesc);
     form.append("foodGroup", recipeGroup || "Other");
-    form.append("createdBy", userId);
 
     // Ensure ingredients have quantity as Number and match Recipe schema
     const formattedIngredients = ingredients.map((ing) => ({
@@ -134,22 +174,40 @@ const submitRecipe = async () => {
       });
     }
 
-    // Use your IP address here if apiClient isn't updated!
-    await apiClient.post("/recipes", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Let axios set multipart boundary; manual Content-Type breaks uploads on RN.
+    await apiClient.post("/recipes", form);
 
+    await loadQuota();
     Alert.alert("Success", "Recipe saved to MongoDB!");
     navigation.goBack();
   } catch (err) {
     console.error("Upload Error:", err);
     const status = err.response?.status;
+    const data = err.response?.data || {};
     const msg =
-      err.response?.data?.message ||
-      err.response?.data?.error ||
+      data.message ||
+      data.error ||
       err.message ||
       "Failed to save recipe.";
-    const title = status === 429 ? "Daily limit" : status === 401 ? "Sign in required" : "Error";
+
+    if (status === 429) {
+      let body = String(msg);
+      if (data.resetAt) {
+        try {
+          const when = new Date(data.resetAt).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          });
+          body += `\n\nYou can add more recipes after: ${when}.`;
+        } catch (_) {
+          /* ignore bad resetAt */
+        }
+      }
+      Alert.alert("Daily recipe limit reached", body.trim());
+      return;
+    }
+
+    const title = status === 401 ? "Sign in required" : "Error";
     Alert.alert(title, String(msg));
   }
 };
@@ -161,10 +219,39 @@ const submitRecipe = async () => {
         <View style={styles.headerBar}>
           <CustomBackButton onPress={() => navigation.goBack()} />
           <Text style={styles.headerTitle}>New Recipe</Text>
-          <TouchableOpacity onPress={submitRecipe}>
-            <Text style={styles.saveHeaderBtn}>Save</Text>
+          <TouchableOpacity
+            onPress={submitRecipe}
+            disabled={Boolean(quota?.limitReached && !quota?.isAdmin) || quotaLoading}
+          >
+            <Text
+              style={[
+                styles.saveHeaderBtn,
+                (quota?.limitReached && !quota?.isAdmin) || quotaLoading ? styles.saveHeaderBtnDisabled : null,
+              ]}
+            >
+              Save
+            </Text>
           </TouchableOpacity>
         </View>
+
+        {(quotaLoading || quota) && (
+          <View
+            style={[
+              styles.quotaBar,
+              quota?.limitReached && !quota?.isAdmin && styles.quotaBarWarn,
+            ]}
+          >
+            <Text style={styles.quotaBarText}>
+              {quotaLoading
+                ? "Checking today's recipe allowance…"
+                : quota?.isAdmin
+                  ? "Admin account: no daily recipe creation limit."
+                  : quota?.limitReached
+                    ? `Daily limit reached: ${quota.usedToday} of ${quota.limit} recipes created today (UTC). Save is disabled until after reset.`
+                    : `Today (UTC): ${quota.usedToday} of ${quota.limit} recipe creations used — ${quota.remaining} remaining.`}
+            </Text>
+          </View>
+        )}
 
         <FlatList
           data={[{ key: "form" }]}
@@ -343,6 +430,21 @@ const styles = StyleSheet.create({
   headerBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#2E4221' },
   saveHeaderBtn: { color: '#4D693A', fontWeight: 'bold', fontSize: 16 },
+  saveHeaderBtnDisabled: { opacity: 0.35 },
+  quotaBar: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "rgba(232, 245, 233, 0.95)",
+    borderWidth: 1,
+    borderColor: "#c8e6c9",
+  },
+  quotaBarWarn: {
+    backgroundColor: "rgba(255, 243, 224, 0.98)",
+    borderColor: "#ffcc80",
+  },
+  quotaBarText: { fontSize: 13, color: "#333", lineHeight: 18 },
   mainTitleInput: { fontSize: 28, fontWeight: 'bold', color: '#2E4221', marginBottom: 10 },
   selector: { backgroundColor: '#fff', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#DDD', marginBottom: 15 },
   mainImageContainer: { height: 180, backgroundColor: '#E0E0E0', borderRadius: 15, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },

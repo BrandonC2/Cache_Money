@@ -4,6 +4,7 @@ const Recipe = require("../models/Recipe");
 const InventoryItem = require("../models/InventoryItem");
 const GroceryItem = require("../models/GroceryItem");
 const auth = require("../middleware/auth");
+const { consumeRecipeInventory } = require("../services/recipeInventoryConsume");
 
 router.use(auth);
 
@@ -134,6 +135,29 @@ router.get("/check/:recipeId", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/grocerylist/cook/:recipeId — deduct recipe ingredients from pantry (same rules as meal complete)
+router.post("/cook/:recipeId", async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.recipeId);
+    if (!recipe) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+
+    const result = await consumeRecipeInventory(req.userId, recipe.ingredients);
+    if (!result.ok) {
+      return res.status(400).json({
+        message: result.message,
+        missing: result.missing,
+      });
+    }
+
+    res.json({ message: "Inventory updated. Enjoy your meal!", ok: true });
+  } catch (err) {
+    console.error("POST /grocerylist/cook error:", err);
+    res.status(500).json({ message: "Could not update inventory", error: err.message });
   }
 });
 

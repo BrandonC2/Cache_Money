@@ -4,10 +4,9 @@ const MealPlan = require("../models/MealPlan");
 const Recipe = require("../models/Recipe");
 const InventoryItem = require("../models/InventoryItem");
 const auth = require("../middleware/auth");
+const { consumeRecipeInventory } = require("../services/recipeInventoryConsume");
 
 router.use(auth);
-
-const normalize = (value) => String(value || "").trim().toLowerCase();
 
 // GET /api/mealplans/inventory - Get all inventory items for the user (for meal prep check)
 router.get("/inventory", async (req, res) => {
@@ -84,78 +83,12 @@ router.patch("/complete/:id", async (req, res) => {
       return res.json(plan);
     }
 
-    // Validate and allocate ingredients from inventory before completing.
-    const inventory = await InventoryItem.find({ userId: req.userId });
-    const requirements = recipe.ingredients
-      .filter((ing) => (Number(ing.quantity) || 0) > 0 && normalize(ing.name))
-      .map((ing) => ({
-        name: ing.name,
-        unit: ing.unit || "",
-        quantity: Number(ing.quantity) || 0,
-      }));
-
-    const missing = [];
-    for (const reqIng of requirements) {
-      const requiredName = normalize(reqIng.name);
-      const requiredUnit = normalize(reqIng.unit);
-      const candidates = inventory.filter((inv) => {
-        if (normalize(inv.name) !== requiredName) return false;
-        const invUnit = normalize(inv.unit);
-        if (!requiredUnit || !invUnit) return true;
-        return invUnit === requiredUnit;
-      });
-
-      const available = candidates.reduce(
-        (sum, inv) => sum + (Number(inv.quantity) || 0),
-        0
-      );
-      if (available < reqIng.quantity) {
-        missing.push({
-          name: reqIng.name,
-          unit: reqIng.unit || "",
-          required: reqIng.quantity,
-          available,
-          missing: Math.max(0, reqIng.quantity - available),
-        });
-      }
-    }
-
-    if (missing.length > 0) {
+    const result = await consumeRecipeInventory(req.userId, recipe.ingredients);
+    if (!result.ok) {
       return res.status(400).json({
         message: "Cannot complete meal: missing key ingredients in inventory.",
-        missing,
+        missing: result.missing,
       });
-    }
-
-    // Consume oldest matching stock first.
-    for (const reqIng of requirements) {
-      const requiredName = normalize(reqIng.name);
-      const requiredUnit = normalize(reqIng.unit);
-      const candidates = inventory
-        .filter((inv) => {
-          if (normalize(inv.name) !== requiredName) return false;
-          const invUnit = normalize(inv.unit);
-          if (!requiredUnit || !invUnit) return true;
-          return invUnit === requiredUnit;
-        })
-        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-      let remaining = reqIng.quantity;
-      for (const invItem of candidates) {
-        if (remaining <= 0) break;
-        const currentQty = Number(invItem.quantity) || 0;
-        const taken = Math.min(currentQty, remaining);
-        invItem.quantity = currentQty - taken;
-        remaining -= taken;
-      }
-    }
-
-    for (const invItem of inventory) {
-      if ((Number(invItem.quantity) || 0) <= 0) {
-        await InventoryItem.findByIdAndDelete(invItem._id);
-      } else {
-        await invItem.save();
-      }
     }
 
     plan.status = "completed";

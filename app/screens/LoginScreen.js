@@ -79,7 +79,6 @@ export default function LoginScreen({navigation}) {
         const actualId = user?.id || user?._id || user?.data?.id; 
         if (actualId) {
           await AsyncStorage.setItem("userId", String(actualId));
-          console.log("UserID saved:", actualId); // Debugging line
         } else {
           console.error("Login successful but no ID found in user object");
         }

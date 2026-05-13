@@ -16,9 +16,54 @@ function utcDayBounds(now = new Date()) {
 }
 
 function recipeDailyLimit() {
-  const n = parseInt(process.env.RECIPE_DAILY_LIMIT ?? "10", 10);
-  return Number.isFinite(n) && n >= 1 ? n : 10;
+  const n = parseInt(process.env.RECIPE_DAILY_LIMIT ?? "20", 10);
+  return Number.isFinite(n) && n >= 1 ? n : 20;
 }
+
+// GET /api/recipes/daily-quota — today's create count vs limit (must be before GET /:id)
+router.get("/daily-quota", auth, async (req, res) => {
+  try {
+    const uid = req.userId;
+    const user = await User.findById(uid).select("isAdmin").lean();
+    const dailyLimit = recipeDailyLimit();
+    const { start, end } = utcDayBounds();
+
+    if (user?.isAdmin) {
+      return res.json({
+        isAdmin: true,
+        limit: dailyLimit,
+        usedToday: 0,
+        remaining: null,
+        limitReached: false,
+        windowStartUtc: start.toISOString(),
+        windowEndUtc: end.toISOString(),
+        resetAt: end.toISOString(),
+      });
+    }
+
+    const usedToday = await Recipe.countDocuments({
+      createdAt: { $gte: start, $lt: end },
+      userId: uid,
+    });
+
+    const remaining = Math.max(0, dailyLimit - usedToday);
+    const limitReached = usedToday >= dailyLimit;
+
+    res.json({
+      isAdmin: false,
+      limit: dailyLimit,
+      usedToday,
+      remaining,
+      limitReached,
+      windowStartUtc: start.toISOString(),
+      windowEndUtc: end.toISOString(),
+      resetAt: end.toISOString(),
+    });
+  } catch (err) {
+    console.error("daily-quota error:", err);
+    res.status(500).json({ message: "Could not load recipe quota" });
+  }
+});
 
 // ❌ DELETE THESE LINES (They use the old local system)
 // const uploadRecipe = createUpload(uploadDirs.recipes, "recipe"); 
@@ -48,9 +93,15 @@ router.post("/", auth, uploadCloud.single("image"), async (req, res) => {
     }
 
     const { name, description, foodGroup, ingredients, instructions } = req.body;
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ message: "Recipe name is required." });
+    }
     
-    const parsedIngredients = ingredients
-      ? JSON.parse(ingredients)
+    let parsedIngredients = [];
+    if (ingredients) {
+      try {
+        parsedIngredients = JSON.parse(ingredients)
           .map((ing) => ({
             name: ing.name ?? "",
             foodGroup: ing.foodGroup ?? "Other",
@@ -59,12 +110,22 @@ router.post("/", auth, uploadCloud.single("image"), async (req, res) => {
             notes: ing.notes ?? "",
             ...(ing.inventoryItemId && { inventoryItemId: ing.inventoryItemId }),
           }))
-          .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0)
-      : [];
-    const parsedInstructions = instructions ? JSON.parse(instructions) : [];
+          .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid ingredients format (must be JSON)." });
+      }
+    }
+    let parsedInstructions = [];
+    if (instructions) {
+      try {
+        parsedInstructions = JSON.parse(instructions);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid instructions format (must be JSON)." });
+      }
+    }
 
     const newRecipe = new Recipe({
-      name,
+      name: String(name).trim(),
       description,
       foodGroup,
       userId: uid,
@@ -99,20 +160,30 @@ router.put("/:id", auth, optionalSingleImage("image"), async (req, res) => {
     if (description !== undefined) recipe.description = description;
     if (foodGroup) recipe.foodGroup = foodGroup;
     if (ingredients) {
-      const parsed = JSON.parse(ingredients)
-        .map((ing) => ({
-          name: ing.name ?? "",
-          foodGroup: ing.foodGroup ?? "Other",
-          quantity: Number(ing.quantity) || 0,
-          unit: ing.unit ?? "",
-          notes: ing.notes ?? "",
-          ...(ing.inventoryItemId && { inventoryItemId: ing.inventoryItemId }),
-        }))
-        .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0);
+      let parsed;
+      try {
+        parsed = JSON.parse(ingredients)
+          .map((ing) => ({
+            name: ing.name ?? "",
+            foodGroup: ing.foodGroup ?? "Other",
+            quantity: Number(ing.quantity) || 0,
+            unit: ing.unit ?? "",
+            notes: ing.notes ?? "",
+            ...(ing.inventoryItemId && { inventoryItemId: ing.inventoryItemId }),
+          }))
+          .filter((ing) => !Number.isNaN(ing.quantity) && ing.quantity > 0);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid ingredients format (must be JSON)." });
+      }
       recipe.ingredients = parsed;
     }
     if (instructions !== undefined) {
-      const parsed = JSON.parse(instructions);
+      let parsed;
+      try {
+        parsed = JSON.parse(instructions);
+      } catch (e) {
+        return res.status(400).json({ message: "Invalid instructions format (must be JSON)." });
+      }
       recipe.instructions = parsed.map((step) => ({
         description: step.description ?? "",
         image: step.image || step.imageUri || "",

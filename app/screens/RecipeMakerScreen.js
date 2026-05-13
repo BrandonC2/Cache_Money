@@ -1,4 +1,4 @@
-import React, { SafeAreaView, useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -37,10 +37,6 @@ const loadRecipes = async () => {
       ...r,
       fullImageUrl: r.image || null,
     }));
-
-    if (fullData.length > 0) {
-      console.log("🔗 TEST THIS LINK:", fullData[0].fullImageUrl);
-    }
 
     setRecipes(fullData);
   } catch (err) {

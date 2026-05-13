@@ -1,11 +1,10 @@
 import React, { useState, useRef } from "react";
+import { CommonActions } from "@react-navigation/native";
 import { 
   View, TextInput, Button, Image, Alert, StyleSheet, 
   ScrollView, Text, TouchableOpacity, ActivityIndicator 
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../lib/apiClient";
 
 function toHexObjectIdString(value) {
@@ -121,7 +120,26 @@ export default function EditRecipeScreen({ route, navigation }) {
                 {
                   text: "OK",
                   onPress: () =>
-                    navigation.navigate("MainNavBar", { screen: "Recipe" }),
+                    navigation.dispatch(
+                      CommonActions.reset({
+                        index: 0,
+                        routes: [
+                          {
+                            name: "MainNavBar",
+                            state: {
+                              routes: [
+                                { name: "Pantry" },
+                                { name: "Schedule" },
+                                { name: "Camera" },
+                                { name: "Grocery" },
+                                { name: "Recipe" },
+                              ],
+                              index: 4,
+                            },
+                          },
+                        ],
+                      })
+                    ),
                 },
               ]);
             } catch (err) {
@@ -149,7 +167,6 @@ export default function EditRecipeScreen({ route, navigation }) {
     }
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem("authToken");
       const formData = new FormData();
 
       formData.append("name", name);
@@ -162,25 +179,16 @@ export default function EditRecipeScreen({ route, navigation }) {
         formData.append("image", { uri: newMainImage, name: "main.jpg", type: "image/jpeg" });
       }
 
-      // Handle Instructions & Step Images
-      const finalInstructions = instructions.map((step, idx) => {
-        if (step.isNewImage) {
-          // If it's a new local image, append it to formData with a unique key
-          formData.append(`stepImage_${idx}`, {
-            uri: step.image,
-            name: `step_${idx}.jpg`,
-            type: "image/jpeg"
-          });
-          // Set to temporary placeholder so backend knows to look for file
-          return { ...step, image: `PENDING_FILE_${idx}` };
-        }
-        return step;
+      // Step images: only the main `image` field is processed by the API today.
+      // Strip local-only flags and send URLs / descriptions the server can store.
+      const finalInstructions = instructions.map((step) => {
+        const { isNewImage, ...rest } = step;
+        return rest;
       });
       formData.append("instructions", JSON.stringify(finalInstructions));
 
-      const res = await apiClient.put(`/recipes/${rid}`, formData, {
-        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
-      });
+      // Do not set Content-Type manually — multipart needs a boundary (axios sets it for FormData).
+      const res = await apiClient.put(`/recipes/${rid}`, formData);
 
       // Update Local Navigation State
       const payload = res.data?.data;
@@ -200,7 +208,12 @@ export default function EditRecipeScreen({ route, navigation }) {
       navigation.navigate("RecipeDetails", { recipe: updated, recipeId: updated._id });
     } catch (err) {
       console.error(err);
-      Alert.alert("Error", "Failed to update recipe.");
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to update recipe.";
+      Alert.alert("Error", String(msg));
     } finally {
       setLoading(false);
     }
