@@ -205,9 +205,10 @@ export default function ReceiptReviewScreen({ route, navigation }) {
       });
 
       if (importResponse.data.ok) {
+        const skipped = Array.isArray(importResponse.data.skipped) ? importResponse.data.skipped.length : 0;
         Alert.alert("Success", importResponse.data.message, [
           {
-            text: "View Inventory",
+            text: skipped > 0 ? `View Inventory (${skipped} skipped)` : "View Inventory",
             onPress: () => {
               // Navigate to MainNavBar (the tab navigator), which will show Pantry by default
               navigation.navigate("MainNavBar");

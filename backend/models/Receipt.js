@@ -17,7 +17,10 @@ const receiptSchema = new mongoose.Schema({
     {
       name: String,
       quantity: { type: Number, default: 1 },
-      category: String,
+      category: { type: String, default: 'Other' },
+      normalizedName: String,
+      isFood: { type: Boolean, default: true },
+      rejectionReason: String,
       price: Number,
       originalText: String, // original OCR text before cleaning
     },

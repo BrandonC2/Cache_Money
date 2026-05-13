@@ -1,20 +1,27 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { getHistory } from '../services/recentStorage';
 import apiClient from '../lib/apiClient';
 
 export const useIngredientSuggestions = (query) => {
   const [globalSuggestions, setGlobalSuggestions] = useState([]);
-  const [localHistory, setLocalHistory] = useState({});
+  const [localHistory, setLocalHistory] = useState([]);
+  const latestQueryRef = useRef('');
 
   useEffect(() => {
     getHistory().then(setLocalHistory);
   }, []);
 
   useEffect(() => {
+    const currentQuery = String(query || '').trim();
+    latestQueryRef.current = currentQuery.toLowerCase();
     const handler = setTimeout(() => {
-      if (query && query.length > 2) {
-        apiClient.get(`/inventory/search/${encodeURIComponent(query)}`)
-          .then(res => setGlobalSuggestions(res.data))
+      if (currentQuery.length > 2) {
+        apiClient.get(`/inventory/search/${encodeURIComponent(currentQuery)}`)
+          .then(res => {
+            // Ignore stale responses from older queries.
+            if (latestQueryRef.current !== currentQuery.toLowerCase()) return;
+            setGlobalSuggestions(Array.isArray(res.data) ? res.data : []);
+          })
           .catch(err => console.error("❌ Search error:", err));
       } else {
         setGlobalSuggestions([]);
@@ -25,8 +32,8 @@ export const useIngredientSuggestions = (query) => {
   }, [query]);
 
   return useMemo(() => {
-    // 1. Convert local history object to an array
-    const historyArray = Object.values(localHistory || {});
+    // 1. Ensure local history is an array
+    const historyArray = Array.isArray(localHistory) ? localHistory : [];
     
     // 2. Start with local history as the base
     const combined = [...historyArray];
@@ -48,7 +55,7 @@ export const useIngredientSuggestions = (query) => {
     return combined.sort((a, b) => {
       if (a.isGlobal && !b.isGlobal) return 1;
       if (!a.isGlobal && b.isGlobal) return -1;
-      return a.name.localeCompare(b.name);
+      return String(a.name || '').localeCompare(String(b.name || ''));
     });
   }, [localHistory, globalSuggestions]);
 };

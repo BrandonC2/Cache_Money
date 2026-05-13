@@ -58,7 +58,7 @@ function normalizeTabScannerItems(payload) {
   const rawItems = extractItemsCandidates(payload);
   const mapped = rawItems
     .map((it) => {
-      const name = String(it?.name || it?.description || it?.text || '').trim();
+      const name = String(it?.descClean || it?.desc || it?.name || it?.description || it?.text || '').trim();
       if (!name) return null;
       return {
         name: cleanItemName(name),
@@ -70,6 +70,24 @@ function normalizeTabScannerItems(payload) {
     })
     .filter(Boolean);
   return mapped;
+}
+
+const NON_FOOD_KEYWORDS = [
+  'bag', 'bags', 'bottle deposit', 'deposit', 'gift card', 'giftcard', 'battery',
+  'soap', 'detergent', 'cleaner', 'bleach', 'toothpaste', 'toothbrush', 'shampoo',
+  'conditioner', 'deodorant', 'razor', 'napkin', 'paper towel', 'toilet paper',
+  'trash bag', 'foil', 'plastic wrap', 'pet food', 'cat litter', 'pharmacy',
+  'medicine', 'vitamin', 'supplement', 'diaper', 'wipes', 'lotion', 'makeup',
+];
+
+function normalizeNameForClassification(text) {
+  let value = String(text || '').toLowerCase();
+  // Remove UPC-like prefixes and store suffix codes.
+  value = value.replace(/^\d{6,}\s+/, '');
+  value = value.replace(/\b(bf|tf|tx|tax)\b/g, ' ');
+  value = value.replace(/[^\w\s']/g, ' ');
+  value = value.replace(/\s+/g, ' ').trim();
+  return value;
 }
 
 // Helper: Clean item names (remove brand prefixes like "hz", "del", "campbells", etc.)
@@ -162,31 +180,38 @@ const parseReceiptText = (text) => {
   return items;
 };
 
-// Helper: Auto-categorize items
+// Helper: classify and categorize item lines.
 const categorizeItems = (items) => {
   const categories = {
-    'Produce': ['tomato', 'lettuce', 'carrot', 'apple', 'banana', 'orange', 'grape', 'melon', 'pepper', 'onion', 'garlic', 'potato', 'spinach', 'broccoli', 'cauliflower', 'celery'],
-    'Dairy': ['milk', 'cheese', 'yogurt', 'butter', 'cream', 'sour cream', 'egg', 'ice cream'],
-    'Meat': ['chicken', 'beef', 'pork', 'ham', 'turkey', 'bacon', 'sausage', 'ground'],
-    'Bakery': ['bread', 'bun', 'bagel', 'croissant', 'donut', 'cake', 'pastry', 'muffin'],
-    'Beverages': ['juice', 'soda', 'water', 'coffee', 'tea', 'milk', 'smoothie', 'drink', 'beer', 'wine'],
-    'Pantry': ['rice', 'pasta', 'beans', 'cereal', 'flour', 'sugar', 'salt', 'oil', 'sauce', 'soup', 'broth', 'ketchup', 'mustard', 'mayo'],
-    'Frozen': ['frozen', 'ice cream', 'pizza', 'dinners'],
-    'Snacks': ['chips', 'cookie', 'candy', 'granola', 'bar', 'cracker', 'popcorn', 'pretzel'],
+    Protein: ['chicken', 'beef', 'pork', 'ham', 'turkey', 'bacon', 'sausage', 'tofurky', 'meat', 'tofu', 'fish', 'shrimp', 'egg'],
+    Grain: ['rice', 'pasta', 'bread', 'oat', 'oatmilk', 'flour', 'granola', 'cereal', 'cracker', 'biscuit', 'bagel', 'tortilla'],
+    Dairy: ['milk', 'cheese', 'yogurt', 'butter', 'cream', 'ice cream', 'silk'],
+    Fruit: ['apple', 'banana', 'orange', 'grape', 'melon', 'berry', 'fruit', 'juice'],
+    Vegetable: ['tomato', 'lettuce', 'carrot', 'pepper', 'onion', 'garlic', 'potato', 'spinach', 'broccoli', 'cauliflower', 'celery', 'pickle'],
+    Spice: ['salt', 'pepper', 'seasoning', 'spice', 'cinnamon', 'paprika', 'oregano', 'thyme', 'cumin', 'garlic powder'],
   };
 
-  return items.map(item => {
+  return items.map((item) => {
+    const normalizedName = normalizeNameForClassification(item.name || item.originalText || '');
     let assignedCategory = 'Other';
-    const itemNameLower = item.name.toLowerCase();
-
     for (const [category, keywords] of Object.entries(categories)) {
-      if (keywords.some(keyword => itemNameLower.includes(keyword))) {
+      if (keywords.some((keyword) => normalizedName.includes(keyword))) {
         assignedCategory = category;
         break;
       }
     }
 
-    return { ...item, category: assignedCategory };
+    const nonFoodHit = NON_FOOD_KEYWORDS.find((kw) => normalizedName.includes(kw));
+    const isFood = !nonFoodHit;
+    const rejectionReason = nonFoodHit ? `Matched non-food keyword: ${nonFoodHit}` : undefined;
+
+    return {
+      ...item,
+      category: assignedCategory,
+      normalizedName,
+      isFood,
+      rejectionReason,
+    };
   });
 };
 
@@ -339,7 +364,7 @@ router.put('/:id', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    receipt.items = items;
+    receipt.items = categorizeItems(items || []);
     receipt.status = 'reviewed';
     receipt.processedAt = new Date();
 
@@ -371,8 +396,22 @@ router.post('/:id/import', async (req, res) => {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    // Create inventory items from receipt items
-    const inventoryItems = receipt.items.map(item => ({
+    const skipped = [];
+    const importableItems = [];
+    for (const item of receipt.items) {
+      const classified = categorizeItems([item])[0];
+      if (classified.isFood === false) {
+        skipped.push({
+          name: classified.name,
+          reason: classified.rejectionReason || 'Classified as non-food',
+        });
+      } else {
+        importableItems.push(classified);
+      }
+    }
+
+    // Create inventory items from food-only receipt items
+    const inventoryItems = importableItems.map(item => ({
       userId: req.userId,
       room: room,
       name: item.name,
@@ -382,8 +421,8 @@ router.post('/:id/import', async (req, res) => {
       createdAt: new Date(),
     }));
 
-    // Save all items
-    const saved = await InventoryItem.insertMany(inventoryItems);
+    // Save all items (if any)
+    const saved = inventoryItems.length > 0 ? await InventoryItem.insertMany(inventoryItems) : [];
 
     receipt.status = 'imported';
     receipt.importedAt = new Date();
@@ -391,8 +430,9 @@ router.post('/:id/import', async (req, res) => {
 
     res.json({
       ok: true,
-      message: `Imported ${saved.length} items to inventory`,
+      message: `Imported ${saved.length} items to inventory${skipped.length ? ` (${skipped.length} skipped as non-food)` : ''}`,
       items: saved,
+      skipped,
     });
   } catch (err) {
     console.error('Import error:', err);

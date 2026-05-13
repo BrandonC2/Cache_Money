@@ -1,13 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import apiClient from '../lib/apiClient';
 import { calculateConfidence } from '../services/matchEngine';
 
 export const useRecipeCheck = (recipeId) => {
   const [loading, setLoading] = useState(false);
   const [comparison, setComparison] = useState(null);
+  const latestRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (!recipeId) {
+      setComparison(null);
+      setLoading(false);
+    }
+  }, [recipeId]);
 
   const checkAvailability = async () => {
-    if (!recipeId) return;
+    if (!recipeId) {
+      setComparison(null);
+      return;
+    }
+    const requestId = Date.now();
+    latestRequestRef.current = requestId;
     setLoading(true);
     try {
       const response = await apiClient.get(`/grocerylist/check/${recipeId}`);
@@ -23,10 +36,14 @@ export const useRecipeCheck = (recipeId) => {
         return { ...item, confidenceScore: confidence, status };
       });
 
+      if (latestRequestRef.current !== requestId) return;
       setComparison({ canMake: canCook, ingredientsStatus: enhancedItems });
     } catch (err) {
+      if (latestRequestRef.current !== requestId) return;
       console.error("Check failed", err);
+      setComparison(null);
     } finally {
+      if (latestRequestRef.current !== requestId) return;
       setLoading(false);
     }
   };
