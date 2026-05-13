@@ -157,7 +157,10 @@ export default function MealPrepScreen({ route, navigation }) {
         date: selectedDate,
       });
       Alert.alert("Scheduled!", `${recipeName} is planned for ${selectedDate}.`);
-      navigation.navigate("Schedule", { selectedDate, refreshAt: Date.now() });
+      navigation.navigate("MainNavBar", {
+        screen: "Schedule",
+        params: { selectedDate, refreshAt: Date.now() },
+      });
     } catch (err) {
       console.error("Schedule error:", err);
       Alert.alert(
@@ -214,6 +217,17 @@ export default function MealPrepScreen({ route, navigation }) {
           <Text style={styles.headerTitle} numberOfLines={1}>
             Plan: {recipeName}
           </Text>
+          <TouchableOpacity
+            style={styles.headerScheduleButton}
+            onPress={() =>
+              navigation.navigate("MainNavBar", {
+                screen: "Schedule",
+                params: { selectedDate, refreshAt: Date.now() },
+              })
+            }
+          >
+            <Text style={styles.headerScheduleButtonText}>Schedule</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.calendarCard}>
@@ -380,6 +394,18 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     color: "#333",
     flex: 1,
+    marginRight: 8,
+  },
+  headerScheduleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "#4D693A",
+  },
+  headerScheduleButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 13,
   },
   sectionLabel: {
     fontSize: 14,
